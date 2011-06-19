@@ -26,7 +26,7 @@ function pause() {
 #	read
 }
 
-cd $( pwd )/$( dirname $0 )/../
+cd "$( dirname "$0" )/../"
 runDir=$( pwd )
 cd -
 echo "$runDir"
