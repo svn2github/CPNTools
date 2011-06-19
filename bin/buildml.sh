@@ -65,7 +65,7 @@ pause "Found Arch"
 
 
 # Perform installation using our settings
-cp $runDir/config/targets $runDir/config/preloads config
+cp "$runDir/config/targets" "$runDir/config/preloads" config
 ./config/install.sh
 
 pause "Compiled 1st"
@@ -85,13 +85,13 @@ pause "Downloaded additional packages"
 
 # Patch compiler, runtime and system
 cd base
-patch -p0 < $runDir/simulator/patch/compiler.diff
+patch -p0 < "$runDir/simulator/patch/compiler.diff"
 pause "Patched compiler"
-patch -p0 < $runDir/simulator/patch/runtime.diff
+patch -p0 < "$runDir/simulator/patch/runtime.diff"
 pause "Patched runtime"
-patch -p0 < $runDir/simulator/patch/system.diff
+patch -p0 < "$runDir/simulator/patch/system.diff"
 pause "Patched system"
-patch -p0 < $runDir/simulator/patch/cm.diff
+patch -p0 < "$runDir/simulator/patch/cm.diff"
 pause "Patched cm"
 
 
@@ -136,13 +136,13 @@ pause "Images rebuilt"
 # Copy new image to correct locations
 cd bin/
 echo "These copies will fail on other than Windows"
-cp /cygdrive/c/cygwin/bin/cygwin1.dll /cygdrive/c/cygwin/bin/cyggcc_s-1.dll $runDir/simulator/runtime
+cp /cygdrive/c/cygwin/bin/cygwin1.dll /cygdrive/c/cygwin/bin/cyggcc_s-1.dll "$runDir/simulator/runtime"
 chmod +x .run/$SML*
 if [ -f .run/$SML ]; then
-cp .run/$SML $runDir/simulator/runtime/$SML*
-cp .run/$SML $runDir/simulator/runtime/
+	cp .run/$SML "$runDir/simulator/runtime/$SML"*
+	cp .run/$SML "$runDir/simulator/runtime/"
 else
-cp .run/$SML* $runDir/simulator/runtime/$SML*
+	cp .run/$SML* "$runDir/simulator/runtime/$SML"*
 fi
 cd ../
 pause "Image copied"
