@@ -30,7 +30,6 @@ cd $( pwd )/$( dirname $0 )/../
 runDir=$( pwd )
 cd -
 echo "$runDir"
-read
 
 # Get installer package
 mkdir -p sml
@@ -106,14 +105,12 @@ echo cp $SML* ../../../bin/.run/
 cp $SML* ../../../bin/.run/
 cd ../../
 pause "Runtime built"
-read
 
 # Recompile compiler
 cd compiler
 echo | ../../bin/sml "core.cm"
 cd ../
 pause "Compiled 2nd"
-read
 
 # Make and install new image
 cd system
