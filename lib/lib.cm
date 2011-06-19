@@ -1,0 +1,41 @@
+library
+	structure BigWord8Array
+	signature BIGBITARRAY
+	structure BigBitArray
+	structure Counter
+	structure StandardArray
+	structure LargeArray
+	structure LargeHashTable
+	structure LargeDynamicArray
+	functor LargeHashTableFn
+	functor LargeMonoArrayFn
+#if (defined(SMLNJ_VERSION))
+	library (matrix/sources.cm)
+#endif
+	structure Regression
+	signature DICTIONARY
+	functor HashDictionary
+	structure IntKey
+	structure StringKey
+	structure IntInfKey
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	bigword8array.sml
+	bitarray-sig.sml
+	bitarray.sml
+	counter.sml
+	large-array.sml
+	hash-table-rep.sml
+	hash-table.sml
+	hash-table-fn.sml
+	(*dynamic-array.sml*)
+	mono-array-fn.sml
+	remap.sml
+	matrix/sources.cm
+	regression.sml
+	dictionary.sml
+	keys.sml

@@ -1,0 +1,159 @@
+diff -ru tmp/fxp-2.0/src/Parser/Params/parserOptions.sml fxp-2.0/src/Parser/Params/parserOptions.sml
+--- tmp/fxp-2.0/src/Parser/Params/parserOptions.sml	2004-06-25 18:42:54.000000000 +0200
++++ fxp-2.0/src/Parser/Params/parserOptions.sml	2004-08-17 12:17:30.252936200 +0200
+@@ -112,39 +112,39 @@
+ 	 end
+ 
+       val parserUsage = 
+-	 [U_ITEM(["-[n]v","--validate[=(yes|no)]"],"Turn on or off validation (yes)"),
+-	  U_ITEM(["-[n]c","--compat[=(yes|no)]","--compatibility[=(yes|no)]"],
+-                 "Turn on or off compatibility checking (yes)"),
+-	  U_ITEM(["-[n]i","--interop[=(yes|no)]","--interoperability[=(yes|no)]"],
+-                 "Turn on or off interoperability checking (no)"),
+-          U_SEP,
+-	  U_ITEM(["--few-errors[=(yes|no)]"],"Report fewer errors (no)"),
+-	  U_ITEM(["--check-reserved[=(yes|no)]"],
+-                 "Checking for reserved names (no)"),
+-	  U_ITEM(["--check-predef[=(yes|no)]","--check-predefined[=(yes|no)]"],
+-                 "Check declaration of predefined entities (yes)"),
+-	  U_ITEM(["--check-lang-id[=(yes|no)]"],"Checking language identifiers (no)"),
+-	  U_ITEM(["--check-iso639[=(yes|no)]"],"Check ISO 639 language codes (no)"),
+-	  U_ITEM(["--check-xml-version[=(yes|no)]"], "Check XML version number (yes)"),
+-          U_SEP,
+-	  U_ITEM(["--warn-xml-decl[=(yes|no)]"],"Warn if there is no XML declaration (no)"),
+-	  U_ITEM(["--warn-att-elem[=(yes|no)]"],
+-                 "Warn about attlist declarations for undeclared elements (no)"),
+-	  U_ITEM(["--warn-predefined[=(yes|no)]"],
+-                 "Warn if the predefined entities are not declared (no)"),
+-	  U_ITEM(["--warn-mult-decl[=<arg>]"],"Warn about multiple declarations (none)"),
+-          U_ITEM(["--warn-uri[=(yes|no)]"],"Warn about non-ASCII characters in URIs (yes)"),
+-          U_ITEM(["--warn[=all]"],"Warn about nearly everything"),
+-          U_ITEM(["--warn=none"],"Do not print warnings"),
+-	  U_SEP,
+-	  U_ITEM(["--include-ext[=(yes|no)]","--include-external[=(yes|no)]"],
+-                 "Include external entities in non-validating mode (no)"),
+-	  U_ITEM(["--include-par[=(yes|no)]","--include-parameter[=(yes|no)]"],
+-                 "Include parameter entities and external subset in "^
+-                 "non-validating mode (no)"),
+-	  U_SEP]
+-	 @dfaUsage
+-
++	  List.@ ([U_ITEM(["-[n]v","--validate[=(yes|no)]"],"Turn on or off validation (yes)"),
++		   U_ITEM(["-[n]c","--compat[=(yes|no)]","--compatibility[=(yes|no)]"],
++			  "Turn on or off compatibility checking (yes)"),
++		   U_ITEM(["-[n]i","--interop[=(yes|no)]","--interoperability[=(yes|no)]"],
++			  "Turn on or off interoperability checking (no)"),
++		   U_SEP,
++		   U_ITEM(["--few-errors[=(yes|no)]"],"Report fewer errors (no)"),
++		   U_ITEM(["--check-reserved[=(yes|no)]"],
++			  "Checking for reserved names (no)"),
++		   U_ITEM(["--check-predef[=(yes|no)]","--check-predefined[=(yes|no)]"],
++			  "Check declaration of predefined entities (yes)"),
++		   U_ITEM(["--check-lang-id[=(yes|no)]"],"Checking language identifiers (no)"),
++		   U_ITEM(["--check-iso639[=(yes|no)]"],"Check ISO 639 language codes (no)"),
++		   U_ITEM(["--check-xml-version[=(yes|no)]"], "Check XML version number (yes)"),
++		   U_SEP,
++		   U_ITEM(["--warn-xml-decl[=(yes|no)]"],"Warn if there is no XML declaration (no)"),
++		   U_ITEM(["--warn-att-elem[=(yes|no)]"],
++			  "Warn about attlist declarations for undeclared elements (no)"),
++		   U_ITEM(["--warn-predefined[=(yes|no)]"],
++			  "Warn if the predefined entities are not declared (no)"),
++		   U_ITEM(["--warn-mult-decl[=<arg>]"],"Warn about multiple declarations (none)"),
++		   U_ITEM(["--warn-uri[=(yes|no)]"],"Warn about non-ASCII characters in URIs (yes)"),
++		   U_ITEM(["--warn[=all]"],"Warn about nearly everything"),
++		   U_ITEM(["--warn=none"],"Do not print warnings"),
++		   U_SEP,
++		   U_ITEM(["--include-ext[=(yes|no)]","--include-external[=(yes|no)]"],
++			  "Include external entities in non-validating mode (no)"),
++		   U_ITEM(["--include-par[=(yes|no)]","--include-parameter[=(yes|no)]"],
++			  "Include parameter entities and external subset in "^
++			  "non-validating mode (no)"),
++		   U_SEP],
++		  dfaUsage)
++	  
+       fun setParserOptions(opts,doError) = 
+ 	 let 
+ 	    datatype What = ATT | ATTLIST | ENT | NOT 
+Only in fxp-2.0/src/Parser/Params: parserOptions.sml~
+diff -ru tmp/fxp-2.0/src/Parser/Parse/parseXml.sml fxp-2.0/src/Parser/Parse/parseXml.sml
+--- tmp/fxp-2.0/src/Parser/Parse/parseXml.sml	2004-06-25 18:42:54.000000000 +0200
++++ fxp-2.0/src/Parser/Parse/parseXml.sml	2004-08-17 12:27:42.830426200 +0200
+@@ -317,11 +317,11 @@
+ 	 (*-----------------------------------------------------------------*)
+ 	 (* might raise: SyntaxState                                        *) 
+ 	 (*-----------------------------------------------------------------*)
+-	 fun parseXmlDeclAfterS enc (v,e) caq = 
++	 fun parseXmlDeclAfterS enc (v,e1) caq = 
+ 	    let 
+ 	       val (alone,caq1) = parseStandaloneDecl caq
+ 	       val caq2 = skipSopt caq1
+-	    in skipXmlDeclEnd enc (v,e,alone) caq2
++	    in skipXmlDeclEnd enc (v,e1,alone) caq2
+ 	    end
+ 	 (*-----------------------------------------------------------------*)
+ 	 (* parse the remainder after the encoding declaration, the version *)
+@@ -333,7 +333,7 @@
+ 	 (*-----------------------------------------------------------------*)
+ 	 (* might raise: SyntaxState                                        *) 
+ 	 (*-----------------------------------------------------------------*)
+-	 fun parseXmlDeclBeforeS enc (v,e) caq = 
++	 fun parseXmlDeclBeforeS enc (v,e1) caq = 
+ 	    let
+ 	       val (hadS,caq1 as (_,_,q1)) = skipSmay caq
+ 	       val (name,(c2,a2,q2)) = parseName caq1 (* NotFound handled below *)
+@@ -341,13 +341,13 @@
+ 			else hookError(a2,(getPos q1,ERR_MISSING_WHITE))
+ 	    in case name 
+ 		 of [0wx73,0wx74,0wx61,0wx6e,0wx64,0wx61,0wx6c,0wx6f,0wx6e,0wx65] => 
+-		  (* "standalone" *) parseXmlDeclAfterS enc (v,e) (c2,a3,q2)
++		  (* "standalone" *) parseXmlDeclAfterS enc (v,e1) (c2,a3,q2)
+ 		  | _ => let val a4 = hookError(a3,(getPos q1,ERR_EXPECTED(expStandOpt,name)))
+-			 in parseXmlDeclAfterS enc (v,e) (c2,a4,q2)
++			 in parseXmlDeclAfterS enc (v,e1) (c2,a4,q2)
+ 			 end
+ 	    end
+ 	 handle NotFound caq => (* exception raised by parseName *) 
+-	    skipXmlDeclEnd enc (v,e,NONE) caq 
++	    skipXmlDeclEnd enc (v,e1,NONE) caq 
+ 	 (*-----------------------------------------------------------------*)
+ 	 (* parse the remainder after the keyword 'encoding', the version   *)
+ 	 (* already parsed and given in the first arg.                      *) 
+Only in fxp-2.0/src/Parser/Parse: parseXml.sml~
+diff -ru tmp/fxp-2.0/src/Unicode/Chars/uniRanges.sml fxp-2.0/src/Unicode/Chars/uniRanges.sml
+--- tmp/fxp-2.0/src/Unicode/Chars/uniRanges.sml	2004-06-25 18:42:55.000000000 +0200
++++ fxp-2.0/src/Unicode/Chars/uniRanges.sml	2004-08-17 12:18:02.791671200 +0200
+@@ -417,12 +417,11 @@
+ 	  ] : CharClasses.CharRange
+ 
+       val nameCharRange =
+-	nameStartCharRange@
+-	[(0wx002D,0wx002E), (* -.  *)
+-	 (0wx0030,0wx0039), (* 0-9 *)
+-         (0wxB7,0wxB7),
+-         (0wx0300,0wx036F),
+-	 (0wx203F,0wx2040)
+-	 ] : CharClasses.CharRange
++	  List.@ (nameStartCharRange,
++		  [(0wx002D,0wx002E), (* -.  *)
++		   (0wx0030,0wx0039), (* 0-9 *)
++		   (0wxB7,0wxB7),
++		   (0wx0300,0wx036F),
++		   (0wx203F,0wx2040)]) : CharClasses.CharRange
+ 
+    end
+Only in fxp-2.0/src/Unicode/Chars: uniRanges.sml~
+diff -ru tmp/fxp-2.0/src/Util/utilTime.sml fxp-2.0/src/Util/utilTime.sml
+--- tmp/fxp-2.0/src/Util/utilTime.sml	2004-06-25 18:42:57.000000000 +0200
++++ fxp-2.0/src/Util/utilTime.sml	2004-08-17 12:25:24.963936200 +0200
+@@ -12,8 +12,8 @@
+ (*--------------------------------------------------------------------------*)
+ signature UtilTime =
+    sig
+-      val time  : ('a -> 'b) -> 'a -> 'b * {usr:Time.time, sys:Time.time, gc:Time.time} 
+-      val timeN : int -> ('a -> 'b) -> 'a -> 'b * {usr:Time.time, sys:Time.time, gc:Time.time} 
++      val time  : ('a -> 'b) -> 'a -> 'b * {usr:SMLTime.time, sys:SMLTime.time, gc:SMLTime.time} 
++      val timeN : int -> ('a -> 'b) -> 'a -> 'b * {usr:SMLTime.time, sys:SMLTime.time, gc:SMLTime.time} 
+    end
+ 
+ structure UtilTime : UtilTime =
+Only in fxp-2.0/src/Util: utilTime.sml~

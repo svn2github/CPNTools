@@ -1,0 +1,32 @@
+library
+#if (defined(SMLNJ_VERSION))
+	signature GRAPH
+	signature GRAPH_EXPLORER
+	signature GRAPH_GENERATOR
+	signature STATE_SPACE_GRAPH
+	structure Graph
+	functor GraphExplorer
+	functor ReachabilityGraphGenerator
+(*	functor GraphStatistics*)
+	functor GraphExploration
+	functor GraphModel
+	functor GraphWaitingSetExploration
+	functor SCCGraphModel
+	functor IdentityStateMapping
+	functor IdentityEventMapping
+#endif
+is
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../../lib/lib.cm
+	../../siminterface/interfaces/interfaces.cm
+	../storages/storages.cm
+	../waitingsets/waitingsets.cm 
+	../explorations/exploration.cm
+	../interfaces/interfaces.cm
+	graph-sig.sml
+	graph.sml
+(*	graph-statistics.sml*)
+	identity-mappings.sml

@@ -1,0 +1,50 @@
+library
+	functor DFSExploration
+	functor SimpleTraceExploration
+	functor RealSimpleTraceExploration
+	functor NoTraceExploration
+	functor SimpleExploration
+	functor RealSimpleExploration
+	functor ComBackExploration
+	functor ComBackExplorationNoArcs
+	functor DebugTraceExploration
+	functor HookStatsExploration
+	functor SimpleStatsExploration
+	functor WaitingSetExploration
+	functor ComBackDDDExploration
+	functor IntermediateStatsExploration
+	functor StoppableExploration
+#if (defined(SMLNJ_VERSION))
+	library (external-explorations.cm)
+	library (fixpoint-calculator.cm)
+	library (sweep-line-exploration.cm)
+(*
+	library (state-caching-exploration.cm)
+*)
+#endif
+
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+        $/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../siminterface/interfaces/interfaces.cm
+	../storages/storages.cm
+	../hash/hash.cm
+	dfs-exploration.sml
+	exploration.sml
+	comback-exploration.sml
+	debug-exploration.sml
+	simple-stats-exploration.sml
+	waitingset-exploration.sml
+	fixpoint-calculator.cm
+	sweep-line-exploration.cm
+	comback-ddd-exploration.sml
+	stats-exploration.sml
+	stoppable-exploration.sml
+	external-explorations.cm
+(*
+	state-caching-exploration.cm
+*)

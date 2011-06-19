@@ -1,0 +1,195 @@
+diff -r -u system/Basis/Implementation/NJ/gc.sig /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sig
+--- system/Basis/Implementation/NJ/gc.sig	2000-06-01 20:34:03.000000000 +0200
++++ /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sig	2007-10-03 00:08:42.000000000 +0200
+@@ -10,6 +10,8 @@
+ 
+     val doGC : int -> unit
+     val messages : bool -> unit
++    val getHeapSize : unit -> int
++    val getPageFaults : unit -> int
+ 
+   end
+ 
+diff -r -u system/Basis/Implementation/NJ/gc.sml /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sml
+--- system/Basis/Implementation/NJ/gc.sml	2000-06-01 20:34:03.000000000 +0200
++++ /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sml	2007-10-03 00:08:42.000000000 +0200
+@@ -11,11 +11,18 @@
+     val gcCtl : ((string * int ref) list -> unit) =
+ 	  CInterface.c_function "SMLNJ-RunT" "gcControl"
+ 
+-    fun doGC n = gcCtl [("DoGC", ref n)]
++      fun doGC n = gcCtl [("DoGC", ref n)]
++
++      val getMemory: (unit -> int) =
++          CInterface.c_function "SMLNJ-RunT" "getMemory"
++
++      val getPageFaults: (unit -> int) =
++          CInterface.c_function "SMLNJ-RunT" "getPageFaults"
+ 
+     fun messages true = gcCtl [("Messages", ref 1)]
+       | messages false = gcCtl [("Messages", ref 0)]
+ 
++      val getHeapSize = getMemory
+   end
+ 
+ 
+diff -r -u system/smlnj/compiler/alpha32.cm /usr/local/smlnj/base/system/smlnj/compiler/alpha32.cm
+--- system/smlnj/compiler/alpha32.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/alpha32.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -66,6 +66,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -85,7 +86,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/compiler/amd64.cm /usr/local/smlnj/base/system/smlnj/compiler/amd64.cm
+--- system/smlnj/compiler/amd64.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/amd64.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -65,6 +65,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -84,7 +85,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/compiler/current.cm /usr/local/smlnj/base/system/smlnj/compiler/current.cm
+--- system/smlnj/compiler/current.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/current.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -68,6 +68,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -87,7 +88,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/compiler/hppa.cm /usr/local/smlnj/base/system/smlnj/compiler/hppa.cm
+--- system/smlnj/compiler/hppa.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/hppa.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -66,6 +66,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -85,7 +86,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/compiler/ppc.cm /usr/local/smlnj/base/system/smlnj/compiler/ppc.cm
+--- system/smlnj/compiler/ppc.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/ppc.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -66,6 +66,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -85,7 +86,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/compiler/sparc.cm /usr/local/smlnj/base/system/smlnj/compiler/sparc.cm
+--- system/smlnj/compiler/sparc.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/sparc.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -66,6 +66,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -85,7 +86,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/compiler/x86.cm /usr/local/smlnj/base/system/smlnj/compiler/x86.cm
+--- system/smlnj/compiler/x86.cm	2007-05-04 05:39:10.000000000 +0200
++++ /usr/local/smlnj/base/system/smlnj/compiler/x86.cm	2007-10-03 00:08:42.000000000 +0200
+@@ -66,6 +66,7 @@
+ 	structure UnpickleSymPid
+ 	structure PrettyPrint
+ 	structure CompilerPPTable
++	structure MLParser
+ 	structure Ast
+ 	structure Absyn
+ 	structure SmlFile
+@@ -85,7 +86,8 @@
+         structure TypesUtil
+         structure VarCon
+         structure ModuleUtil
+-        structure PrimOpId
++	  structure PrimOpId
++	  structure Precedence
+         structure BasicTypes
+         structure PPType
+         structure Access
+diff -r -u system/smlnj/viscomp/elaborate.cm /usr/local/smlnj/base/system/smlnj/viscomp/elaborate.cm
+--- system/smlnj/viscomp/elaborate.cm	2001-11-21 22:03:17.000000000 +0100
++++ /usr/local/smlnj/base/system/smlnj/viscomp/elaborate.cm	2007-10-03 00:11:55.000000000 +0200
+@@ -5,7 +5,8 @@
+  * The SML/NJ elaborator.
+  *)
+ Library
+-	group($compiler/Elaborator/elaborate.cm)
++group($compiler/Elaborator/elaborate.cm)
++structure Precedence
+ is
+ 	(* reference to our only group... *)
+ 	$compiler/Elaborator/elaborate.cm

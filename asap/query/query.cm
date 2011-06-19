@@ -1,0 +1,36 @@
+library
+	functor DeadlockFreeness
+	functor SafetyChecker
+	functor SimpleSafetyChecker
+	functor NDFSLTLChecker
+	structure PLTLSyntax
+	signature BUCHI_EXPRESSION
+	signature BUCHI_MODEL
+	functor BuchiSimulator
+	functor ProductHashFunction
+	structure BuchiHashFunction
+	functor BuchiProductModel
+	functor LTLCompressor
+	functor RemoveNonAcceptingSCC
+	functor FinalSCCOptimizer
+	functor RemoveRedundantStates
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+        $/smlnj-lib.cm
+#endif
+	../../lib/lib.cm
+	../../siminterface/interfaces/interfaces.cm
+	../interfaces/interfaces.cm
+	../explorations/exploration.cm
+	../storages/storages.cm
+	../graph/graph.cm
+	deadlock-freeness.sml
+	safety-checker.sml
+	set.sml
+	pltl.sml
+	ndfs-ltl-checker.sml
+	buchi-model.sml
+	buchi-cpn-product-model.sml
+	ltl-analyzer.sml

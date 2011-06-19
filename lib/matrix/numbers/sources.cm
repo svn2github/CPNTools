@@ -1,0 +1,50 @@
+(*
+ * sources.cm
+ * numbers
+ *
+ * Franklin Chen
+ *
+ * Beginning of an attempt to organize mathematical structures.
+ *)
+
+library
+	signature COMPLEX
+	signature ANY
+	signature MONOID
+	(*signature GROUP*)
+	signature GROUP_FUNCTION
+	signature ABELIAN_GROUP
+	signature RNG
+	signature RING
+	signature DIVISION_RING
+	signature FIELD
+	signature VECTOR_SPACE
+	signature INNER_PROD_SPACE
+	signature ORDERED
+	signature UNORDERED_NUMBER
+	signature NUMBER
+	signature ORDERED_NUMBER
+	functor GroupFunctionFromAny
+	structure RealNumber
+	structure ComplexNumber
+is
+	$/basis.cm
+	MONOID.sml
+	ANY.sml
+	GROUP.sml
+	GROUP_FUNCTION.sml
+	RNG.sml
+	RING.sml
+	DIVISION_RING.sml
+	FIELD.sml
+	NUMBER.sml
+	COMPLEX.sml
+	ComplexNumber.sml
+	ORDERED.sml
+	ORDERED_NUMBER.sml
+	RealNumber.sml
+	GroupFunctionFromAny.sml
+	ABELIAN_GROUP.sml
+	UNORDERED_NUMBER.sml
+	VECTOR_SPACE.sml
+	INNER_PROD_SPACE.sml

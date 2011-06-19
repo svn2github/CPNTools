@@ -1,0 +1,9 @@
+library
+	library (../asap/platform.cm)
+	library (comms/comms.cm)
+	library (../lib/lib.cm)
+is
+	$/basis.cm
+	../lib/lib.cm
+	../asap/platform.cm
+	comms/comms.cm

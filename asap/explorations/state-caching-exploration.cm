@@ -1,0 +1,13 @@
+library
+	functor StateCachingExploration
+	signature STATE_CACHING_CACHE
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+        $/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../siminterface/interfaces/interfaces.cm
+	../storages/storages.cm
+	state-caching-exploration.sml

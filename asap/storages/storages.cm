@@ -1,0 +1,31 @@
+library
+	(*  basic storages  *)
+	functor OrdSetStorage
+	functor BitStateStorage
+	functor BloomFilterStorage
+	functor DoubleHashingStorage
+	functor HashStorage
+        functor HashCompactionStorage
+        functor HashMapStorage
+#if (defined(SMLNJ_VERSION))
+	library (comback-storages.cm)
+	library (external-storages.cm)
+#endif
+
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../lib/lib.cm
+	../../siminterface/interfaces/interfaces.cm
+	../hash/hash.cm
+	set-storage.sml
+	bit-storage.sml
+	hash-storage.sml
+	hash-compaction.sml
+	hash-map-storage.sml
+	comback-storages.cm
+	external-storages.cm

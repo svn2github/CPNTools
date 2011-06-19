@@ -1,0 +1,19 @@
+The files cpn-event-sig.sml, cpn-state-sig.sml, and cpntools-model.sml
+should be loaded as part of the SS-tool.  They do not depend on the
+CPN simulator.  These files generate two interfaces, CPN'EVENT and
+CPN'STATE, which describes the events resp. states of a CPN model, and
+a functor CPNToolsModel, which can generate a MODEL from a CPN'STATE
+and a CPN'EVENT.
+
+The files net-capture.sml, cpn-event.sml, and cpn-state.sml should be
+loaded after the CPN simulator.  These files wille define a structure
+NetCapture, which is able to capture the internal structure of a CPN
+net from the CPN simulator.  CPN'State and CPN'Event are able to
+generate code for structures Mark, Bind, CPNToolsState and
+CPNToolsEvent, the two latter implementing CPN'STATE and CPN'EVENT.
+
+The file switch.sml should be loaded after the model is loaded into
+the CPN simulator, and immediately before the SS analysis.  This will
+instantiate the CPNToolsModel functor into a CPNToolsModel structure
+using CPNToolsState and CPNToolsEvent.  CPNToolsModel will implement
+MODEL.

@@ -1,0 +1,32 @@
+library
+
+#if (defined(SMLNJ_VERSION))
+	library (../siminterface/siminterface.cm)
+	library (interfaces/interfaces.cm)
+	library (hash/hash.cm)
+	library (cache/cache.cm)
+	library (storages/storages.cm)
+	library (explorations/exploration.cm)
+	library (tools/tools.cm)
+	library (waitingsets/waitingsets.cm)
+	library (query/query.cm)
+	library (graph/graph.cm)
+	library (profiling/profiling.cm)
+#endif
+
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	../siminterface/siminterface.cm
+	interfaces/interfaces.cm
+	hash/hash.cm
+	cache/cache.cm
+	storages/storages.cm
+	tools/tools.cm
+	explorations/exploration.cm
+	waitingsets/waitingsets.cm
+	query/query.cm
+	graph/graph.cm
+	profiling/profiling.cm

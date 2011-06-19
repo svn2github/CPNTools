@@ -1,0 +1,17 @@
+library
+	signature PT_NET
+	functor PTNetUtilities
+	functor PTNetModel
+	functor SmartPTNetModel
+	structure PTNetHashFunction
+	structure PTNetHashFunction2
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	pt-net-sig.sml
+	pt-net-model.sml
+	pt-net-hash-function.sml

@@ -1,0 +1,29 @@
+library
+	structure Profiling
+	functor ProfilingHelp
+	functor ProfiledHash
+	functor ProfiledStorage
+	functor ProfiledExplicitStorage
+	functor ProfiledRemoveStorage
+	functor ProfiledExplicitRemoveStorage
+	functor ProfiledWaitingSet
+	functor ProfiledTraceExploration
+	functor ProfiledExploration
+	functor ProfiledSimpleExploration
+	functor ProfiledModel
+	functor ProfiledGameModel
+	functor ProfiledSafetyProperty
+	functor ProfiledCache
+	functor ProfiledPersistenceCache
+	functor ProfiledMapping
+	functor ProfiledReversibleMapping
+	functor ProfiledPacker
+	functor ProfiledSerializer
+	functor ProfiledModelSerializer
+is
+	$/basis.cm
+	$smlnj/viscomp/basics.cm
+	../../siminterface/interfaces/interfaces.cm
+	../interfaces/interfaces.cm
+	profiling.sml
+	time-profiling.sml

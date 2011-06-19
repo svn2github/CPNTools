@@ -1,0 +1,18 @@
+library
+	structure syntax
+	structure Parser
+	signature RUNTIME
+	functor RuntimeFn
+	structure CPN'Animation
+	signature ANIMATIONMODEL
+	functor AnimationModelObject
+	functor AnimationModel
+is
+	$/basis.cm
+	../comms/comms.cm
+	fxp-2.0/fxp.cm
+	syntax.sml
+	xmlparser.sml
+	runtime-sig.sml
+	runtime.sml
+	animationmodel.sml

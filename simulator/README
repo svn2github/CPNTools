@@ -1,0 +1,10 @@
+This CPN simulator is taken from the cpn2000 repository from the darwin
+branch.  The simulator compiles on SML/NJ 110.59.
+
+The rmi and comms libraries are taken from the BRITNeY repository.  The
+compiler patch in patch is also taken from the BRITNeY repository.
+
+Run the makefile to build an image.  It will first load comms and rmi,
+then the entore state-space tool, and finally the simulator.  In order to
+build a patched version of SML/NJ must be used.  Check the HOWTO in patch
+for more information (currently Mac only).

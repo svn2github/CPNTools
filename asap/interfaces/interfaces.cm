@@ -1,0 +1,19 @@
+library
+#if (defined(SMLNJ_VERSION))
+	library (storage-sig.cm)
+	library (exploration-sig.cm)
+	library (cache-sig.cm)
+	library (waitingset-sig.cm)
+	library (query-sig.cm)
+	signature PROFILING
+#endif
+is
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	storage-sig.cm
+	exploration-sig.cm
+	cache-sig.cm
+	waitingset-sig.cm
+	query-sig.cm
+	profiling.sml

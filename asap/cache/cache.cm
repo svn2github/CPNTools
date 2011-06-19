@@ -1,0 +1,15 @@
+library
+	functor HashCache
+	functor ArrayCache
+	functor PersistentCache
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/cache-sig.cm
+	../../siminterface/interfaces/hash-function-sig.cm
+	hash-cache.sml
+	array-cache.sml
+	persistent-cache.sml

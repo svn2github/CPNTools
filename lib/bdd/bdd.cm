@@ -1,0 +1,8 @@
+library
+	structure BDD
+is
+	$/basis.cm
+	$c/c.cm
+	bdd-sml/bdd.cm : make (-f bdd.make)
+	bdd-sml/bdd.cm
+	bdd-class.sml

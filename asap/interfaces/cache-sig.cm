@@ -1,0 +1,9 @@
+library
+	signature CACHE
+	signature PERSISTENCE_CACHE
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	cache-sig.sml

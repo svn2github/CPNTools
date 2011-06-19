@@ -1,0 +1,106 @@
+library
+	functor Parse
+	structure Dtd
+	structure ResolveNull
+	functor ParserOptions
+	structure IgnoreHooks
+	structure UniChar
+	structure HookData
+	structure Uri
+is
+	$/basis.cm
+	src/Util/utilHash.sml
+	src/Util/utilInt.sml
+	src/Util/utilList.sml
+	src/Util/utilString.sml
+	src/Util/utilTime.sml
+	src/Util/utilError.sml
+	src/Util/utilCompare.sml
+	src/Util/intLists.sml
+	src/Util/intSets.sml
+	src/Util/options.sml
+	src/Util/SymDict/key.sml
+	src/Util/SymDict/symbolTable.sml
+	src/Util/SymDict/dict.sml
+	src/Util/SymDict/intDict.sml
+	src/Util/SymDict/intListDict.sml
+	src/Util/SymDict/intSetDict.sml
+	src/Util/SymDict/stringDict.sml
+	src/Unicode/Chars/uniChar.sml
+	src/Unicode/Chars/charClasses.sml
+	src/Unicode/Chars/charVecDict.sml
+	src/Unicode/Chars/uniRanges.sml
+	src/Unicode/Chars/uniClasses.sml
+	src/Unicode/Chars/dataDict.sml
+	src/Unicode/Chars/testClasses.sml
+	src/config.sml
+	src/Unicode/Uri/uriDecode.sml
+	src/Unicode/Uri/uriEncode.sml
+	src/Unicode/Uri/uri.sml
+	src/Unicode/Uri/uriDict.sml
+	src/Unicode/Encode/encodeBasic.sml
+	src/Unicode/Encode/encodeError.sml
+	src/Unicode/Encode/encodeMisc.sml
+	src/Unicode/encoding.sml
+	src/Unicode/Encode/encode.sml
+	src/Unicode/Decode/decodeFile.sml
+	src/Unicode/Decode/decodeError.sml
+	src/Unicode/Decode/decodeUtil.sml
+	src/Unicode/Decode/decodeMisc.sml
+	src/Unicode/Decode/decodeUtf16.sml
+	src/Unicode/Decode/decodeUtf8.sml
+	src/Unicode/Decode/decodeUcs2.sml
+	src/Unicode/Decode/decodeUcs4.sml
+	src/Unicode/Decode/decode.sml
+	src/genRandom.sml
+	src/Parser/Error/errorData.sml
+	src/Parser/Error/errorUtil.sml
+	src/Parser/Error/errorString.sml
+	src/Parser/Error/errorMessage.sml
+	src/Parser/Error/expected.sml
+	src/Parser/Error/errors.sml
+	src/Parser/Dfa/dfaData.sml
+	src/Parser/Dfa/dfaUtil.sml
+	src/Parser/Dfa/dfaError.sml
+	src/Parser/Dfa/dfaString.sml
+	src/Parser/Dfa/dfaOptions.sml
+	src/Parser/Dfa/dfaPassOne.sml
+	src/Parser/Dfa/dfaPassThree.sml
+	src/Parser/Dfa/dfaPassTwo.sml
+	src/Parser/Dfa/dfa.sml
+	src/Parser/Base/baseData.sml
+	src/Parser/Base/baseString.sml
+	src/Parser/Base/base.sml
+	src/Parser/Params/dtd.sml
+	src/Parser/Params/hookData.sml
+	src/Parser/Params/hooks.sml
+	src/Parser/Params/ignore.sml
+	src/Parser/Params/parserOptions.sml
+	src/Parser/Params/resolve.sml
+	src/Parser/entities.sml
+	src/Parser/version.sml
+	src/Parser/Dtd/dtdDeclare.sml
+	src/Parser/Dtd/dtdAttributes.sml
+	src/Parser/Dtd/dtdManager.sml
+	src/Parser/Parse/parseBase.sml
+	src/Parser/Parse/parseNames.sml
+	src/Parser/Parse/parseMisc.sml
+	src/Parser/Parse/parseXml.sml
+	src/Parser/Parse/parseRefs.sml
+	src/Parser/Parse/parseLiterals.sml
+	src/Parser/Parse/parseTags.sml
+	src/Parser/Parse/parseDecl.sml
+	src/Parser/Parse/parseDtd.sml
+	src/Parser/Parse/parseContent.sml
+	src/Parser/Parse/parseDocument.sml
+	src/Catalog/catData.sml
+	src/Catalog/catDtd.sml
+	src/Catalog/catError.sml
+	src/Catalog/catOptions.sml
+	src/Catalog/catParams.sml
+	src/Catalog/catHooks.sml
+	src/Catalog/catFile.sml
+	src/Catalog/socatParse.sml
+	src/Catalog/catParse.sml
+	src/Catalog/catalog.sml
+	src/Catalog/catResolve.sml

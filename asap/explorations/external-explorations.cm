@@ -1,0 +1,24 @@
+library
+	functor PartExploration
+	functor HashFunction
+	functor StaticLHCFunction
+	functor DynamicLHCFunction
+	functor DynamicCompStaticFunction
+	functor DynamicCompDRFunction
+	functor DynamicCompDEFunction
+	functor DynamicCompDDFunction
+	functor DynamicCompDDEFunction
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+        $/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../siminterface/interfaces/interfaces.cm
+	../storages/storages.cm
+	../waitingsets/waitingsets.cm
+	../hash/hash.cm
+	part-function-sig.sml
+	part-function.sml
+	generic-external-exploration.sml

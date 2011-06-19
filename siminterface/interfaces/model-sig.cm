@@ -1,0 +1,8 @@
+library
+	signature MODEL
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	model-sig.sml

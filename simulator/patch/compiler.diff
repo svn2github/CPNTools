@@ -1,0 +1,93 @@
+diff -ur compiler/Elaborator/elaborate.cm ../compiler/Elaborator/elaborate.cm
+--- compiler/Elaborator/elaborate.cm	2005-11-15 23:38:49.000000000 +0100
++++ ../compiler/Elaborator/elaborate.cm	2006-11-13 14:09:55.000000000 +0100
+@@ -7,6 +7,7 @@
+ Group
+ 	structure ElabControl
+ 
++	signature PRECEDENCE
+ 	signature PRIM_TYC_NUM
+ 	signature DEB_INDEX
+ 	signature BASICTYPES
+@@ -23,6 +24,7 @@
+ 	functor ElabModFn
+ 	functor ElabTopFn
+ 
++	structure Precedence
+ 	structure PrimTycNum
+ 	structure DebIndex
+ 	structure BasicTypes
+diff -ur compiler/TopLevel/backend/backend-fn.sml ../compiler/TopLevel/backend/backend-fn.sml
+--- compiler/TopLevel/backend/backend-fn.sml	2006-02-15 00:31:16.000000000 +0100
++++ ../compiler/TopLevel/backend/backend-fn.sml	2006-11-13 14:09:55.000000000 +0100
+@@ -4,10 +4,8 @@
+  *)
+ functor BackendFn (structure M : CODEGENERATOR
+ 		   val cproto_conv : string) : BACKEND = struct
+-    structure Interact =
+-    Interact
+-	(EvalLoopF
+-	     (CompileF
++    structure TopCompile =
++	     CompileF
+ 		  (val cproto_conv = cproto_conv
+ 		   structure M = M
+ 		   structure CC : CCONFIG = struct
+@@ -42,7 +40,12 @@
+ 		       in
+ 		           fun mkMkStamp () = stampGen (* always the same *)
+ 		       end
+-		   end)))
++		   end)
++
++    structure Interact =
++    Interact
++	(EvalLoopF
++	     (TopCompile))
+ 
+     structure Compile =
+     CompileF (val cproto_conv = cproto_conv
+diff -ur compiler/TopLevel/backend/backend.sig ../compiler/TopLevel/backend/backend.sig
+--- compiler/TopLevel/backend/backend.sig	2006-02-15 00:31:16.000000000 +0100
++++ ../compiler/TopLevel/backend/backend.sig	2006-11-13 14:09:55.000000000 +0100
+@@ -7,6 +7,7 @@
+     structure Compile : COMPILE
+     structure Interact : INTERACT
+     structure Machine : MACHINE
++    structure TopCompile : COMPILE0
+     val architecture: string
+     val abi_variant: string option
+ end
+diff -ur compiler/TopLevel/interact/evalloop.sig ../compiler/TopLevel/interact/evalloop.sig
+--- compiler/TopLevel/interact/evalloop.sig	2004-11-23 21:44:10.000000000 +0100
++++ ../compiler/TopLevel/interact/evalloop.sig	2006-11-14 12:02:33.000000000 +0100
+@@ -4,6 +4,7 @@
+ signature EVALLOOP =
+ sig
+   exception Interrupt 
++  exception ExnDuringExecution of exn
+ 
+   val interact    : unit -> unit
+   val evalStream  : string * TextIO.instream -> unit
+diff -ur compiler/TopLevel/interact/interact.sig ../compiler/TopLevel/interact/interact.sig
+--- compiler/TopLevel/interact/interact.sig	2005-05-17 06:46:12.000000000 +0200
++++ ../compiler/TopLevel/interact/interact.sig	2006-11-14 12:06:11.000000000 +0100
+@@ -4,6 +4,7 @@
+ signature INTERACT =
+ sig
+   exception Interrupt
++  exception ExnDuringExecution of exn
+ 
+   val interact : unit -> unit
+   val useFile  : string -> unit
+diff -ur compiler/TopLevel/interact/interact.sml ../compiler/TopLevel/interact/interact.sml
+--- compiler/TopLevel/interact/interact.sml	2005-05-17 06:46:12.000000000 +0200
++++ ../compiler/TopLevel/interact/interact.sml	2006-11-14 12:06:47.000000000 +0100
+@@ -4,6 +4,7 @@
+ functor Interact(EvalLoop : EVALLOOP) : INTERACT =
+ struct
+   exception Interrupt = EvalLoop.Interrupt
++  exception ExnDuringExecution = EvalLoop.ExnDuringExecution
+ 
+   type envref = EnvRef.envref
+ 

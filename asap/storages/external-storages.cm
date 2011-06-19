@@ -1,0 +1,17 @@
+library
+	signature EXTERNAL_PARTITION
+	signature EXTERNAL_STORAGE
+	signature PART_EXTERNAL_STORAGE
+	structure ExternalPartition
+	functor PartExternalStorage
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../lib/lib.cm
+	../../siminterface/interfaces/interfaces.cm
+	../hash/hash.cm
+	external-storage.sml

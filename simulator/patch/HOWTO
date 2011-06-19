@@ -1,0 +1,60 @@
+This documents assumes a full cygwin installation on Windows, a
+Linux, or a Mac OS X system.
+
+Download SML/NJ; version 110.60 has been tested, newer versions should
+be preferred if available, previous versions will not work, as the
+directory structure changed with version 110.60.  SML/NJ can be
+downloaded from:
+	http://smlnj.org/dist/working/
+
+If your are building on Windows, you need to create links in the
+bin directory under you SML/NJ installation:
+	ln -s sml.bat sml
+	ln -s link-sml.bar .link-sml
+	echo "echo \"ARCH=x86; OPSYS=win32; HEAP_SUFFIX=x86-win32\"" > .arch-n-opsys
+	chmod a+x .arch-n-opsys
+
+Go to your sml installation dir.  In that directory, you need to
+download and unpack the following packages (unless they are already
+there from your installation of the binaries):
+	MLRISC, ml-yacc, smlnj-lib, pgraph
+
+Create a base dir (if it does not already exist), in the installation
+dir:
+	mkdir base
+
+Download and unpack the following packages in the base dir (unless they
+already exist):
+	cm, runtime, compiler, system
+
+Then patch the compiler, runtime, and system packages, standing in the
+base directory:
+	patch -p0 < <tincpn-path>/sml/patch/compiler.diff
+	patch -p0 < <tincpn-path>/sml/patch/runtime.diff
+	patch -p0 < <tincpn-path>/sml/patch/system.diff
+
+Recompile the runtime system.  Standing in the base directory.  Examples
+for <cpu-type>-<os-type> are x86-darwin for MacOS X on Intel, x86-win32
+for Windows, x86-linux for Linux.
+	cd runtime/objs/
+	make -f mk.<cpu-type>-<os-type>
+	cp run.<cpu-type>-<os-type> <ml-installation-dir>/bin/.run/
+	cd ../../
+
+Recompile the compiler. Standing in the base directory.  <quit sml>
+means press the key combination needed to quit sml on your platform.
+On Windows this is Ctrl-Z followed by enter, on most Unix systems
+this is Ctrl-D:
+	cd compiler/
+	sml "core.cm"
+	<quit sml>
+	cd ../
+	
+Rebuild the SML/NJ system, standing in the base directory:
+	cd system/
+	sml '$smlnj/cmb.cm'
+	CMB.make();
+	<quit sml>
+	./makeml
+	mv sml.x86.x86-win32 sml.x86-win32
+	./installml

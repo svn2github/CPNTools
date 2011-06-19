@@ -1,0 +1,18 @@
+library
+
+#if (defined(SMLNJ_VERSION))
+	library (interfaces/interfaces.cm)
+	library (pt-nets/pt-net.cm)
+	library (cpntools/cpntools.cm)
+	library (dve/dve.cm)
+#endif
+
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	interfaces/interfaces.cm
+	pt-nets/pt-net.cm
+	cpntools/cpntools.cm
+	dve/dve.cm

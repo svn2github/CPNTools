@@ -1,0 +1,25 @@
+library
+	structure Estimator
+	structure GNUPlot
+	structure TestTools
+	structure MaxMemory
+	structure MemoryLimit
+	structure MemoryLimit2
+	structure SQLDump
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../../lib/lib.cm
+	../../siminterface/interfaces/interfaces.cm
+	../storages/storages.cm
+	../interfaces/interfaces.cm
+	gnu-plot.sml
+	sql-dump.sml
+#if (defined(SMLNJ_VERSION))
+	memory-limit.sml
+	estimator.sml
+	test-tools.sml	
+#endif

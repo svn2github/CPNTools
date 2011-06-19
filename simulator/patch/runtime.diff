@@ -1,0 +1,146 @@
+diff -ru runtime/c-libs/c-libraries.c ../runtime/c-libs/c-libraries.c
+--- runtime/c-libs/c-libraries.c	2006-01-30 21:51:19.000000000 +0100
++++ ../runtime/c-libs/c-libraries.c	2006-11-06 10:48:03.000000000 +0100
+@@ -14,6 +14,7 @@
+ #include "ml-values.h"
+ #include "c-library.h"
+ #include <stdio.h>
++#include <string.h>
+ 
+ #define C_LIBRARY(lib)  extern c_library_t lib;
+ #include "clib-list.h"
+diff -ru runtime/c-libs/smlnj-runtime/cfun-list.h ../runtime/c-libs/smlnj-runtime/cfun-list.h
+--- runtime/c-libs/smlnj-runtime/cfun-list.h	2002-03-08 22:05:27.000000000 +0100
++++ ../runtime/c-libs/smlnj-runtime/cfun-list.h	2006-11-07 15:35:03.000000000 +0100
+@@ -21,6 +21,8 @@
+ CFUNC("exportHeap",	_ml_RunT_export_heap,	"string -> bool")
+ CFUNC("exportFn",	_ml_RunT_export_fun,	"(string * (string list -> unit)) -> unit")
+ CFUNC("gcControl",	_ml_RunT_gc_ctl,	"(string * int ref) list -> unit")
++CFUNC("getMemory",	_ml_RunT_get_heap_size,	"unit -> int")
++CFUNC("getPageFaults",	_ml_RunT_get_page_faults,	"unit -> int")
+ CFUNC("intervalTick",	_ml_RunT_itick,		"unit -> (int * int)")
+ CFUNC("allocCode",	_ml_RunT_alloc_code,	"")
+ CFUNC("mkExec",		_ml_RunT_mkexec,	"Word8Vector * int -> object -> object")
+diff -ru runtime/c-libs/smlnj-runtime/gc-ctl.c ../runtime/c-libs/smlnj-runtime/gc-ctl.c
+--- runtime/c-libs/smlnj-runtime/gc-ctl.c	2005-05-05 18:25:11.000000000 +0200
++++ ../runtime/c-libs/smlnj-runtime/gc-ctl.c	2006-11-07 21:28:33.000000000 +0100
+@@ -5,6 +5,7 @@
+  * General interface for GC control functions.
+  */
+ 
++#include "ml-osdep.h"
+ #include "ml-base.h"
+ #include "ml-values.h"
+ #include "ml-state.h"
+@@ -12,6 +13,9 @@
+ #include "heap.h"
+ #include "ml-objects.h"
+ #include "cfun-proto-list.h"
++#include <stdio.h>
++#include <sys/time.h>
++#include <sys/resource.h>
+ 
+ #define STREQ(s1, s2)	(strcmp((s1), STR_MLtoC(s2)) == 0)
+ 
+@@ -65,6 +69,40 @@
+ 
+ } /* end of _ml_RunT_gc_ctl */
+ 
++ml_val_t _ml_RunT_get_page_faults (ml_state_t *msp, ml_val_t arg)
++{
++	struct rusage ru;
++	getrusage(RUSAGE_SELF, &ru);
++	return INT_CtoML(ru.ru_minflt);
++}
++
++
++
++ml_val_t _ml_RunT_get_heap_size (ml_state_t *msp, ml_val_t arg)
++{
++	heap_t *heap = msp->ml_heap;
++	Addr_t bytes;
++	int i, j;
++
++	bytes = ((Addr_t)(msp->ml_allocPtr) - (Addr_t)(heap->allocBase));
++	for (i = 0;  i < heap->numGens;  i++) {
++		for (j = 0;  j < NUM_ARENAS;  j++) {
++			arena_t	*ap = heap->gen[i]->arena[j];
++			if (isACTIVE(ap))
++			bytes += ((Addr_t)(ap->nextw) - (Addr_t)(ap->tospBase));
++		}
++		/* count code objects too! */
++		for (j = 0;  j < NUM_BIGOBJ_KINDS;  j++) {
++			bigobj_desc_t   *dp = heap->gen[i]->bigObjs[j];
++			for (; dp != NIL(bigobj_desc_t *);  dp = dp->next) {
++				bytes += dp->sizeB;
++			}
++		}
++	}
++
++	return INT_CtoML(bytes);
++}
++
+ 
+ /* SetVMCache:
+  *
+diff -ru runtime/c-libs/unix-raise-syserr.c ../runtime/c-libs/unix-raise-syserr.c
+--- runtime/c-libs/unix-raise-syserr.c	2000-06-01 20:33:45.000000000 +0200
++++ ../runtime/c-libs/unix-raise-syserr.c	2006-11-06 10:42:52.000000000 +0100
+@@ -15,25 +15,6 @@
+ #include "ml-globals.h"
+ #include "ml-c.h"
+ 
+-
+-#ifndef HAS_STRERROR
+-/* strerror:
+- * An implementation of strerror for those systems that do not provide it.
+- */
+-PVT char *strerror (int errnum)
+-{
+-    extern int	sys_nerr;
+-    extern char	*sys_errlist[];
+-
+-    if ((errnum < 0) || (sys_nerr <= errnum))
+-	return "<unknown system error>";
+-    else
+-	return sys_errlist[errnum];
+-
+-} /* end of strerror */
+-#endif
+-
+-
+ /* RaiseSysError:
+  *
+  * Raise the ML exception SysErr, which has the spec:
+diff -ru runtime/config/gen-sizes.c ../runtime/config/gen-sizes.c
+--- runtime/config/gen-sizes.c	2006-01-30 21:48:19.000000000 +0100
++++ ../runtime/config/gen-sizes.c	2006-11-06 10:41:36.000000000 +0100
+@@ -24,7 +24,7 @@
+     unsigned long   l;
+ } U;
+ 
+-int log2 (int x)
++int sml_log2 (int x)
+ {
+     int		i, j;
+ 
+@@ -33,7 +33,7 @@
+ 
+     return i-1;
+ 
+-} /* end of log2 */
++} /* end of sml_log2 */
+ 
+ int main (void)
+ {
+@@ -84,8 +84,8 @@
+     fprintf (f, "#define ADDR_SZB           %d\n", ADDR_SZB);
+     fprintf (f, "#define REALD_SZB          %d\n", sizeof(double));
+     fprintf (f, "#define BITS_PER_WORD      %d\n", 8*WORD_SZB);
+-    fprintf (f, "#define LOG_BITS_PER_WORD  %d\n", log2(8*WORD_SZB));
+-    fprintf (f, "#define LOG_BYTES_PER_WORD %d\n", log2(WORD_SZB));
++    fprintf (f, "#define LOG_BITS_PER_WORD  %d\n", sml_log2(8*WORD_SZB));
++    fprintf (f, "#define LOG_BYTES_PER_WORD %d\n", sml_log2(WORD_SZB));
+     fprintf (f, "\n");
+ 
+     U.bytes[0] = 0x01;

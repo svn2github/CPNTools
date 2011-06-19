@@ -1,0 +1,11 @@
+library
+	signature TRACE_EXPLORATION
+	signature SIMPLE_TRACE_EXPLORATION
+	signature EXPLORATION
+	signature SIMPLE_EXPLORATION
+	signature REAL_SIMPLE_EXPLORATION
+is
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	exploration-sig.sml

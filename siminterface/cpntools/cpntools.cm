@@ -1,0 +1,41 @@
+library
+	signature CPN'STATE
+	signature CPN'EVENT
+	signature CPN'NETCAPTURE
+	functor CPNToolsModel
+	functor CPN'Event
+	functor CPN'State
+	structure CPN'HashCommon
+	functor CPN'HashFunction
+	structure CPN'OrderCommon
+	functor CPN'Order
+	structure CPN'SerializerCommon
+	functor CPN'Serializer
+	signature CPN'PackCommon
+	functor CPN'PackCommon
+	functor CPN'PackFunction
+	functor CPN'State'FoldFunctions
+	functor CPN'Transition
+	functor CPN'AlphaState
+	functor CPN'ColSet
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	cpntools-model.sml
+	cpn-state-sig.sml
+	cpn-event-sig.sml
+	cpn-alpha-state.sml
+	cpn-state.sml
+	cpn-state-fold-functions.sml
+	cpn-event.sml
+	cpn-transition.sml
+	cpn-colset.sml
+	net-capture-sig.sml
+	hash-function.sml
+	order.sml
+	serializer.sml
+	java-packer.sml

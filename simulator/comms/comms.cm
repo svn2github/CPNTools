@@ -1,0 +1,17 @@
+library
+	signature COMMS_LAYER
+	structure CommsLayer
+	signature MESSAGING_LAYER
+	structure MessagingLayer
+	signature CONN_MANAGEMENT_LAYER
+	structure ConnManagementLayer
+	structure EncodeDecodeFunctions
+is
+	$/basis.cm
+	comms-layer-sig.sml
+	comms-layer.sml
+	messaging-layer-sig.sml
+	messaging-layer.sml
+	conn-management-layer-sig.sml
+	conn-management-layer.sml
+	encode-decode-functions.sml

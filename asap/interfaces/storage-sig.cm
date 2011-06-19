@@ -1,0 +1,13 @@
+library
+	signature STORAGE
+	signature EXPLICIT_STORAGE
+	signature REMOVE_STORAGE
+	signature EXPLICIT_REMOVE_STORAGE
+	signature ORD_KEY
+	signature ORD_SET
+is
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	storage-sig.sml

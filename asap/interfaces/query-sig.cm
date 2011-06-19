@@ -1,0 +1,7 @@
+library
+	signature SAFETY_PROPERTY
+is
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	query-sig.sml

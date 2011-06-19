@@ -1,0 +1,15 @@
+library
+	structure Stack
+	structure FifoQueue
+	structure RandomQueue
+	functor QueueStack
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	basic-waitingsets.sml
+	random-queue.sml
+	queue-stack.sml

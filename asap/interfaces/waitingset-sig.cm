@@ -1,0 +1,7 @@
+library
+	signature WAITINGSET
+is
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	waitingset-sig.sml

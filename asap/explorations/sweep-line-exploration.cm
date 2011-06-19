@@ -1,0 +1,16 @@
+library
+	signature PROGRESS_MEASURE
+	functor InternalSweepLineExploration
+	functor SweepLineDebugExploration
+	functor SweepLineStatisticsExploration
+	functor SweepLineExploration
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+        $/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../siminterface/interfaces/interfaces.cm
+	../storages/storages.cm
+	sweep-line-exploration.sml

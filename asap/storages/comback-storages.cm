@@ -1,0 +1,37 @@
+library
+        (*  basic comback  *)
+        signature COMBACK_STORAGE
+        signature COMBACK_STATS
+        functor ComBackStorage64NoArcs
+        functor ComBackStorage64
+        functor ComBackStorage62NoArcs
+        functor ComBackStorage62
+        functor ComBackStorage32NoArcs
+        functor ComBackStorage32
+        functor ComBackStorage31NoArcs
+        functor ComBackStorage31
+        functor ComBackDDDStorage
+
+        (*  comback + delayed duplicate detection  *)
+        signature COMBACK_DDD_STORAGE
+        signature COMBACK_DDD_STORAGE_CACHE
+        functor ComBackDDDStorage
+        functor ComBackDDDNumStorage
+        functor ComBackDDDPointerStorage
+        structure ComBackDDDStorageFifoCache
+        structure ComBackDDDStorageRandomCache
+        structure ComBackDDDStorageHeuristicCache
+        functor ComBackDDDStorageDistanceCache
+        functor ComBackDDDStorageCombinationCache
+is
+
+#if (defined(SMLNJ_VERSION))
+        $/basis.cm
+        $/smlnj-lib.cm
+#endif
+        ../interfaces/interfaces.cm
+        ../../lib/lib.cm
+        ../../siminterface/interfaces/interfaces.cm
+        ../hash/hash.cm
+        comback-storage.sml
+        comback-ddd-storage.sml

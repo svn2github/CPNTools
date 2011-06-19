@@ -1,0 +1,13 @@
+diff -ur cm/paths/fileid.sml ../cm/paths/fileid.sml
+--- cm/paths/fileid.sml	2010-08-19 16:50:47.865633700 +0200
++++ ../cm/paths/fileid.sml	2010-08-19 16:49:59.052841800 +0200
+@@ -52,7 +52,8 @@
+ 	    loop (P.splitDirFile f)
+ 	end
+     in
+-	PRESENT (F.fileId f) handle _ => ABSENT (expandPath f)
++	(* PRESENT (F.fileId f) handle _ => ABSENT (expandPath f) *)
++	PRESENT (F.fileId f) handle _ => ABSENT f
+     end
+ 
+     fun canonical "" = ""

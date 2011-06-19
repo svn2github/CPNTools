@@ -1,0 +1,35 @@
+   This sml files provide structures to translate a dve file into an
+sml structure implementing the MODEL signature and some other
+structures (hash function, serializer).  DVE is the language of the
+Divine tool.  A description of the language may be found at
+http://divine.fi.muni.cz/page.php?page=language
+A database of models described in this language may be found at
+http://anna.fi.muni.cz/models/?page=models-list
+
+To do:
+- bit handling operators ~, <<, >>, ... are not very well supported
+- better management of types.  currently types byte and int are both mapped
+  to int
+
+Notes:
+- the implementation does not currently benefit from the locality principle
+- We made some assumptions and slight changes to the language.  These are
+  listed below.
+  + a process may have a local variable and a state with the same name
+  + arrays cannot be transmitted through channels
+  + arrays are not valid expressions, e.g., this will be rejected:
+    effect myArray = myOtherArray;
+  + global variables, channels and processes may defined in any order
+  + global elements, i.e., global variables, channels or processes, may
+    be referenced in processes even if they have'nt been declared yet
+- Thease features are currently not supported
+  + synchronous systems
+  + commited states
+  + accepting states
+  + buffered channels
+  + assertions
+  + typed channels
+
+Bugs:
+- the model of pgm_protocol.3.dve (# of states is different than the
+  one reported on the BEEM webpage) is not generated correctly

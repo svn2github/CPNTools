@@ -1,0 +1,8 @@
+library
+	signature HASH_FUNCTION
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	hash-function-sig.sml

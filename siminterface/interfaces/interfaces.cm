@@ -1,0 +1,37 @@
+library
+
+#if (defined(SMLNJ_VERSION))
+	library (model-sig.cm)
+	library (mapping-sig.cm)
+	library (hash-function-sig.cm)
+#endif
+	signature GAME_MODEL
+	signature GAME_SPECIFICATION
+	signature SERIALIZER
+	signature INTERNALIZED_MODEL
+	signature LTL_MODEL
+	signature MODEL_SERIALIZER
+	signature MODEL_COMPONENTS
+	signature MODEL_ENABLING_TEST
+	signature JAVA_EXECUTE
+	signature PACKER
+	signature STATE_FOLD_FUNCTION
+	signature EVENT_FOLD_FUNCTION
+
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+#endif
+	model-sig.cm
+	internalized-model-sig.sml
+	hash-function-sig.cm
+	mapping-sig.cm
+	game-model.sml
+	ltl-model-sig.sml
+	serializer-sig.sml
+	model-components-sig.sml
+	model-enabling-test.sml
+	java-execute.sml
+	packer.sml
+	fold-functions-sig.sml

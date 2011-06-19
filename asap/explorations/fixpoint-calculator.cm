@@ -1,0 +1,18 @@
+library
+	signature PROPERTY
+	functor False
+	functor True
+	functor DeadExists
+	functor DeadInevitable
+	functor GameWinning
+	functor FixPointCalculator
+
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../interfaces/interfaces.cm
+	../../siminterface/interfaces/interfaces.cm
+	fixpoint-calculator.sml

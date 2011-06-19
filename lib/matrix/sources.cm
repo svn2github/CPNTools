@@ -1,0 +1,9 @@
+library
+	signature MATRIX
+	functor DenseMatrix
+	library (numbers/sources.cm)
+is
+	$/basis.cm
+	numbers/sources.cm
+	MATRIX.sml
+      DenseMatrix.sml

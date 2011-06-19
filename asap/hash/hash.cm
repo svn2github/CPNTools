@@ -1,0 +1,18 @@
+library
+	structure Hash64ToHash31
+	structure Hash32ToHash31
+	structure Hash62ToHash31
+	structure Hash31ToHash31
+	structure HashIntToHash31
+	structure HashWord8Vector
+	functor IntProductHashFunction
+is
+
+#if (defined(SMLNJ_VERSION))
+	$/basis.cm
+	$/smlnj-lib.cm
+#endif
+	../../siminterface/interfaces/interfaces.cm
+	hash.sml
+	hash-word8-vector.sml
+	int-product-hash-function.sml
