@@ -1,6 +1,24 @@
 #!/bin/bash
-echo "Will install in current directory and remove the sml directory.  Ctri-C to cancel."
-read
+MAX_TESTED=73
+
+if [ "x$1" == "x" ]; then
+	echo "Please enter the minor version you want to install, e.g., \`buildml.sh 73' to install version 110.73"
+	exit
+fi
+
+if [ $1 -lt 73 ]; then
+	echo "Please enter a version above 73"
+	exit 1
+fi
+
+if [ $1 -gt $MAX_TESTED ]; then
+	echo "You have entered a version above the latest tested one (110.$MAX_TESTED); press enter to continue at your own risk or Ctrl-C to cancel"
+	read
+else
+	echo "Will install in current directory and remove the sml directory.  Ctri-C to cancel."
+	read
+fi
+
 rm -Rf sml/*
 
 function pause() {
@@ -115,6 +133,7 @@ cp /cygdrive/c/cygwin/bin/cygwin1.dll /cygdrive/c/cygwin/bin/cyggcc_s-1.dll $dev
 chmod +x .run/$SML*
 if [ -f .run/$SML ]; then
 cp .run/$SML $devDir/simulator/runtime/$SML*
+cp .run/$SML $devDir/simulator/runtime/
 else
 cp .run/$SML* $devDir/simulator/runtime/$SML*
 fi
