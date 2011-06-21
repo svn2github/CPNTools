@@ -222,4 +222,71 @@ val _ = CpnMLSys.GramError.debugState:= false;
 open EncodeDecodeFunctions;
 open ConnManagementLayer;
 
-print "CpnML.Toploop.build \"cpn.ML\";\n";
+(* Make it possible to load ASCoVeCo code *)
+
+functor CPN'ASAP(structure CPN'InstTable:CPN'INSTTABLE) = 
+struct
+    local
+    structure CPN'NetCapture = CPN'NetCapture(structure CPN'InstTable = CPN'InstTable)
+
+    val _ = CPN'NetCapture.initNet ()
+    val _ = CPN'NetCapture.checkNames()
+
+    structure CPN'State = CPN'State(structure CPN'NetCapture = CPN'NetCapture)
+    
+    val _ = CPN'Env.use_string(CPN'State.genMark(CPN'NetCapture.getNet()))
+    val _ = CPN'Env.use_string(CPN'State.genState(CPN'NetCapture.getNet()))
+    
+    structure CPN'Event = CPN'Event(structure CPN'NetCapture = CPN'NetCapture)
+
+    val _ = CPN'Env.use_string(CPN'Event.genBind(CPN'NetCapture.getNet()))
+    val _ = CPN'Env.use_string(CPN'Event.genEvent(CPN'NetCapture.getNet()))
+      
+    structure CPN'HashFunction = CPN'HashFunction(structure CPN'NetCapture = CPN'NetCapture)
+
+    val _ = CPN'Env.use_string(CPN'HashFunction.genHashFunction(CPN'NetCapture.getNet()))
+    
+    structure CPN'Order = CPN'Order(structure CPN'NetCapture = CPN'NetCapture)
+
+    val _ = CPN'Env.use_string(CPN'Order.genStateOrder(CPN'NetCapture.getNet()))
+
+    in
+        functor Build(structure CPNToolsState : CPN'STATE structure
+        CPNToolsEvent : CPN'EVENT val CPNToolsHashFunction : (word * word ->
+        word) -> CPNToolsState.state -> word) =
+        struct
+        structure CPNToolsModel = CPNToolsModel(structure CPNToolsState = CPNToolsState
+        structure CPNToolsEvent = CPNToolsEvent)
+
+        structure CPNToolsHashFunction : HASH_FUNCTION =
+        struct
+            type state = CPNToolsModel.state
+
+            fun combinator (h2, h1) =
+                Word.<<(h1, 0w2) + h1 + h2 + 0w17
+
+            val hash = CPNToolsHashFunction combinator
+        end
+
+        structure CPNToolsHashFunction2 : HASH_FUNCTION =
+        struct
+            type state = CPNToolsModel.state
+
+            fun combinator (h2, h1) =
+                Word.<<(h1, 0w5) + h1 + h2 + 0w720
+
+            val hash = CPNToolsHashFunction combinator
+        end
+
+        (* structure CPNToolsStateOrder : ORD_KEY =
+        struct
+            type ord_key = CPNToolsModel.state
+
+            val compare = CPN'StateOrder
+        end*)
+        end
+    end
+
+end;
+
+val _ = print "CpnML.Toploop.build \"cpn.ML\";\n";

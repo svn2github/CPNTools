@@ -259,8 +259,9 @@ fun setModelNameAndDirs (modelname, modeldir, (outputdir: string option))=
      then raise CPN'Error "Net name must not be empty."
      else modelName := SOME modelname;
      if modeldir = ""
-     then () (* New net that has not been saved, do not try to 
-	      * set output dir *)
+     then (if Option.isSome outputdir
+     then setModelNameAndDirs(modelname, Option.valOf outputdir, NONE)
+     else ())
      else (((if OS.Path.isRelative(modeldir) 
 	      andalso ((OS.Path.getVolume modeldir)="") (* allow, e.g. C: which is relative *)
 	   then raise CPN'Error ("Cannot use relative path for model directory: "^modeldir)
