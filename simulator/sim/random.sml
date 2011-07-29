@@ -66,10 +66,10 @@ structure CPN'Random: sig
 
     val init: int option -> unit
 	    
-    val int : int -> int;
-    val int2 : int -> int;
+    val int : int -> int
+    val int2 : int -> int
     val real: real -> real
-
+    val normal: real * real -> real
 end = struct
 
     val a = 16807.0  and  m = 2147483647.0
@@ -114,10 +114,40 @@ end = struct
         Word.fromInt (IntInf.toInt (n'))
     end
 
+	val 
+	    b = ref(false) and
+	    y2 = ref(0.0) and
+	    pi = 4.0*Math.atan(1.0)
+
     (* Initializes the pseudo random number generator with the given number,
      * if NONE then the system clock is used as seed *)
     fun init NONE = (seed_ref:=(Time.toReal(Time.now())); m_w := (nowWord()); m_z
-        := (nowWord()))
+        := (nowWord()); b := false; y2 := 0.0)
       | init (SOME seed) = (seed_ref:=(Real.fromInt seed); real 1.0; 
-         m_w := (Word31.fromInt seed); m_z := (Word31.fromInt seed); int2 1; ())
+      m_w := (Word31.fromInt seed); m_z := (Word31.fromInt seed); b := false; y2
+      := 0.0; int2 1; ())
+
+	fun normal (n,s) =
+	    if !b 
+		     then (b := false;
+			   n+Math.sqrt(s)* !y2)
+		 else 
+		     let 
+			 val 
+			     sub1 = Math.sqrt(~2.0*Math.ln(real 1.0)) and
+			     sub2 = 2.0*pi*(real 1.0)
+		     in 
+			 b := true;
+			 y2 := sub1*Math.sin(sub2);
+			 n+Math.sqrt(s)*sub1*Math.cos(sub2)
+		     end
 end
+
+structure RandomValues : sig
+
+    val init: int option -> unit
+	    
+    val int : int -> int
+    val real: real -> real
+
+end = CPN'Random;

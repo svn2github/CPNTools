@@ -107,7 +107,12 @@ struct
 	if a <= b 
 	    then floor(real(b-a+1)*problibrandom()) + a
 	else raise Discrete
-	    
+
+    fun problibrandom () = CPN'Random.real 1.0
+    fun discrete (a, b) = 
+	if a <= b 
+      then (CPN'Random.int (b - a)) + a
+	else raise Discrete
 end;
 
 open ProbLibBasics; 

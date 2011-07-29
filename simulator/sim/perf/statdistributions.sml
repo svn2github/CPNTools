@@ -95,7 +95,13 @@ structure ProbLibDist :
 
 	exception Erlang;
 	val erlang : int * real -> real;
-	
+
+        exception Beta
+        val beta : real * real -> real
+        val beta_pert : real * real * real -> real
+
+        exception Gamma
+        val gamma : real * real -> real
     end = 
 
 struct
@@ -115,31 +121,11 @@ struct
 			else raise Uniform;
 
     exception Normal;
-    local 
-	val 
-	    b = ref(false) and
-	    y2 = ref(0.0) and
-	    pi = 4.0*Math.atan(1.0);
-
-    in 
 	fun normal (n:real,s:real) =
-	if s >= 0.0
-	    then if !b 
-		     then (b := false;
-			   n+Math.sqrt(s)* !y2)
-		 else 
-		     let 
-			 val 
-			     sub1 = Math.sqrt(~2.0*Math.ln(problibrandom())) and
-			     sub2 = 2.0*pi*problibrandom();
-		     in 
-			 b := true;
-			 y2 := sub1*Math.sin(sub2);
-			 n+Math.sqrt(s)*sub1*Math.cos(sub2)
-		     end
+          if s >= 0.0
+	    then CPN'Random.normal (n, s)
 	else 
 	    raise Normal
-    end;
 
     exception Chisq;
     fun chisq (n) = 
@@ -192,7 +178,41 @@ struct
 	if n >=1 andalso l > 0.0
 	    then exponential(l) + 
 		(if n=1 then 0.0 else erlang(n-1,l))
-	else raise Erlang;
+   else raise Erlang;
+
+    exception Beta
+    exception Gamma
+    val erlang_treshold = 0.0000000000000001
+    fun beta_pert(l, h, m) =
+        if l<m andalso m<h
+        then beta(l, h, (l+4.0*m+h)/6.0, (h-l)*(h-l)/36.0)
+        else raise Beta
+    and beta(l, h, m, v) =
+        if l<h
+        then l+(h-l)*beta_std((m-l)/(h-l), v/((h-l)*(h-l)))
+        else raise Beta
+    and beta_std(m, v) =
+        if m*(1.0-m) > v
+        then beta_01(m*(m*(1.0-m)/v-1.0), (1.0-m)*(m*(1.0-m)/v-1.0))
+        else raise Beta
+    and beta_01(a,b) =
+        if a<2.0 andalso b<2.0
+        then pow2beta(Math.pow(uniform(0.0,1.0), 1.0/a), Math.pow(uniform(0.0,1.0),1.0/b), a, b)
+        else gamma2beta(gamma(1.0, a), gamma(1.0, b))
+    and pow2beta(x, y, a, b) =
+        if x+y>1.0
+        then beta_01(a,b)
+        else x/(x+y)
+    and gamma2beta(a, b) = a/(a+b)
+    and gamma(l, k) = gamma1(l, k, 1.0)
+    and gamma1(l, k, r) =
+        (if k>1.0-erlang_treshold
+        then gamma1(l, k-1.0, r*uniform(0.0,1.0))
+        else ((if k>erlang_treshold
+               then 0.0-beta_01(k, 1.0-k)
+               else 0.0)*Math.ln(uniform(0.0,1.0))-Math.ln(r))/l) handle Beta =>
+               raise Gamma
+    val beta = beta_01
 end;
 
 open ProbLibDist;
