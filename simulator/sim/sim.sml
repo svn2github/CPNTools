@@ -957,7 +957,7 @@ in
     let
         fun execute [] _ = raise InternalError "Trying to execute a non-existing transdition; this should never happen"
           | execute ((index, count, inst, binder)::rest) remainder =
-            if remainder > count
+            if remainder >= count
             then execute rest (remainder - count)
             else (CPN'inst := inst; (index, binder ()))
         fun runner () =
@@ -974,6 +974,7 @@ in
                         Array.sub(!transitions,index)
                     val _ = mark_dependents dep_list
                     val _ = app (fn (fstr,f) => f()) (!step_inc_funs)
+
                     val _ = make_report(id,name,inst,msg)
                 in ()
                 end
