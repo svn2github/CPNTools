@@ -70,6 +70,7 @@
 
 
 CM.stabilize true "../image.cm";
+Control.Elab.showTypeErrorCulprits := true;
 
 structure Compiler = struct
 	open Backend

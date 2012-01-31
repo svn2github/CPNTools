@@ -92,8 +92,6 @@ end = struct
     exception Size of int;
     (* the symtable holds all symbols captured with the last snapshot: *)
 
-    exception Compile of string;
-
     val topLevel = Compiler.EnvRef.loc
     
     fun cur_env () = Compiler.EnvRef.listBoundSymbols()
@@ -139,13 +137,13 @@ in
 	
       val _ = err := nil;
 
-      val str = String.concat ["val _ = 5;\n", str]
+      val str = String.concat [str, "\nval _ = 5;"]
 		
 	(* The functions in Compiler.Compile only operates on modules
 	 * so we compile using a dummy structure in the source: *)
 
 	val source = Compiler.Source.newSource
-	    ("",1,
+	    ("",
 (*
 	     TextIO.openString (concat["structure CPN'X = struct ",str," end"]), 
 *)
@@ -159,26 +157,27 @@ in
 
 	val theenvs = Compiler.Environment.staticPart(Compiler.EnvRef.combined())
 
-	fun compile (source) 
-	  = let
-	      val ast = Compiler.MLParser.parse source ()
-            val ast = case ast of
-                           (Compiler.MLParser.PARSE result) => result
+        fun compile (source) =
+        let
+            val ast = Compiler.MLParser.parse source ()
+            val ast = case ast
+                        of (Compiler.MLParser.PARSE result) => result
                          | Compiler.MLParser.ABORT => raise Compile "Aborted parsing"
                          | Compiler.MLParser.EOF => raise Compile "EOF while parsing"
                          | Compiler.MLParser.ERROR => raise Compile "Error parsing"
-            val compInfo = Compiler.Compile.mkCompInfo {source = source,
-            transform = fn any => any}
-	      val baseEnvRefunSC = Compiler.EnvRef.pervasive
-	      fun checkErrors s = 
-		  if Compiler.CompInfo.anyErrors compInfo then raise Compile s else ()
-	      val {static = statenv, dynamic = dynenv, symbolic = symenv} =
+            val compInfo = Compiler.Compile.mkCompInfo {source = source, transform = fn any => any}
+            val baseEnvRefunSC = Compiler.EnvRef.pervasive
+            fun checkErrors s = 
+                if Compiler.CompInfo.anyErrors compInfo
+                then raise Compile s
+                else ()
+            val {static = statenv, dynamic = dynenv, symbolic = symenv} =
                 Compiler.Environment.layerEnv((#get (topLevel ()))(), (#get baseEnvRefunSC)())
-     in
-         Compiler.Compile.compile { source = source, ast = ast, statenv =
-         statenv, symenv = symenv, compInfo = compInfo, checkErr = checkErrors, splitting =
-         Compiler.Control.LambdaSplitting.get(), guid = "CPN"}
-	    end
+        in
+            Compiler.Compile.compile { source = source, ast = ast, statenv =
+            statenv, symenv = symenv, compInfo = compInfo, checkErr = checkErrors, splitting =
+            Compiler.Control.LambdaSplitting.get(), guid = "CPN"}
+        end
 
 	fun drop_string (#"\""::rest) = rest
 	  | drop_string (_::rest) = drop_string rest
@@ -189,24 +188,38 @@ in
 	  | has_warning (_::rest) = has_warning rest
 	  | has_warning [] = false
 
+        fun fail () = 
+        let
+            val _ = Compiler.Source.closeSource source
+        in
+            raise Compile (concat (!err))
+        end
 
-    in
-	(compile (source)
-	 handle Compile s  => (Compiler.Source.closeSource source;
-                               err::= "\n"^s; raise Compile (concat(!err)))
-	      | exn => (Compiler.Source.closeSource source;
-                        err::= "\nUncaught exception 1: "^(exnName exn);
-			raise Compile (concat(!err)));
-         Compiler.Source.closeSource source;
-	 if warn andalso
-	    ((not(!CPN'Settings.ignore_warnings)) andalso 
-	     (has_warning (explode(concat(!err)))))
-	 then
-	     raise Compile (concat(!err))
-	 else
-	     (* The compilation succeeded, so use the native useStream
-	      * to evaluate at toplevel: *)
-	     Compiler.Interact.useStream (TextIO.openString str))
+        val _ = compile source
+        handle Compile s  =>
+                    (err::= "\n"^s; fail ())
+            | ErrorMsg.Error =>
+                    (fail ())
+            | Compiler.Interact.ExnDuringExecution ErrorMsg.Error =>
+                    (fail ())
+            | Compiler.Interact.ExnDuringExecution exn =>
+                    (err::= "\nUncaught exception: "^(exnName exn); fail ())
+            | exn => 
+            (err::= "\nUncaught exception: "^(exnName exn); fail ())
+
+        val _ = Compiler.Source.closeSource source
+
+        in
+            if warn andalso ((not(!CPN'Settings.ignore_warnings))
+                    andalso (has_warning (explode(concat(!err)))))
+            then
+                raise Compile (concat(!err))
+            else
+                (* The compilation succeeded, so use the native useStream
+                * to evaluate at toplevel: *)
+                (Compiler.Interact.useStream (TextIO.openString str))
+                handle e => raise Compile (concat (List.@(("Caught "^(exnName
+                e))::(!err), SMLofNJ.exnHistory e)))
     end
 
     (* Send text to be compiled/executed by the interactive compiler.
@@ -225,6 +238,7 @@ in
 		    | InternalError msg => 
 		       raise InternalError ("Exception InternalError("^msg^
 					    ") raised when executing code:\n"^str)
+                | Compiler.Interact.ExnDuringExecution exn => raise exn
 		    | exn => 
 		       raise InternalError ("Exception "^(exnName exn)^
 					    " raised when generating code:\n"^str)
@@ -279,7 +293,6 @@ in
 	  let
 	      val src = Compiler.Source.newSource
 			    ("",
-			     0,
 			     TextIO.openString ("structure CPN'X = struct "^str^" end"),
 			     false,
 			     {consumer= fn s => (err:= (!err)^^[s]), 

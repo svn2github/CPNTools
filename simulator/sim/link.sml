@@ -68,6 +68,8 @@ Compiler.Control.MC.matchRedundantError := false;
 val ogpath = "../statespacefiles/";
 val rmipath = "../rmi/";
 
+exception Compile of string;
+
 local
     (* Option used in case a minimal simulator is generated for 
      * standalone mode*)

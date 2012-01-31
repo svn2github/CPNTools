@@ -1,13 +1,13 @@
 #!/bin/bash
-MAX_TESTED=73
+MAX_TESTED=74
 
 if [ "x$1" == "x" ]; then
 	echo "Please enter the minor version you want to install, e.g., \`buildml.sh 73' to install version 110.73"
 	exit
 fi
 
-if [ $1 -lt 73 ]; then
-	echo "Please enter a version above 73"
+if [ $1 -lt 74 ]; then
+	echo "Please enter a version above 74"
 	exit 1
 fi
 

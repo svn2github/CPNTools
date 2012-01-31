@@ -42,7 +42,7 @@ functor CmdProcess (structure Str : STREAM
     
     val rcsid = "$Header: /users/cpntools/repository/cpn2000/sml/com/cmdProcess.sml,v 1.4.2.2 2006/06/29 06:57:20 mw Exp $";
 
-    val version = ref "Portions Copyright (c) 2010-2011 AIS Group, Eindhoven University of Technology\n";
+    val version = ref "Portions Copyright (c) 2010-2012 AIS Group, Eindhoven University of Technology\n";
 
     fun get id =
         case (List.find (fn (name, _) => name = id) (Posix.ProcEnv.uname ()))
@@ -50,7 +50,7 @@ functor CmdProcess (structure Str : STREAM
            | NONE => "<unknown>"
 
     val copyright = ref (String.concat
-                      ["Simulator/CPN v3.2.2 [built: ", 
+                      ["Simulator/CPN v3.2.3 [built: ", 
                       Date.toString (Date.fromTimeLocal (Time.now())), " by ", 
                       (Posix.ProcEnv.getlogin () handle _ => "<unknown>"), " on ", get "nodename", "]"])
 

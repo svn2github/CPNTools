@@ -67,8 +67,6 @@ functor CPN'CreateDecl(structure CS: CPN'COLORSETS): CPN'DECL = struct
     open CS;
     structure Time = CS.Time
 
-    exception Compile of string
-
     type parameters = {name   : string,
 		       timed  : bool,
 		       var    : string list,

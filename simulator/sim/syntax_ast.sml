@@ -82,12 +82,12 @@ structure CPN'AstLib:
 	open Compiler.Ast;
 
 	exception SyntaxError = CPN'SyntaxDatatypes.SyntaxError;
-      exception Compile of string
 
 	val err = ref "";
 
 	fun exp_handler (Compile s) =
 	    raise SyntaxError (concat[!err," ",s,"\n"])
+        | exp_handler ErrorMsg.Error = raise SyntaxError (!err)
 	  | exp_handler (CPN'Error s) =
 	    raise SyntaxError s
 	  | exp_handler (SyntaxError s) =
@@ -177,7 +177,7 @@ structure CPN'AstLib:
 
 		val code_str = concat (str_list^^["; end;"]);
 		val src = Compiler.Source.newSource
-		    ("",0,
+		    ("",
 		     TextIO.openString 
 		     code_str,false,
 		     {consumer = fn s => (err := (!err)^s), 
@@ -221,7 +221,7 @@ structure CPN'AstLib:
 		val code_str = str^"; end;";
 
 		val src = Compiler.Source.newSource
-		    ("",0,
+		    ("",
 		     TextIO.openString 
 		     code_str,false,
 		     {consumer = fn s => (err := (!err)^s), 

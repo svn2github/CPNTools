@@ -64,8 +64,6 @@
 
 structure CPN'Dep : CPN'Dep'sig =
 struct
-    exception Compile of string
-
     open Compiler.Symbol; 
 	
     val VALspace_symtable : ((string,string) CPN'StringTable.hash_table) = 
@@ -153,7 +151,6 @@ struct
 	  let
 	      val src = Compiler.Source.newSource
 			    ("",
-			     0,
 			     TextIO.openString ("structure CPN'X = struct "^str^" end"),
 			     false,
 			     {consumer= fn s => (err:= (!err)^^[s]), 
@@ -181,6 +178,7 @@ struct
 	       before checkErrors "Elaborate failure (is_decl)"
 	  end
 	      handle Compile _ => SOME(concat (!err))
+                | ErrorMsg.Error => SOME(concat (!err))
       end
 
 (*
@@ -549,15 +547,15 @@ struct
 	      = (ty_trav ty known)^^(tys_trav rest known)
 	    | tys_trav [] _ = []
 
-	  and dbrhs_trav (Constrs ((symbol, NONE)::rest)) known
-	      = dbrhs_trav (Constrs rest) known
-	    | dbrhs_trav (Constrs ((symbol, SOME ty)::rest)) known
-	      = (ty_trav ty known)^^(dbrhs_trav (Constrs rest) known)
-	    | dbrhs_trav (Constrs []) known = []
-	    | dbrhs_trav (Repl path) known
+	  and dbrhs_trav ((symbol, NONE)::rest) known
+	      = dbrhs_trav rest known
+	    | dbrhs_trav ((symbol, SOME ty)::rest) known
+	      = (ty_trav ty known)^^(dbrhs_trav rest known)
+	    | dbrhs_trav [] known = []
+	    (*| dbrhs_trav path known
 	      = if is_new known path
 		    then [makeSymbol path]
-		else []
+		else []*)
 
 	  and db_trav (Db {rhs, tyc, tyvars, lazyp}) known = dbrhs_trav rhs known
 (*	    | db_trav (LDb {rhs, tyc, tyvars}) known = dbrhs_trav rhs known*)
@@ -775,10 +773,10 @@ struct
 	  and top_fbs (fb::rest) = (top_fb fb)^^(top_fbs rest)
 	    | top_fbs [] = []
 
-	  and top_dbrhs (Constrs ((symbol, _)::rest))
-	      = (makeSymbol [symbol], true)::(top_dbrhs (Constrs rest))
-	    | top_dbrhs (Constrs []) = []
-	    | top_dbrhs (Repl path) = [(makeSymbol path, false)]
+	  and top_dbrhs ((symbol, _)::rest)
+	      = (makeSymbol [symbol], true)::(top_dbrhs rest)
+	    | top_dbrhs [] = []
+	    (*| top_dbrhs (Repl path) = [(makeSymbol path, false)]*)
 
 	  and top_db (Db {rhs, tyc, tyvars, lazyp}) = 
 	      (makeSymbol [tyc], false)::(top_dbrhs rhs)
@@ -1005,7 +1003,7 @@ fun find_dependencies (id,str)
 	  val err = ref (nil: string list);
 	      
 	  val source = Compiler.Source.newSource
-	      ("",1,
+	      ("",
 
 	       TextIO.openString (concat["structure CPN'X = struct ",
 					 str," end"]), false,
@@ -1040,7 +1038,7 @@ fun find_use str
 	  val err = ref (nil: string list);
 	      
 	  val source = Compiler.Source.newSource
-	      ("",1,
+	      ("",
 
 	       TextIO.openString (concat["structure CPN'X = struct ",
 					 str," end"]),
@@ -1068,7 +1066,7 @@ fun find_ast str
 	  val err = ref (nil: string list);
 	      
 	  val source = Compiler.Source.newSource
-	      ("",1,
+	      ("",
 	       TextIO.openString (concat["structure CPN'X = struct ",
 					 str," end"]), 
 	       false,
@@ -1097,7 +1095,7 @@ fun find_ast str
 	  val err = ref (nil: string list);
 	      
 	  val source = Compiler.Source.newSource
-	      ("",1,
+	      ("",
 	       TextIO.openString (concat["structure CPN'X = struct ",
 					 str," end"]),
 	       false,
