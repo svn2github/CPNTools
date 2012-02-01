@@ -137,13 +137,13 @@ in
 	
       val _ = err := nil;
 
-      val str = String.concat [str, "\nval _ = 5;"]
+      val str = String.concat ["val _ = 5;\n", str]
 		
 	(* The functions in Compiler.Compile only operates on modules
 	 * so we compile using a dummy structure in the source: *)
 
 	val source = Compiler.Source.newSource
-	    ("",
+	    ("", 
 (*
 	     TextIO.openString (concat["structure CPN'X = struct ",str," end"]), 
 *)
@@ -292,7 +292,7 @@ in
       in
 	  let
 	      val src = Compiler.Source.newSource
-			    ("",
+			    ("", 
 			     TextIO.openString ("structure CPN'X = struct "^str^" end"),
 			     false,
 			     {consumer= fn s => (err:= (!err)^^[s]), 

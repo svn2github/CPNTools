@@ -70,7 +70,7 @@
 
 
 CM.stabilize true "../image.cm";
-Control.Elab.showTypeErrorCulprits := true;
+(* FIXME 74+ Control.Elab.showTypeErrorCulprits := true;*)
 
 structure Compiler = struct
 	open Backend

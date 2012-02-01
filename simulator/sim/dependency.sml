@@ -547,6 +547,16 @@ struct
 	      = (ty_trav ty known)^^(tys_trav rest known)
 	    | tys_trav [] _ = []
 
+(* 73-	  and dbrhs_trav (Constrs ((symbol, NONE)::rest)) known
+	      = dbrhs_trav (Constrs rest) known
+	    | dbrhs_trav (Constrs ((symbol, SOME ty)::rest)) known
+	      = (ty_trav ty known)^^(dbrhs_trav (Constrs rest) known)
+	    | dbrhs_trav (Constrs []) known = []
+	    | dbrhs_trav (Repl path) known
+	      = if is_new known path
+		    then [makeSymbol path]
+		else []*)
+          
 	  and dbrhs_trav ((symbol, NONE)::rest) known
 	      = dbrhs_trav rest known
 	    | dbrhs_trav ((symbol, SOME ty)::rest) known
@@ -773,6 +783,11 @@ struct
 	  and top_fbs (fb::rest) = (top_fb fb)^^(top_fbs rest)
 	    | top_fbs [] = []
 
+(* 73-	  and top_dbrhs (Constrs ((symbol, _)::rest))
+	      = (makeSymbol [symbol], true)::(top_dbrhs (Constrs rest))
+	    | top_dbrhs (Constrs []) = []
+	    | top_dbrhs (Repl path) = [(makeSymbol path, false)]*)
+          
 	  and top_dbrhs ((symbol, _)::rest)
 	      = (makeSymbol [symbol], true)::(top_dbrhs rest)
 	    | top_dbrhs [] = []
@@ -1067,6 +1082,7 @@ fun find_ast str
 	      
 	  val source = Compiler.Source.newSource
 	      ("",
+            
 	       TextIO.openString (concat["structure CPN'X = struct ",
 					 str," end"]), 
 	       false,

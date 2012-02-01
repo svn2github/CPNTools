@@ -50,7 +50,7 @@ functor CmdProcess (structure Str : STREAM
            | NONE => "<unknown>"
 
     val copyright = ref (String.concat
-                      ["Simulator/CPN v3.2.3 [built: ", 
+                      ["Simulator/CPN v3.3.1 [built: ", 
                       Date.toString (Date.fromTimeLocal (Time.now())), " by ", 
                       (Posix.ProcEnv.getlogin () handle _ => "<unknown>"), " on ", get "nodename", "]"])
 
