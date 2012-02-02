@@ -68,6 +68,9 @@ structure Output = struct
 
 local
 
+    (* We need this as OS.Path.concat does not work with UTF8 in 110.74 *)
+    fun myConcat (a, b) = String.concat [a, "/", b]
+
 val modelName = ref NONE : string option ref 
 
 val modelDir = ref NONE : (string * bool) option ref
@@ -207,13 +210,13 @@ fun setSimOutputDir() =
 		 val maxsimdirnum = findMaxDirNum (parent, !simDirPrefix)
 		 val _ = (currentSimNo := maxsimdirnum+1)
 		 val newdirname = ((!simDirPrefix)^Int.toString(!currentSimNo))
-		 val path = OS.Path.concat(parent,newdirname)
+		 val path = myConcat(parent,newdirname)
 		 val _ = CPN'debug ("Set sim output dir: "^path)
 	     in
 		 setDir(simOutputDir, path)
 	     end
 	 else setDir(simOutputDir, getTopOutputDir());
-	 setDir(simLogfileDir,OS.Path.concat (getSimOutputDir(),
+	 setDir(simLogfileDir,myConcat (getSimOutputDir(),
 					      !logfileDirName)))
 	handle NotValidDirExn s => 
 	       raise NotValidDirExn("Error: cannot set sim output dir because\n"^s)
@@ -224,11 +227,11 @@ fun setRepOutputDir() =
 	 val maxrepdirnum = findMaxDirNum (parent, !repDirPrefix)
 	 val _ = (currentRepNo := maxrepdirnum+1)
 	 val newdirname = ((!repDirPrefix)^Int.toString(!currentRepNo))
-	 val path = OS.Path.concat(parent,newdirname)
+	 val path = myConcat(parent,newdirname)
 	 val _ = CPN'debug ("Set rep output dir: "^path)
      in
 	 setDir(repOutputDir,path);
-	 setDir(repLogfileDir,OS.Path.concat (getRepOutputDir(),
+	 setDir(repLogfileDir,myConcat (getRepOutputDir(),
 					      !logfileDirName))
      end)
     handle NotValidDirExn s => 
@@ -275,14 +278,14 @@ fun setModelNameAndDirs (modelname, modeldir, (outputdir: string option))=
                              outputdir, NONE)
                              else raise CPN'exc));
 	   setTopOutputDir(case outputdir of 
-			       NONE => OS.Path.concat(getModelDir(),!outputDirName)
+			       NONE => myConcat(getModelDir(),!outputDirName)
 			     | SOME dir => 
 			       if (OS.Path.getVolume dir)<>"" (* Windows volume *) 
 			       then (if (OS.Path.getVolume dir)=dir
 				     then dir^"\\"
 				     else dir (* allow e.g. c:/ which is relative *))
 			       else (if OS.Path.isRelative dir
-				     then OS.Path.concat(getModelDir(),dir)
+				     then myConcat(getModelDir(),dir)
 				     else dir))
 	   ))
 
@@ -321,7 +324,7 @@ fun getNumberedDirs dirname prefix =
 	  | getNumberedDir (SOME theEntry) = 
 	    let
 		val isprefix = String.isPrefix prefix theEntry
-		val isdir = OS.FileSys.isDir (OS.Path.concat(dirname,theEntry))
+		val isdir = OS.FileSys.isDir (myConcat(dirname,theEntry))
 		val rest = 
 		    if isprefix 
 		    then String.extract (theEntry,String.size(prefix),NONE)
