@@ -142,7 +142,7 @@ fun relativeSimLogfilePaths () =
     let
 	val dirname = Output.getRepOutputDir()
 	val simdirpaths = Output.getNumberedDirs dirname (!Output.simDirPrefix)
-	val logfiledirpaths = map (fn simdirpath => OS.Path.concat(simdirpath, !Output.logfileDirName)) simdirpaths
+	val logfiledirpaths = map (fn simdirpath => Output.myConcat(simdirpath, !Output.logfileDirName)) simdirpaths
     in 
 	logfiledirpaths
     end
@@ -159,7 +159,7 @@ fun saveRepScripts () =
 	val stepdcswithlogfiles = map nameAndTimed (DCsWithLogfiles(CPN'MonitorTable.step_monitor))
 	val simlogfilepaths = relativeSimLogfilePaths()
 	val relscriptdir = "gnuplot"
-	val absscriptdir = OS.Path.concat(Output.getRepOutputDir(), "gnuplot")
+	val absscriptdir = Output.myConcat(Output.getRepOutputDir(), "gnuplot")
         val _ = (OS.FileSys.mkDir absscriptdir
 		 handle SysErr => ())
 	val _ = (if (not (OS.FileSys.isDir(absscriptdir)))
@@ -170,9 +170,9 @@ fun saveRepScripts () =
 	fun saveStepDCscript (dcName, timeddc) = 
 	    let
 		(* the logfiles to plot *)
-		val logfilenames = map (fn dirpath => OS.Path.concat(dirpath,dcName^".log")) simlogfilepaths
+		val logfilenames = map (fn dirpath => Output.myConcat(dirpath,dcName^".log")) simlogfilepaths
 		(* the name of the file with the gnuplot script *)
-		val scriptfilename = OS.Path.concat(absscriptdir, dcName^".gpl")
+		val scriptfilename = Output.myConcat(absscriptdir, dcName^".gpl")
 		val datafile_modifiers = 
 		    SOME ("using "^(if timed_model 
 				    then "4:1" else "2:1"))
@@ -183,25 +183,25 @@ fun saveRepScripts () =
 
 		val _ = saveScript (logfilenames, scriptfilename, datafile_modifiers, with_style)
 	    in
-		OS.Path.concat (relscriptdir, dcName^".gpl")
+		Output.myConcat (relscriptdir, dcName^".gpl")
 	    end
 	val stepDCscriptNames = map saveStepDCscript stepdcswithlogfiles
-	val overviewfilename = OS.Path.concat(Output.getRepOutputDir(),"plotsimlogfiles.gpl")
+	val overviewfilename = Output.myConcat(Output.getRepOutputDir(),"plotsimlogfiles.gpl")
 	val _ = saveOverviewScript (overviewfilename, stepDCscriptNames)
 
 	val simdcswithlogfiles = map nameAndTimed (DCsWithLogfiles(CPN'MonitorTable.sim_monitor))
 	fun saveRepDCscript (dcName,timed) = 
 	    let
 		(* the logfile to plot *)
-		val logfilename = OS.Path.concat(!Output.logfileDirName, dcName^".log")
+		val logfilename = Output.myConcat(!Output.logfileDirName, dcName^".log")
 		(* the name of the file with the gnuplot script *)
-		val scriptfilename = OS.Path.concat(absscriptdir, dcName^".gpl")
+		val scriptfilename = Output.myConcat(absscriptdir, dcName^".gpl")
 		val _ = saveScript ([logfilename], scriptfilename, SOME "using 2:1", SOME "with points")
 	    in
-		OS.Path.concat (relscriptdir, dcName^".gpl")
+		Output.myConcat (relscriptdir, dcName^".gpl")
 	    end
 	val simDCscriptNames = map saveRepDCscript simdcswithlogfiles
-	val filename = OS.Path.concat(Output.getRepOutputDir(),"plotreplogfiles.gpl")
+	val filename = Output.myConcat(Output.getRepOutputDir(),"plotreplogfiles.gpl")
     in
 	saveOverviewScript (filename, simDCscriptNames)
     end

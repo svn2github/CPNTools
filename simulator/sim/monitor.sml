@@ -173,7 +173,7 @@ fun stop_rep_monitors (numrep:int) =
      (* FIXME: this will cause an error if replication 
       * output dir is not specified. *)
      app (fn percent => 
-	     CPN'PerfReport.saveConfidenceIntervalReport(OS.Path.concat(Output.getRepOutputDir(),"confidenceintervals"^Int.toString percent^".txt"),percent)) (CPN'PerfOptions.get_ci_percentages());
+	     CPN'PerfReport.saveConfidenceIntervalReport(Output.myConcat(Output.getRepOutputDir(),"confidenceintervals"^Int.toString percent^".txt"),percent)) (CPN'PerfOptions.get_ci_percentages());
      if !CPN'GnuplotScript.saveScripts
      then CPN'GnuplotScript.saveRepScripts() 
      else ())
@@ -278,10 +278,10 @@ fun init_logfile() =
 		case montype of 
 		    CPN'MonitorTable.step_monitor => 
 		    (Output.initSimLogfileDir();
-		     OS.Path.concat(Output.getSimLogfileDir(),logfile_name))
+		     Output.myConcat(Output.getSimLogfileDir(),logfile_name))
 		  | CPN'MonitorTable.sim_monitor => 
 		    (Output.initRepLogfileDir();
-		     OS.Path.concat(Output.getRepLogfileDir(),logfile_name))
+		     Output.myConcat(Output.getRepLogfileDir(),logfile_name))
 	in
 	    case (!stream) of
 		NONE => (stream := (if (Sim.step()=0)
@@ -347,7 +347,7 @@ fun create_iid_logfile(filesuffix) =
 	    val filename = iid_filename(filesuffix)
 	    val filepath = 
 		(Output.initRepLogfileDir();
-		 OS.Path.concat(Output.getRepLogfileDir(),filename))
+		 Output.myConcat(Output.getRepLogfileDir(),filename))
 	    val fid = TextIO.openOut(filepath)
 	in
 	    TextIO.output(fid,"#data counter\n");
@@ -358,9 +358,9 @@ fun create_iid_logfile(filesuffix) =
 	    val filepath = 
 		if !Replications.running_reps
 		then (Output.initRepLogfileDir();
-		      OS.Path.concat(Output.getRepLogfileDir(),filename))
+		      Output.myConcat(Output.getRepLogfileDir(),filename))
 		else ((* Output.initSimLogfileDir();
-		      OS.Path.concat(Output.getSimLogfileDir(),filename) *))
+		      Output.myConcat(Output.getSimLogfileDir(),filename) *))
 	    val fid = TextIO.openOut(filepath)
 	in
 	    TextIO.output(fid,"#data counter\n");
@@ -373,7 +373,7 @@ fun addto_iid_logfile(filesuffix,datastr,countstr) =
     then ()
     else let
 	    val filename = iid_filename(filesuffix)
-	    val filepath = OS.Path.concat(Output.getRepLogfileDir(),filename)
+	    val filepath = Output.myConcat(Output.getRepLogfileDir(),filename)
 	    val fid = (TextIO.openAppend(filepath)
 		       handle IO => TextIO.openOut filepath)
 	in
@@ -384,8 +384,8 @@ fun addto_iid_logfile(filesuffix,datastr,countstr) =
 	    val filename = iid_filename(filesuffix)
 	    val filepath = 
 		if !Replications.running_reps
-		then OS.Path.concat(Output.getRepLogfileDir(),filename)
-		else OS.Path.concat(Output.getSimLogfileDir(),filename)
+		then Output.myConcat(Output.getRepLogfileDir(),filename)
+		else Output.myConcat(Output.getSimLogfileDir(),filename)
 	    val fid = TextIO.openAppend(filepath)
 	in
 	    TextIO.output(fid,datastr^" "^countstr^"\n");
@@ -561,7 +561,7 @@ fun init_logfile() =
 	let
 	    val filepath = 
 		(Output.initSimLogfileDir();
-		 OS.Path.concat(Output.getSimLogfileDir(),logfile_name))
+		 Output.myConcat(Output.getSimLogfileDir(),logfile_name))
 	in
 	    case (!stream) of
 		NONE => (stream := (if (Sim.step()=(IntInf.fromInt 0))
@@ -617,7 +617,7 @@ fun create_iid_logfile(filesuffix) =
 	    val filename = iid_filename(filesuffix)
 	    val filepath = 
 		(Output.initRepLogfileDir();
-		 OS.Path.concat(Output.getRepLogfileDir(),filename))
+		 Output.myConcat(Output.getRepLogfileDir(),filename))
 	    val fid = TextIO.openOut(filepath)
 	in
 	    TextIO.output(fid,"#data counter\n");
@@ -628,9 +628,9 @@ fun create_iid_logfile(filesuffix) =
 	    val filepath = 
 		if !Replications.running_reps
 		then (Output.initRepLogfileDir();
-		      OS.Path.concat(Output.getRepLogfileDir(),filename))
+		      Output.myConcat(Output.getRepLogfileDir(),filename))
 		else ((* Output.initSimLogfileDir();
-		      OS.Path.concat(Output.getSimLogfileDir(),filename) *))
+		      Output.myConcat(Output.getSimLogfileDir(),filename) *))
 	    val fid = TextIO.openOut(filepath)
 	in
 	    TextIO.output(fid,"#data counter\n");
@@ -643,7 +643,7 @@ fun addto_iid_logfile(filesuffix,datastr,countstr) =
     then ()
     else let
 	    val filename = iid_filename(filesuffix)
-	    val filepath = OS.Path.concat(Output.getRepLogfileDir(),filename)
+	    val filepath = Output.myConcat(Output.getRepLogfileDir(),filename)
 	    val fid = (TextIO.openAppend(filepath)
 		       handle IO => TextIO.openOut filepath)
 	in
@@ -654,8 +654,8 @@ fun addto_iid_logfile(filesuffix,datastr,countstr) =
      val filename = iid_filename(filesuffix)
 	    val filepath = 
 		if !Replications.running_reps
-		then OS.Path.concat(Output.getRepLogfileDir(),filename)
-		else OS.Path.concat(Output.getSimLogfileDir(),filename)
+		then Output.myConcat(Output.getRepLogfileDir(),filename)
+		else Output.myConcat(Output.getSimLogfileDir(),filename)
 	    val fid = TextIO.openAppend(filepath)
 	in
 	    TextIO.output(fid,datastr^" "^countstr^"\n");
@@ -884,9 +884,9 @@ fun init_file() =
 	    val filepath = 
 		case montype of 
 		    CPN'MonitorTable.step_monitor => 
-		    (OS.Path.concat(Output.getSimOutputDir(),file_name))
+		    (Output.myConcat(Output.getSimOutputDir(),file_name))
 		  | CPN'MonitorTable.sim_monitor => 
-		    (OS.Path.concat(Output.getRepOutputDir(),file_name))
+		    (Output.myConcat(Output.getRepOutputDir(),file_name))
 	in
 	    case montype of 
 		CPN'MonitorTable.step_monitor => Output.initSimOutputDir()

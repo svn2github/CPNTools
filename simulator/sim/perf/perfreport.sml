@@ -518,7 +518,7 @@ fun gen_HTML_report (untimedstats,timedstats) =
         \<title>CPN Tools Simulation Performance Report</title>\n</head>\n\
         \<body>\nCPN Tools Simulation Performance Report<br>\n\
 	\Net: "^
-	OS.Path.concat(Output.getModelDir(),
+	Output.myConcat(Output.getModelDir(),
 		       Output.getModelName())^
         "<hr><p>\
 	\Note that these statistics have been calculated for data that \
@@ -552,7 +552,7 @@ fun save_sim_report (filename_option) =
 	    let
 		val filename = case filename_option of 
 				   SOME fname => fname
-				 | NONE => OS.Path.concat(Output.getSimOutputDir(),"PerfReport.html")
+				 | NONE => Output.myConcat(Output.getSimOutputDir(),"PerfReport.html")
 		val _ = CPN'debug ("CPN'PerfReport.save_sim_report in: "^
 				   (filename))
 		val uf = map (fn (name,ss) => (name,filterStats (!include_untimedstats,ss))) untimedstats
@@ -591,7 +591,7 @@ fun gen_iid_HTML_report (untimedstats,numrep : int option) =
         \<title>CPN Tools Performance Report</title>\n</head>\n\
         \<body>\nCPN Tools Performance Report<br>\n\
 	\Net: "^
-	OS.Path.concat(Output.getModelDir(),
+	Output.myConcat(Output.getModelDir(),
 		       Output.getModelName())^
 	(case numrep of 
 	     NONE => ""
@@ -617,7 +617,7 @@ fun save_iid_report (filename_option,numrep : int option) =
 	val filename = 
 	    case filename_option of 
 		SOME fname => fname
-	      | NONE => OS.Path.concat(Output.getRepOutputDir(),
+	      | NONE => Output.myConcat(Output.getRepOutputDir(),
 				       "PerfReportIID.html")
 	val intuntimedstats = 
 	    List.map 

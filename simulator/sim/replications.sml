@@ -185,7 +185,7 @@ val user_close_report_fun = (ref NONE): ((unit -> string) option) ref
 
 fun open_report fname =
     let
-	val absfilename = OS.Path.concat(Output.getRepOutputDir(),fname)
+	val absfilename = Output.myConcat(Output.getRepOutputDir(),fname)
 	val _ = Output.initRepOutputDir()
 	val _ = report_full_path := absfilename
     in
@@ -224,7 +224,7 @@ fun write_report_entry str =
 fun init_report() = 
     (write_report_entry ("CPN Tools report for simulation replications\n"^
 			 "Net: "^
-			 OS.Path.concat(Output.getModelDir(),
+			 Output.myConcat(Output.getModelDir(),
 					Output.getModelName())^
 			 "\nOutput directory: "^
 			 Output.getRepOutputDir()^"\n\n");

@@ -68,9 +68,6 @@ structure Output = struct
 
 local
 
-    (* We need this as OS.Path.concat does not work with UTF8 in 110.74 *)
-    fun myConcat (a, b) = String.concat [a, "/", b]
-
 val modelName = ref NONE : string option ref 
 
 val modelDir = ref NONE : (string * bool) option ref
@@ -168,6 +165,9 @@ fun initDir(theDir,dirstr) =
 	end
 
 in 
+
+(* We need this as OS.Path.concat does not work with UTF8 in 110.74 *)
+fun myConcat (a, b) = String.concat [a, "/", b]
 
 val usedirprefix = ref true;
 

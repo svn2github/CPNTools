@@ -289,7 +289,7 @@ fun find_max_report_num (dirname) =
 		else
 		    let
 			val isfile = not (OS.FileSys.isDir 
-					      (OS.Path.concat(dirname,theEntry)))
+					      (Output.myConcat(dirname,theEntry)))
 			val rest = 
 			    if isfile
 			    then String.extract (theEntry,String.size(strprefix),
@@ -325,7 +325,7 @@ fun find_max_report_num (dirname) =
 		val dirname = Output.getSimOutputDir()
 		val _ = Output.initSimOutputDir()
 		val n = (find_max_report_num (dirname))+1
-		val filename = OS.Path.concat (dirname, (!report_file_prefix)^
+		val filename = Output.myConcat (dirname, (!report_file_prefix)^
 							Int.toString(n)^".txt")
 	    in 
 		report_file_name := filename;
@@ -336,7 +336,7 @@ fun find_max_report_num (dirname) =
 		  | SOME _ =>  
 		    (write_report_entry 
 			 ("CPN Tools simulation report for:\n"^
-			  OS.Path.concat(Output.getModelDir(),
+			  Output.myConcat(Output.getModelDir(),
 					 Output.getModelName())^
 			  "\nReport generated: "^
 			  (Date.toString(Date.fromTimeLocal(SMLTime.now())))^
