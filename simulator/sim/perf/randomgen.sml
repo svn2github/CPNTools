@@ -111,7 +111,7 @@ struct
     fun problibrandom () = CPN'Random.real 1.0
     fun discrete (a, b) = 
 	if a <= b 
-      then (CPN'Random.int (b - a)) + a
+      then (CPN'Random.int (b - a + 1)) + a
 	else raise Discrete
 end;
 

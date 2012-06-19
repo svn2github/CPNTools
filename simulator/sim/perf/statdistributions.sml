@@ -171,7 +171,19 @@ struct
 		else 0;
 	in if i > 0.0 then event(1.0,i) - 1
 	   else raise Poisson 
-	end;
+ end;
+
+ exception Rayleigh
+    fun rayleigh sigma =
+        if sigma < 0.0
+        then raise Rayleigh
+        else
+		let val U = uniform(0.0, 1.0)
+		in if Real.==(U, 0.0)
+		   then rayleigh sigma
+		   else sigma * Real.Math.sqrt(~2.0 * (Real.Math.ln U))
+		end
+
 	
     exception Erlang;
     fun erlang (n,l) = 
