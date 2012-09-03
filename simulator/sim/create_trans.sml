@@ -1088,8 +1088,11 @@ fun gen_reset(nil,tail) = ""::tail
 | gen_reset({arcs,place}::resets,tail) = let
 val {cs,ims,name,...} = CPN'PlaceTable.get_rep place
 val set = concat[name,".set CPN'inst"]
+val get = concat[name,".get CPN'inst"]
 in
-    "val _ = "::set::" empty\n"::(gen_reset (resets, tail))
+    if CPN'CSTable.is_timed cs
+    then "val _ = "::set::" (List.filter (fn (_@CPN't) => not (CPN'Time.ready CPN't)) ("::get::"))\n"::(gen_reset (resets, tail))
+    else "val _ = "::set::" empty\n"::(gen_reset (resets, tail))
 end
 
 fun gen_add (nil,tail) = ""::tail
