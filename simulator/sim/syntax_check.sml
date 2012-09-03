@@ -206,15 +206,16 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 	= (#decl_id (CPN'VarTable.find v))::(get_var_decls rest)
       | get_var_decls [] = [];
 		  	
-    fun find_trans_dep (id, groups, free_vars, input, output, inout, 
-			guard, time, code, chan, priority)
+    fun find_trans_dep (id, groups, free_vars, input, output, inout, inhibitor,
+        reset, guard, time, code, chan, priority)
 	= (use (id, construct_trans_dep_fun (groups, free_vars, 
-					     input^^output^^inout, 
+					     input^^output^^inout,
 					     guard, time, code, chan, priority));
 	   (* FIXME: does this find dependencies for declarations of 
 	    variables in output pattern of code segment? *)
 	   insert_use (id, get_var_decls (find_vars groups free_vars));
-	   List.map (fn arc => store_ast (#id arc, construct_arc_dep_fun (groups, free_vars, arc))) (input^^output^^inout);
+	   List.map (fn arc => store_ast (#id arc, construct_arc_dep_fun (groups,
+         free_vars, arc))) (input^^output^^inout);
 	   store_ast (id, construct_guard_dep_fun (groups, free_vars, guard)));
 			
     fun ms_wrap st = concat ["1`",st];
@@ -994,6 +995,13 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 	    end
 	end (* check_input *)
 
+    fun check_empty (res, [], true) = raise SyntaxError ""
+      | check_empty (res, [], false) = res
+      | check_empty (res, { id, exp = "", place }::xs, check_failure) = 
+        check_empty ({ arcs = [(id, NONE)], place = place }::res, xs, check_failure)
+      | check_empty (res, {id, place, exp}::xs, check_failure) =
+        error (id, [ArcError, NonEmptyError])
+
     fun check_output (res, [], true) = raise SyntaxError ""
       | check_output (res, [], false) = res
 (*    Do not allow empty arc inscriptions
@@ -1388,7 +1396,7 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 		     bops=[ B_c {var= v, cs= #cs(CPN'VarTable.find v)}]}::res, xs)) 
 	handle HashNotFound => raise InternalError "add_bc_bop"
 	    
-    fun check_transition ({id, name, input, output, inout,  guard, 
+    fun check_transition ({id, name, input, output, inout, inhibitor, reset,  guard, 
 			   time_reg, code_reg, chan_reg, priority_reg, controllable}, page)  = let
 
 	val _ = CPN'debug("check_transition "^id^"(name="^name^")")
@@ -1399,7 +1407,9 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
     in
 	if (is_checked input) andalso 
 	    (is_checked output) andalso 
-	    (is_checked inout) then let
+	    (is_checked inout) andalso 
+	    (is_checked inhibitor) andalso 
+	    (is_checked reset) then let
 
 	    val _ = init_tables ();
 
@@ -1410,7 +1420,7 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 			       
 	    val inout' = check_input ([], inout, id, !errors)
 		handle SyntaxError _ => [] before errors := true;
-			       
+
 	    val _ = check_guard (id, guard)
 		handle SyntaxError _ => errors := true;
 		   
@@ -1441,12 +1451,21 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 
 	    val output' = check_output ([], output, !errors)
 		handle SyntaxError _ => [] before  errors := true;
-		    
+
 	    val output'' =  
 		if not (!errors) then
 		   compress_out_arcs (inout'^^output')
 		else [];
 
+	    (*val inhibitor' = check_output ([], inhibitor, !errors)
+		handle SyntaxError _ => [] before  errors := true;
+	    val reset' = check_output ([], reset, !errors)
+		handle SyntaxError _ => [] before  errors := true;*)
+	    val inhibitor' = check_empty ([], inhibitor, !errors)
+		handle SyntaxError _ => [] before  errors := true;
+	    val reset' = check_empty ([], reset, !errors)
+		handle SyntaxError _ => [] before  errors := true;
+		    
 	    val free_vars = 
 		(if not (!errors) then
 		    check_colorsets(id, list_unbound_vars())
@@ -1486,9 +1505,11 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 				priority_reg = priority_reg',
 				free_vars = free_vars, 
 				output = output'',
+                        reset = reset',
+                        inhibitor = inhibitor',
                         controllable=controllable});
 		 find_trans_dep (id, groups, free_vars, input, output, inout,
-				 guard, time_reg, (case code_reg'
+             inhibitor, reset, guard, time_reg, (case code_reg'
 						    of SOME elm => #action elm
                                          | _ => ""), (case chan_reg' of SOME elm => elm | _ => ""), (case priority_reg' of SOME elm => elm | _ => ""));
 		 insert_checked id)

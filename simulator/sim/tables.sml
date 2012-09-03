@@ -938,6 +938,10 @@ structure CPN'TransitionTable = struct
 		       input    : {arcs: (id * CPN'PlaceTable.exp_type) list, 
 				   place: id,
 				   no_of_tokens: int option} list,
+                   inhibitor : {arcs: (id * CPN'PlaceTable.exp_type option) list, 
+				   place: id} list,
+		       reset    : {arcs: (id * CPN'PlaceTable.exp_type option) list, 
+				   place: id} list,
 		       groups   : {vars: string list, bops: bop list} list,
 		       time_reg : string,
 		       code_reg : {input : string list,
@@ -1786,10 +1790,10 @@ fun rm_from_transitions mid =
 		fun rm_from_trans (tid,i) = 
 		    case CPN'TransitionTable.peek tid of 
 			SOME (CPN'TransitionTable.transition
-                  {page,name,input,groups,time_reg,code_reg,chan_reg,priority_reg,monitors,free_vars,output,controllable}) => 
+                  {page,name,input,inhibitor,reset,groups,time_reg,code_reg,chan_reg,priority_reg,monitors,free_vars,output,controllable}) => 
 			CPN'TransitionTable.insert (tid,
                   CPN'TransitionTable.transition
-                  {page=page,name=name,input=input,groups=groups,time_reg=time_reg,code_reg=code_reg,chan_reg=chan_reg,priority_reg=priority_reg,monitors=
+                  {page=page,name=name,input=input,inhibitor=inhibitor,reset=reset,groups=groups,time_reg=time_reg,code_reg=code_reg,chan_reg=chan_reg,priority_reg=priority_reg,monitors=
                   rm
                   monitors,free_vars=free_vars,output=output,controllable=controllable})
 		      | _ => () (* not found, or subst trans*)
@@ -1815,7 +1819,7 @@ fun add_to_transitions mid =
 	fun update_trans (tid,i) = 
 	    case CPN'TransitionTable.find tid of
 		CPN'TransitionTable.transition
-            {page,name,input,groups,time_reg,code_reg,chan_reg,priority_reg,monitors,free_vars,output,controllable} => 
+            {page,name,input,inhibitor,reset,groups,time_reg,code_reg,chan_reg,priority_reg,monitors,free_vars,output,controllable} => 
 		    let
 			(* assume notmid list is in same order as order *)
 			val withoutmid = List.filter (fn m => m<>mid) monitors
@@ -1828,7 +1832,8 @@ fun add_to_transitions mid =
 			in
 			    CPN'TransitionTable.insert (tid,
                       CPN'TransitionTable.transition
-                      {page=page,name=name,input=input,groups=groups,time_reg=time_reg,code_reg=code_reg,chan_reg=chan_reg,priority_reg=priority_reg,monitors=mlist,free_vars=free_vars,output=output,controllable=controllable})
+                      {page=page,name=name,input=input,inhibitor = inhibitor,
+                      reset = reset, groups=groups,time_reg=time_reg,code_reg=code_reg,chan_reg=chan_reg,priority_reg=priority_reg,monitors=mlist,free_vars=free_vars,output=output,controllable=controllable})
 			end
 		  | _ => raise InternalError "CPN'MonitorTable.add_to_transitions" 
 	in

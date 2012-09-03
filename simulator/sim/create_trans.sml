@@ -946,7 +946,7 @@ end
 
 (******************** generate occur function ********************)
 
-fun gen_occ (t,page,input,groups,free_vars,code_reg,time_reg,output,monitors,tail) = let
+fun gen_occ (t,page,input,inhibitor,reset,groups,free_vars,code_reg,time_reg,output,monitors,tail) = let
 (* Generates:
 * fun CPN'occfun ({v1,...,vn1},...,{v1,...,vnm},"free_vars",CPN'inc_step) = let
 *     / increase the step number if simulating, but not when
@@ -1084,6 +1084,14 @@ in
 gen(arcs,gen_rem(ins,tail))
 end
 
+fun gen_reset(nil,tail) = ""::tail
+| gen_reset({arcs,place}::resets,tail) = let
+val {cs,ims,name,...} = CPN'PlaceTable.get_rep place
+val set = concat[name,".set CPN'inst"]
+in
+    "val _ = "::set::" empty\n"::(gen_reset (resets, tail))
+end
+
 fun gen_add (nil,tail) = ""::tail
 | gen_add ({arcs,place}::outs,tail) = let
 
@@ -1206,12 +1214,13 @@ else "")::
 (if !CPN'Settings.use_legal_check then		      
 "\n val _ = CPN'Sim.tst_ill_marks CPN'suberr;"
 else "")::
+(gen_reset(reset,
 gen_pause_after(t, 
 gen_bindrec(t,groups,free_vars,code_reg,
 gen_monitor_reg(t,monitors,
 "\n in\n\
 \ (CPN'Sim.is_executed,"::gen_report(")\n\
-\ end"::tail)))))))))))))
+\ end"::tail)))))))))))))))
 end
 
 fun gen_pick (groups,free_vars,tail) =
@@ -1530,7 +1539,7 @@ end
 fun create_transition (_,CPN'TransitionTable.substitution _) = 
 display_status_bar()
 | create_transition (t,CPN'TransitionTable.transition
-{page,name,input,groups,time_reg,code_reg,chan_reg,priority_reg,free_vars,output,monitors,controllable}) = let
+{page,name,input,inhibitor,reset=reset,groups,time_reg,code_reg,chan_reg,priority_reg,free_vars,output,monitors,controllable}) = let
 
 val _ = CPN'debug(concat["create_transition(",t,",{page=",page,
 ",name=",name,",monitors=[",
@@ -1689,7 +1698,7 @@ gen_monitor_action (t,groups,free_vars,code_reg,monitors,
 gen_var_lists(groups,free_vars,code_reg,
 gen_bh_ref(groups,
 gen_bindfun(t,groups,
-gen_occ(t,page,input,groups,free_vars,code_reg,time_reg,output,monitors,
+gen_occ(t,page,input,inhibitor,reset,groups,free_vars,code_reg,time_reg,output,monitors,
 gen_pick (groups, free_vars,
 gen_bindings_as_strings (groups, free_vars,
 gen_man_bind(groups,free_vars,

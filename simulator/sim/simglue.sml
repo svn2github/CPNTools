@@ -603,7 +603,7 @@ in
 	 * [],
 	 * [prime,nchkr,nchkp,nchkt,ninstrefs,npagerefs,nplaces,nfusions,
 	 *  nsubs,nborder_1,..,nborder_nsubs,
-	 *  ntrans,nin_1,nout_1,ninout_1,...,nin_ntrans,...],
+	 *  ntrans,nin_1,nout_1,ninout_1,ninhibitor_1,nreset_1...,nin_ntrans,...],
 	 * slist
 	 *)
 
@@ -662,7 +662,8 @@ in
                       (trans,blist,ilist,slist)
                     | wrap_transitions (n,trans,[],ilist,slist) =
                     wrap_transitions (n, trans, [true], ilist, slist)
-	      | wrap_transitions (n,trans,controllable::blist,nin::nout::ninout::ilist,
+	      | wrap_transitions
+            (n,trans,controllable::blist,nin::nout::ninout::ninhibitor::nreset::ilist,
 				  id::name::guard::treg::creg::chan::priority::slist) = let
 		    
 	        fun wrap_arcs (0,arcs,slist) = (arcs,slist)
@@ -674,11 +675,14 @@ in
 		val (input,slist) = wrap_arcs (nin,nil,slist)
 		val (output,slist) = wrap_arcs (nout,nil,slist)
 		val (inout,slist) = wrap_arcs (ninout,nil,slist)
+		val (inhibitor,slist) = wrap_arcs (ninhibitor,nil,slist)
+		val (reset,slist) = wrap_arcs (nreset,nil,slist)
 	    in
 		wrap_transitions(n-1,
 				 {id=id, name=name, guard=guard,
 				  time_reg=treg, code_reg=creg, chan_reg=chan, priority_reg=priority,
-				  input=input, output=output, inout=inout, controllable
+				  input=input, output=output, inout=inout, inhibitor =
+                          inhibitor, reset=reset,controllable
                           = controllable}::
                           trans,
                           blist,

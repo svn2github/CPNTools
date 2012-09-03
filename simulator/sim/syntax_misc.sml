@@ -98,6 +98,7 @@ structure CPN'SyntaxErrors = struct
     val TimedExpError = "Time expression not allowed!";
     val CSnotTimedError = "Colour set is not timed: ";
     val EmptyError = "Empty inscriptions not allowed!\n";	    
+    val NonEmptyError = "NonEmpty inscriptions not allowed\non inhibitor and reset arcs!\n";	    
 end;
 
 structure CPN'SyntaxDatatypes = struct
