@@ -116,7 +116,7 @@ end
 
 (******************** generate traverse function ********************)
 
-fun gen_trv (input,init_cs,tail) = let 
+fun gen_trv (input,inhibitor,init_cs,tail) = let 
 (* Generates the calls, that traverse all the input * places and
 * initializes them, if all places are timed it looks like:
 *
@@ -140,7 +140,7 @@ fun gen_init_cs (nil,tail) = tail
 * to bind free variables on input arcs *)
 "\n "::"CPN'RS.init_res "::rs::";"::gen_init_cs(rss,tail)
 
-fun gen_each (nil,tail) = "\n"::" (true,CPN'Sim.is_disabled)"::tail
+fun gen_each (nil,tail) = "\n"::tail
 | gen_each ({place, arcs, no_of_tokens}::ins,tail) = let
 (* Generates call to the "each_place" function for each input
 * place. The "each_place" is in the Sim structure *)
@@ -150,16 +150,33 @@ SOME (n: int) => (Int.toString n)
 | NONE => "0"
 in
 if CPN'CSTable.is_timed cs then
-"\n "::"CPN'Sim.each_timed_place("::no::" <= "::
+List.concat [
+"\n CPN'Sim.each_timed_place("::no::" <= "::
 name::".init(CPN'inst),"::name::
-".next_time (CPN'inst),"::gen_each(ins,")"::tail)
+".next_time (CPN'inst),"::[], gen_each(ins, tail), [")"]]
+else List.concat [
+"\n CPN'Sim.each_place("::no::" <= "::
+name::".init(CPN'inst),"::[], gen_each(ins, tail), [")"]]
+end
+
+fun gen_inhibitor (nil,tail) = "\n (true,CPN'Sim.is_disabled)"::tail
+| gen_inhibitor ({place, arcs}::ins,tail) = let
+(* Generates call to the "each_place" function for each input
+* place. The "each_place" is in the Sim structure *)
+val {cs,ims,name,...} = CPN'PlaceTable.get_rep place
+in
+if CPN'CSTable.is_timed cs then
+    "\n CPN'Sim.each_timed_place(0 = "::
+name::".init(CPN'inst),"::name::
+".next_time (CPN'inst),"::gen_inhibitor(ins,")"::tail)
 else
-"\n "::"CPN'Sim.each_place("::no::" <= "::
-name::".init(CPN'inst),"::gen_each(ins,")"::tail)
+"\n CPN'Sim.each_place(0 = "::
+name::".init(CPN'inst),"::gen_inhibitor(ins,")"::tail)
 end
 in
 "\n val (CPN'enough_tokens, CPN'answer) = ("::
-tl(gen_init_cs(init_cs,gen_each(input,""::")"::tail)))
+(String.concat(gen_init_cs(init_cs,gen_each(input, 
+(gen_inhibitor(inhibitor,[]))))))::")"::tail
 end
 
 (******************** generate binding function ********************)
@@ -1707,7 +1724,7 @@ gen_bindings_as_strings (groups, free_vars,
 gen_man_bind(groups,free_vars,
 gen_pick_bind (groups, free_vars,
 "\n fun CPN'bind_exe(CPN'mode,CPN'inst) = \nlet\n"::
-gen_trv(input,init_cs,
+gen_trv(input,inhibitor,init_cs,
 "\n(* Force bindfun to calculate all bindings for interactive \
 \\n manual binding and for picking a binding*)\n\
 \val CPN'bindfunmode = case CPN'mode of\
