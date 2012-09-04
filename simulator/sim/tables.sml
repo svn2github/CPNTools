@@ -1696,10 +1696,10 @@ functor CPN'CreateInstTable (structure RepTable: CPN'REPTABLE) : CPN'INSTTABLE =
     local
 	fun get ((p,i), tail) =
 	    foldr (fn (t,ts) => get_ti_index(t,i)::ts) tail (RepTable.get_dep p)
-	fun get_out ((p,i), tail) =
+	fun get_in ((p,i), tail) =
       let
-          fun matches (_, CPN'TransitionTable.transition { output , ...}) =
-              List.exists (fn { place, ... } => place = p) output
+          fun matches (_, CPN'TransitionTable.transition { input , ...}) =
+              List.exists (fn { place, ... } => place = p) input
             | matches _ = false
           val ts = List.map (fn (id, _) => id) (List.filter matches
           (CPN'TransitionTable.list()))
@@ -1723,7 +1723,7 @@ functor CPN'CreateInstTable (structure RepTable: CPN'REPTABLE) : CPN'INSTTABLE =
 	    unique_sort (Int.<) (foldr get nil (get_inst_cons((p,i),nil)))
 
 	fun get_dep_list (t,i) = 
-	    unique_sort (Int.<) (foldr get_out (foldr get_inhibit (foldr
+	    unique_sort (Int.<) (foldr get_in (foldr get_inhibit (foldr
           get_inhibit nil (get_reset_place_instances(t, i)))
           (get_input_place_instances(t, i))) (get_output_place_instances(t,i)))
     end
