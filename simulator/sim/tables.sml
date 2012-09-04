@@ -1031,6 +1031,16 @@ structure CPN'TransitionTable = struct
 	    SOME(transition{output,...}) => map #place output
 	  | _ => raise InternalError("get_output")
 
+    fun get_inhibitor t = 
+	case peek t of
+	    SOME(transition{inhibitor,...}) => map #place inhibitor
+	  | _ => raise InternalError("get_inhibitor")
+
+    fun get_reset t = 
+	case peek t of
+	    SOME(transition{reset,...}) => map #place reset
+	  | _ => raise InternalError("get_reset")
+
     fun get_controllable t = 
 	case peek t of
 	    SOME(transition{controllable,...}) => controllable
@@ -1659,9 +1669,25 @@ functor CPN'CreateInstTable (structure RepTable: CPN'REPTABLE) : CPN'INSTTABLE =
 	foldr (fn (p,tail) => get_all_cons(p,tail)) 
 	nil (CPN'TransitionTable.get_input t)
 
+    fun get_inhibitor_place_ids t =
+	foldr (fn (p,tail) => get_all_cons(p,tail)) 
+	nil (CPN'TransitionTable.get_inhibitor t)
+
     fun get_output_place_instances (t,i) =
 	foldr (fn (p,tail) => get_inst_cons((p,i),tail)) 
 	nil (CPN'TransitionTable.get_output t)
+
+    fun get_input_place_instances (t,i) =
+	foldr (fn (p,tail) => get_inst_cons((p,i),tail)) 
+	nil (CPN'TransitionTable.get_input t)
+
+    fun get_inhibitor_place_instances (t,i) =
+	foldr (fn (p,tail) => get_inst_cons((p,i),tail)) 
+	nil (CPN'TransitionTable.get_inhibitor t)
+
+    fun get_reset_place_instances (t,i) =
+	foldr (fn (p,tail) => get_inst_cons((p,i),tail)) 
+	nil (CPN'TransitionTable.get_reset t)
 
     fun get_sur_places (t,i) =
 	foldr (fn (p,tail) => get_inst_cons((p,i),tail)) 
@@ -1670,6 +1696,26 @@ functor CPN'CreateInstTable (structure RepTable: CPN'REPTABLE) : CPN'INSTTABLE =
     local
 	fun get ((p,i), tail) =
 	    foldr (fn (t,ts) => get_ti_index(t,i)::ts) tail (RepTable.get_dep p)
+	fun get_out ((p,i), tail) =
+      let
+          fun matches (_, CPN'TransitionTable.transition { output , ...}) =
+              List.exists (fn { place, ... } => place = p) output
+            | matches _ = false
+          val ts = List.map (fn (id, _) => id) (List.filter matches
+          (CPN'TransitionTable.list()))
+      in
+	    foldr (fn (t,ts) => get_ti_index(t,i)::ts) tail ts
+      end
+	fun get_inhibit ((p,i), tail) =
+      let
+          fun matches (_, CPN'TransitionTable.transition { inhibitor, ...}) =
+              List.exists (fn { place, ... } => place = p) inhibitor
+            | matches _ = false
+          val ts = List.map (fn (id, _) => id) (List.filter matches
+          (CPN'TransitionTable.list()))
+      in
+	    foldr (fn (t,ts) => get_ti_index(t,i)::ts) tail ts
+      end
 
 	open CPN'Misc
     in
@@ -1677,7 +1723,9 @@ functor CPN'CreateInstTable (structure RepTable: CPN'REPTABLE) : CPN'INSTTABLE =
 	    unique_sort (Int.<) (foldr get nil (get_inst_cons((p,i),nil)))
 
 	fun get_dep_list (t,i) = 
-	    unique_sort (Int.<) (foldr get nil (get_output_place_instances(t,i)))
+	    unique_sort (Int.<) (foldr get_out (foldr get_inhibit (foldr
+          get_inhibit nil (get_reset_place_instances(t, i)))
+          (get_input_place_instances(t, i))) (get_output_place_instances(t,i)))
     end
 
     fun get_page_structure () = let

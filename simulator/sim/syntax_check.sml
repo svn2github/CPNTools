@@ -957,7 +957,6 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
       | check_input (res, {id, place, exp}::xs, trans_id, check_failure) =
 	let
 	    val {kind,ext={cs,...},...} = CPN'PlaceTable.find place
-
 	    val timed = CPN'CSTable.is_timed cs;
 
 	    val (exp_type_exp, parsed_exp) =
@@ -995,11 +994,19 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 	    end
 	end (* check_input *)
 
-    fun check_empty (res, [], true) = raise SyntaxError ""
-      | check_empty (res, [], false) = res
-      | check_empty (res, { id, exp = "", place }::xs, check_failure) = 
-        check_empty ({ arcs = [(id, NONE)], place = place }::res, xs, check_failure)
-      | check_empty (res, {id, place, exp}::xs, check_failure) =
+    fun check_empty (res, [], _, true) = raise SyntaxError ""
+      | check_empty (res, [], _, false) = res
+      | check_empty (res, { id, exp = "", place }::xs, NONE, check_failure) = 
+          check_empty ({ arcs = [(id, NONE)], place = place }::res, xs, NONE, check_failure)
+      | check_empty (res, { id, exp = "", place }::xs, SOME trans_id, check_failure) = 
+        let
+	    val {kind,ext={cs,...},...} = CPN'PlaceTable.find place
+	    val timed = CPN'CSTable.is_timed cs
+          val _ = init_repdep (place, kind, trans_id, timed)
+        in
+          check_empty ({ arcs = [(id, NONE)], place = place }::res, xs, SOME trans_id, check_failure)
+        end
+      | check_empty (res, {id, place, exp}::xs, _, check_failure) =
         error (id, [ArcError, NonEmptyError])
 
     fun check_output (res, [], true) = raise SyntaxError ""
@@ -1415,6 +1422,9 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 
 	    val errors = ref false;
 	       
+	    val inhibitor' = check_empty ([], inhibitor, SOME id, !errors)
+		handle SyntaxError _ => [] before  errors := true;
+
 	    val _ = check_input ([],input, id, !errors)
 		handle SyntaxError _ => [] before errors := true;
 			       
@@ -1461,9 +1471,7 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 		handle SyntaxError _ => [] before  errors := true;
 	    val reset' = check_output ([], reset, !errors)
 		handle SyntaxError _ => [] before  errors := true;*)
-	    val inhibitor' = check_empty ([], inhibitor, !errors)
-		handle SyntaxError _ => [] before  errors := true;
-	    val reset' = check_empty ([], reset, !errors)
+	    val reset' = check_empty ([], reset, NONE, !errors)
 		handle SyntaxError _ => [] before  errors := true;
 		    
 	    val free_vars = 
@@ -1480,7 +1488,7 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 		      * Remove dependency between input places with 
 		      * legal input arcs and this transition with errors *)
 		    let
-			val inputpids = map #place (list_input())
+			val inputpids = (map #place (list_input())) @ (map #place inhibitor)
 			val fusion_grps = 
 			    foldr (fn (pid,tail) => 
 				      case CPN'PlaceTable.peek pid of
@@ -1876,6 +1884,8 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 				(CPN'debug ("clean_up_transition "^t);
 				 app (fn pid => InstTable.RepTable.rm_trans (pid,t)) 
 				 (InstTable.get_input_place_ids t);
+				 app (fn pid => InstTable.RepTable.rm_trans (pid,t)) 
+				 (InstTable.get_inhibitor_place_ids t);
 				 remove t;
 				 ())
 
@@ -1883,10 +1893,12 @@ functor CPN'MakeSyntaxCheck (structure InstTable: CPN'INSTTABLE) : CPN'SYNTAXCHE
 		     set in as transitions *)
 		    fun clean_up_subst t = 
 			case peek t of
-			  SOME (transition {input,...}) =>
+			  SOME (transition {input,inhibitor,...}) =>
 				(CPN'debug ("clean_up_subst "^t);
 				 (app (fn p => InstTable.RepTable.rm_trans (#place p,t)) 
 				 input;
+				 app (fn p => InstTable.RepTable.rm_trans (#place p,t)) 
+				 inhibitor;
 				 remove t;
 				 ()))
 			  | _ => ()

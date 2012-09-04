@@ -146,6 +146,7 @@ signature CPN'INSTTABLE = sig
     val get_dep_list: (CPN'Id.id * int) -> int list
 
     val get_input_place_ids: CPN'Id.id -> CPN'Id.id list
+    val get_inhibitor_place_ids: CPN'Id.id -> CPN'Id.id list
 
     val get_output_place_instances: CPN'Id.id * int -> (CPN'Id.id * int) list
 
