@@ -206,11 +206,10 @@ public class Handler implements Channel {
 		Packet response = getResponse(p);
 		final Packet originalResponse = response;
 		request.reset();
-		request.getInteger();
-		final int command = request.getCommand();
+		final int command = request.getInteger();
 		final int subcommand = request.getInteger();
 		final Map<Integer, List<Extension>> subscribers = subscriptions.get(command);
-		if (subscribers == null) { return null; }
+		if (subscribers == null) { return response; }
 		final List<Extension> allSubscribers = subscribers.get(Command.ANY);
 		if (allSubscribers != null) {
 			for (final Extension e : allSubscribers) {

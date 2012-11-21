@@ -12,7 +12,7 @@ public class TestServer {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws InterruptedException, IOException {
-		final Thread t = new Thread(new Server(Server.DEFAULT_PORT, new HelloWorld()), "Main server in port "
+		final Thread t = new Thread(new Server(Server.DEFAULT_PORT, new HelloWorld()), "Main server on port "
 		        + Server.DEFAULT_PORT);
 		t.start();
 		t.join();

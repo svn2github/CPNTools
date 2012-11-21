@@ -14,7 +14,7 @@ public class DeclareTestServer {
 	 */
 	public static void main(final String[] args) throws InterruptedException, IOException {
 		final Thread t = new Thread(new Server(Server.DEFAULT_PORT, new HelloWorld(), new DeclareExtension()),
-		        "Main server in port " + Server.DEFAULT_PORT);
+		        "Main server on port " + Server.DEFAULT_PORT);
 		t.start();
 		t.join();
 	}
