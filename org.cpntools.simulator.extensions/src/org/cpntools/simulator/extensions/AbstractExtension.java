@@ -54,6 +54,34 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		notifyObservers(option);
 	}
 
+	@SuppressWarnings("unchecked")
+	protected <T> T getOption(final Option<T> option) {
+		if (option.getType() == Integer.class) { return (T) integerOptions.get(option); }
+		if (option.getType() == Boolean.class) { return (T) booleanOptions.get(option); }
+		if (option.getType() == String.class) { return (T) stringOptions.get(option); }
+		return null;
+	}
+
+	protected int getInt(final Option<Integer> option) {
+		try {
+			return getOption(option);
+		} catch (final NullPointerException _) {
+			return 0;
+		}
+	}
+
+	protected boolean getBoolean(final Option<Boolean> option) {
+		try {
+			return getOption(option);
+		} catch (final NullPointerException _) {
+			return false;
+		}
+	}
+
+	protected String getString(final Option<String> option) {
+		return getOption(option);
+	}
+
 	@Override
 	public Extension start(final Channel c) {
 		try {
@@ -85,8 +113,9 @@ public abstract class AbstractExtension extends Observable implements Extension 
 				stringValue = (String) value;
 			}
 			stringOptions.put((Option<String>) option, stringValue);
-		} else
+		} else {
 			throw new IllegalArgumentException("Unknown option type");
+		}
 	}
 
 	protected void addOption(final Option<?>... options) {

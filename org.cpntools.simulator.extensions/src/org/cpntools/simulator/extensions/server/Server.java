@@ -56,9 +56,9 @@ public class Server implements Runnable {
 						throw new Exception("Wrong login");
 					}
 					new Packet(1, "").send(out); //$NON-NLS-1$
-					new Handler(in, out, extensions, "Handler for port " + connection.getLocalPort());
+					new Handler(in, out, extensions, "for port " + connection.getRemoteSocketAddress());
 				} catch (final SocketException se) {
-					break;
+					se.printStackTrace();
 				}
 			} catch (final Exception _) {
 

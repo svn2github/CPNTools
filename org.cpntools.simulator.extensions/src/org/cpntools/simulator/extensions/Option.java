@@ -14,6 +14,16 @@ public class Option<T> {
 	 * @param name
 	 * @param key
 	 * @param type
+	 * @return
+	 */
+	public static final <T> Option<T> create(final String name, final String key, final Class<T> type) {
+		return new Option<T>(name, key, type);
+	}
+
+	/**
+	 * @param name
+	 * @param key
+	 * @param type
 	 */
 	public Option(final String name, final String key, final Class<T> type) {
 		this.name = name;
@@ -27,16 +37,16 @@ public class Option<T> {
 	 */
 	@Override
 	public boolean equals(final Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (!(obj instanceof Option)) return false;
+		if (this == obj) { return true; }
+		if (obj == null) { return false; }
+		if (!(obj instanceof Option)) { return false; }
 		final Option other = (Option) obj;
 		if (key == null) {
-			if (other.key != null) return false;
-		} else if (!key.equals(other.key)) return false;
+			if (other.key != null) { return false; }
+		} else if (!key.equals(other.key)) { return false; }
 		if (type == null) {
-			if (other.type != null) return false;
-		} else if (!type.equals(other.type)) return false;
+			if (other.type != null) { return false; }
+		} else if (!type.equals(other.type)) { return false; }
 		return true;
 	}
 
@@ -53,9 +63,9 @@ public class Option<T> {
 	}
 
 	public int getTypeId() {
-		if (type == Integer.class) return 0;
-		if (type == Boolean.class) return 1;
-		if (type == String.class) return 2;
+		if (type == Boolean.class) { return 0; }
+		if (type == Integer.class) { return 1; }
+		if (type == String.class) { return 2; }
 		return -1;
 	}
 
@@ -72,9 +82,17 @@ public class Option<T> {
 	}
 
 	protected void checkType(final Class<?> type) {
-		if (type == Integer.class) return;
-		if (type == Boolean.class) return;
-		if (type == String.class) return;
+		if (type == Integer.class) { return; }
+		if (type == Boolean.class) { return; }
+		if (type == String.class) { return; }
 		throw new IllegalArgumentException(type + " is not of type integer, boolean or string");
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return name + " (" + type.getSimpleName() + ')';
 	}
 }

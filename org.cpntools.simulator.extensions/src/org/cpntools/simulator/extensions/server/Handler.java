@@ -27,8 +27,8 @@ import dk.klafbang.tools.Pair;
  */
 public class Handler implements Channel {
 
-	class ReceiverThread extends Thread {
-		public ReceiverThread(final String name) {
+	class FeederThread extends Thread {
+		public FeederThread(final String name) {
 			super(name);
 		}
 
@@ -36,19 +36,41 @@ public class Handler implements Channel {
 		public void run() {
 			try {
 				while (true) {
-					Packet p = new Packet();
+					final Packet p = new Packet();
 					p.receive(in);
-					if (p.getOpcode() == 9) { // extension
+					packetQueue.put(p);
+				}
+			} catch (final IOException e) {
+				// Add a fake termination packet
+				packetQueue.put(new Packet(-1, EXTERNAL_COMMAND));
+			}
+		}
+	}
+
+	class DispatcherThread extends Thread {
+		public DispatcherThread(final String name) {
+			super(name);
+		}
+
+		@Override
+		public void run() {
+			while (true) {
+				try {
+					Packet p = packetQueue.get();
+					switch (p.getOpcode()) {
+					case 9: // extension
 						p = handleCommand(p);
 						sendLock.lock();
 						p.send(out);
 						sendLock.unlock();
-					} else if (p.getOpcode() == 5) { // GFC
+						break;
+					case 5: // GFC
 						p = handleGFC(p);
 						sendLock.lock();
 						p.send(out);
 						sendLock.unlock();
-					} else if (p.getOpcode() == 10) { // filtering
+						break;
+					case 12: // filter
 						p = handleForward(p);
 						if (p == null) {
 							p = new Packet(7, 0);
@@ -56,17 +78,27 @@ public class Handler implements Channel {
 						sendLock.lock();
 						p.send(out);
 						sendLock.unlock();
-					} else if (p.getOpcode() == 7) { // response from invocation
+						break;
+					case 7: // invocation response
+					case 3: // CB reponse
+						final boolean delay = packetQueue.isEmpty();
 						packetQueue.put(p);
-					} else if (p.getOpcode() == 11) { // response from GFC forward
-						packetQueue.put(unwrap(p));
-					} else {
+						if (delay) {
+							try {
+								sleep(100);
+							} catch (final InterruptedException ie) {
+							}
+						}
+						break;
+					case -1:
+						return;
+					default:
 						assert false;
 						// Ignore, this should never happen...
 					}
+				} catch (final IOException ioe) {
+					return;
 				}
-			} catch (final IOException e) {
-				// Mask IO errors
 			}
 		}
 	}
@@ -77,8 +109,8 @@ public class Handler implements Channel {
 	        throws ConflictingExtensionsException {
 		final Map<Integer, Extension> extensions = new HashMap<Integer, Extension>();
 		for (final Extension e : exns) {
-			if (extensions.containsKey(e.getIdentifier()))
-			    throw new ConflictingExtensionsException(e, extensions.get(e.getIdentifier()));
+			if (extensions.containsKey(e.getIdentifier())) { throw new ConflictingExtensionsException(e,
+			        extensions.get(e.getIdentifier())); }
 			extensions.put(e.getIdentifier(), e);
 		}
 		return extensions;
@@ -134,11 +166,13 @@ public class Handler implements Channel {
 		packetQueue = new BlockingQueue<Packet>();
 		this.extensions = Handler.constructExtensionMap(extensions);
 		subscriptions = Handler.constructSubscriptions(extensions);
-		new ReceiverThread(name).start();
+		new FeederThread("Feeder " + name).start();
+
 		doInjection(extensions);
 		makeSubscriptions(subscriptions);
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
 		registerExtensions(extensions);
+		new DispatcherThread("Dispatcher " + name).start();
 	}
 
 	public Packet handleCommand(final Packet p) {
@@ -176,7 +210,7 @@ public class Handler implements Channel {
 		final int command = request.getCommand();
 		final int subcommand = request.getInteger();
 		final Map<Integer, List<Extension>> subscribers = subscriptions.get(command);
-		if (subscribers == null) return null;
+		if (subscribers == null) { return null; }
 		final List<Extension> allSubscribers = subscribers.get(Command.ANY);
 		if (allSubscribers != null) {
 			for (final Extension e : allSubscribers) {
@@ -195,7 +229,7 @@ public class Handler implements Channel {
 				}
 			}
 		}
-		if (response == originalResponse) return null;
+		if (response == originalResponse) { return null; }
 		return response;
 	}
 
@@ -221,6 +255,18 @@ public class Handler implements Channel {
 	public Packet send(final Packet p) throws IOException {
 		lock();
 		try {
+			final int expectedCode;
+			switch (p.getOpcode()) {
+			case 9:
+				expectedCode = 7;
+				break;
+			case 3:
+				expectedCode = 3;
+				break;
+			default:
+				expectedCode = 7;
+				break;
+			}
 			sendLock.lock();
 			try {
 				p.send(out);
@@ -230,26 +276,22 @@ public class Handler implements Channel {
 			Packet result;
 			do {
 				result = packetQueue.get();
-				if (result.getOpcode() != 7) {
+				if (result.getOpcode() != expectedCode) {
+					final boolean sleep = packetQueue.isEmpty();
 					packetQueue.put(result);
-					try {
-						Thread.sleep(100);
-					} catch (final InterruptedException _) {
-						// IGnore, we're just avoiding a busy wait
+					if (sleep) {
+						try {
+							Thread.sleep(100);
+						} catch (final InterruptedException _) {
+							// IGnore, we're just avoiding a busy wait
+						}
 					}
 				}
-			} while (result.getOpcode() != 7);
+			} while (result.getOpcode() != expectedCode);
 			return result;
 		} finally {
 			release();
 		}
-	}
-
-	public Packet unwrap(final Packet p) {
-		assert p.getOpcode() == 11;
-		p.reset();
-		// TODO
-		return null;
 	}
 
 	private Packet createInjectPacket(final String s) {
@@ -260,7 +302,7 @@ public class Handler implements Channel {
 	}
 
 	private Packet createOptions(final Extension e) {
-		final Packet p = new Packet(Handler.EXTERNAL_COMMAND);
+		final Packet p = new Packet(3, Handler.EXTERNAL_COMMAND);
 		p.addInteger(101);
 		p.addInteger(e.getIdentifier());
 		p.addString(e.getName());
@@ -289,7 +331,7 @@ public class Handler implements Channel {
 	}
 
 	private Packet getRequest(final Packet p) {
-		assert p.getOpcode() == 10;
+		assert p.getOpcode() == 12;
 		p.reset();
 		final int b = p.getInteger();
 		final int i = p.getInteger();
@@ -311,7 +353,7 @@ public class Handler implements Channel {
 	}
 
 	private Packet getResponse(final Packet p) {
-		assert p.getOpcode() == 10;
+		assert p.getOpcode() == 12;
 		p.reset();
 		p.getInteger();
 		p.getInteger();
@@ -346,7 +388,7 @@ public class Handler implements Channel {
 			if (s != null && !"".equals(s)) {
 				try {
 					final Packet p = send(createInjectPacket(s));
-					if (p.getInteger() != 1) throw new ErrorInjectingException(e, s, p.getString());
+					if (p.getInteger() != 1) { throw new ErrorInjectingException(e, s, p.getString()); }
 				} catch (final IOException ex) {
 					throw new ErrorInjectingException(e, s, ex);
 				}
@@ -374,6 +416,10 @@ public class Handler implements Channel {
 				}
 
 			}
+			break;
+		case 301:
+			result = new Packet(7, 1);
+			result.addString("Britney was here and broke the protocol but as nobody actually checks the result that's ok");
 			break;
 		case 201: {
 			final int extension = p.getInteger();

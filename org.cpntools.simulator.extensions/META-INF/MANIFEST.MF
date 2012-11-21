@@ -7,3 +7,5 @@ Bundle-ActivationPolicy: lazy
 Bundle-Vendor: Michael Westergaard
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.cpntools.accesscpn.engine.protocol;bundle-version="3.0.0"
+Export-Package: org.cpntools.simulator.extensions,
+ org.cpntools.simulator.extensions.server
