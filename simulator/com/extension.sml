@@ -77,6 +77,7 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
         val socket = ref (NONE : socket option)
         val input = ref (NONE : Stream.instream option)
         val output = ref (NONE : Stream.outstream option)
+        val subscriptions = ref ([] : (int * int list ref) list)
 
         fun disconnect () =
         let
@@ -183,9 +184,44 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
 
         fun getStreams () = (Option.valOf (!input), Option.valOf (!output))
 
+        fun getSubscription cmd =
+            List.find (fn (c, v) => c = cmd) (!subscriptions)
+
+        fun addSubscription cmd subcmd =
+            case (getSubscription cmd)
+               of NONE =>
+                   if subcmd < 0
+                   then subscriptions := (cmd, ref [])::(!subscriptions)
+                   else subscriptions := (cmd, ref [subcmd])::(!subscriptions)
+               | SOME (_, v) =>
+                       if !v = []
+                       then ()
+                       else if subcmd < 0
+                            then v := []
+                            else if (List.exists (fn c => c = subcmd) (!v))
+                                 then ()
+                                 else v := subcmd::(!v)
+
+        fun testSubscriptions () = !subscriptions
+
+        fun addSubscriptions [] = ()
+          | addSubscriptions (cmd::subcmd::rest) =
+            (addSubscription cmd subcmd; addSubscriptions rest)
+
+        fun dispatchLocally (b, 2::count::i, s) =
+            if List.length i = 2 * count
+            then (addSubscriptions i; ([], [1], []))
+            else ([], [~1], [])
+          | dispatchLocally _ = ([], [~1], ["Unknown command"])
+
+        exception Local of bool list * int list * string list
         fun forward received param opcode (b, i, s) =
         let
-            val _ = connect ()
+            val _ =
+                if (opcode = 9) andalso (List.length i >= 2) andalso
+                   (List.hd i = 10000) andalso (List.hd (List.tl i) < 100)
+                then raise Local (dispatchLocally (b, List.tl i, s))
+                else connect ()
         in
             if (!socket = NONE)
             then raise NoExtensionServer
@@ -196,9 +232,32 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
                 in
                     result
                 end
-        end 
+        end handle (Local bis) => bis
 
-        fun watched received param ((b, opcode::i, s), response) =
-            response
+        fun forward' received param (b, i, s) (b', i', s') =
+            forward received param 12
+            (List.@ (b, b'),
+             (List.length b)::(List.length i)::(List.length s)::
+             (List.length b')::(List.length i')::(List.length s')::
+             (List.@ (i, i')),
+             List.@ (s, s'))
+
+        fun watched received param ((b, [], s), response) = response
+          | watched received param ((b, [cmd], s), response) =
+          (case (getSubscription cmd)
+            of NONE => response
+             | SOME (_, v) => 
+                     if (!v) = []
+                     then forward' received param (b, [cmd], s) response
+                     else response)
+          | watched received param ((b, cmd::subcmd::i, s), response) =
+            (case (getSubscription cmd)
+            of NONE => response
+             | SOME (_, v) => 
+                     if (!v) = []
+                     then forward' received param (b, cmd::subcmd::i, s) response
+                     else if (List.exists (fn c => c = subcmd) (!v))
+                          then forward' received param (b, cmd::subcmd::i, s) response
+                          else response)
     end
 end

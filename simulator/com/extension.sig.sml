@@ -72,4 +72,7 @@ signature EXTENSION = sig
     val watched : ('a -> Stream.instream -> BIS) -> 'a -> BIS * BIS -> BIS
     val getStream : unit -> Stream.instream list
     val getStreams : unit -> Stream.instream * Stream.outstream
+
+    (* testing purposes *)
+    val testSubscriptions : unit -> (int * int list ref) list
 end
