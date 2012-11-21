@@ -71,7 +71,7 @@ local
     val ENDPAUSE	= 50
     val MANBIND 	= 60
 
-    val response = CpnMLSys.SimProcess.response
+    val response = CpnMLSys.CmdProcess.response
 
     fun add_ints (blist,ilist,slist) is = (blist, List.@(is,ilist), slist)
 in

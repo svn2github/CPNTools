@@ -1,6 +1,6 @@
 #!/bin/bash
 MIN=74
-MAX_TESTED=74
+MAX_TESTED=75
 
 if [ "x$1" == "x" ]; then
 	echo "Please enter the minor version you want to install, e.g., \`buildml.sh $MIN' to install version 110.$MIN"

@@ -74,19 +74,13 @@ $Source: /users/cpntools/repository/cpn2000/sml/com/simProcess.sig.sml,v $ *)
 
 
 signature SIMPROCESS = sig
-    
-    structure Stream : STREAM
-
     exception InternalError of string
 
-    type blist
-    type ilist
-    type slist
     type gluefun
 
     (* Callback table *)
     val NSBootstrap : ((string * string * string) -> 
-		       (blist * ilist * slist)) ref
+		       (bool list * int list * string list)) ref
     val NSMisc : gluefun ref
     val NSCompileDecl : gluefun ref
     val NSSyntaxCheck : gluefun ref
@@ -95,12 +89,13 @@ signature SIMPROCESS = sig
     val NSChart :  gluefun ref
     val NSWFA :  gluefun ref
     val NSStateSpace :  gluefun ref
+    val NSExtension:  gluefun ref
 
-    (* Main function for processing requests *)
-    val process : Stream.instream * Stream.outstream -> unit
+    val TERMTAG: int
+    val RESPTAG: int
+    val ERRTAG: int
 
-    (* Function to send and receive response during a call to process *)
-    val response: blist * ilist * slist -> blist * ilist * slist
-	
+    val process: bool list * int list * string list -> bool list * int list * string list
+
 end; (* SIMPROCESS *)
 

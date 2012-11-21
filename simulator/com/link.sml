@@ -120,10 +120,11 @@ import "byteArray";
 import "stream";
 import "majorOpcodes";
 import "evalProc";
+import "bis";
+import "extension";
 import "simProcess";
 import "cmdProcess";
 import "glue";
-import "manualGlue";
 import "gramControl";
 import "cpnml.sig";
 import "toploop";
@@ -159,23 +160,24 @@ structure CpnMLSys = struct
 					structure Utils = MiscUtils
 					structure BAExt = ByteArrayExt);
 
+    structure Extension = Extension(structure Stream = GramStream structure Err = GramError);
+
     structure SimProcess = SimProcess(structure Str = GramStream
+                                      structure Extension = Extension
                                       structure Err = GramError
                                       structure BAExt = ByteArrayExt
                                       structure Opcodes = MajorOpcodes);
 
     structure CmdProcess = CmdProcess(structure Str = GramStream
 				      structure Eval = EvalProcess
-                                      structure Sim = SimProcess
+                              structure Sim = SimProcess
+                              structure Extension = Extension
 				      structure Err = GramError
 				      structure Utils = MiscUtils
 				      structure Ops = MajorOpcodes
 				      structure OSDep = OSDep);
 
     structure Glue = Glue(structure Cmd = CmdProcess);
-
-    structure ManualGlue = ManualGlue(structure Cmd = CmdProcess
-				      structure Unsafe = GramUnsafe);
 
 end; (* structure CpnMLSys *)
 

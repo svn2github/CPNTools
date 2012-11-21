@@ -137,7 +137,11 @@ local
 	end
 
 in    
-    fun misc ([],[9],[model_name, model_dir, output_dir]) = 
+    fun misc ([], [8, port], [host]) = 
+        ((CpnMLSys.Extension.configure (host, port); ([true],[],[]))
+        handle exn => ([false], [], ["Exception relocating extension server: " ^
+        exnName(exn)]))
+      | misc ([],[9],[model_name, model_dir, output_dir]) = 
 	(* set model name and model and output directories *)
 	((Output.setModelNameAndDirs 
 	      (model_name, model_dir, 
@@ -1433,7 +1437,12 @@ end (* local *)
 	    nil => (nil,nil,nil)
 	  | _ =>  raise InternalError("SimGlue.charts")
      end
-      | chart _ = (CPN'debug "Match error in chart"; raise Match);
+    | chart _ = (CPN'debug "Match error in chart"; raise Match);
+
+    fun extension (b, i, s) =
+        CpnMLSys.Extension.forward CpnMLSys.CmdProcess.waitAndRead
+        (!CpnMLSys.CmdProcess.theGram, CpnMLSys.CmdProcess.ExtSimResult) 9
+        (b, 10000::i, s)
 
     fun SimGlueInit () =
 	(CpnMLSys.SimProcess.NSMisc:= misc;
@@ -1441,7 +1450,9 @@ end (* local *)
 	 CpnMLSys.SimProcess.NSSyntaxCheck:= syntax_check;
 	 CpnMLSys.SimProcess.NSSimulate:= simulate;
 	 CpnMLSys.SimProcess.NSMonitor:= monitor;
-	 CpnMLSys.SimProcess.NSChart:= chart)
+       CpnMLSys.SimProcess.NSChart:= chart;
+       CpnMLSys.SimProcess.NSExtension := extension
+       )
 
     val _ = SimGlueInit ()
 

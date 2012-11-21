@@ -36,8 +36,9 @@ functor CmdProcess (structure Str : STREAM
 		    structure Utils : MISCUTILS
 		    structure Ops : MAJOROPCODES
 		    structure OSDep : OSDEP
+                structure Extension : EXTENSION
 
-		    sharing Str = Eval.Stream = Sim.Stream
+		    sharing Str = Eval.Stream = Extension.Stream
 			) : CMDPROCESS = struct
     
     val rcsid = "$Header: /users/cpntools/repository/cpn2000/sml/com/cmdProcess.sml,v 1.4.2.2 2006/06/29 06:57:20 mw Exp $";
@@ -50,7 +51,7 @@ functor CmdProcess (structure Str : STREAM
            | NONE => "<unknown>"
 
     val copyright = ref (String.concat
-                      ["Simulator/CPN v3.5.1 [built: ", 
+                      ["Simulator/CPN v3.5.2 [built: ", 
                       Date.toString (Date.fromTimeLocal (Time.now())), " by ", 
                       (Posix.ProcEnv.getlogin () handle _ => "<unknown>"), " on ", get "nodename", "]"])
 
@@ -65,14 +66,15 @@ functor CmdProcess (structure Str : STREAM
 		     outs:Str.outstream,
 		     ins:Str.instream};
     datatype connMode = Master of string | Slave;
-    datatype eventType = Result | GfcResult | ChartResult | MimicResult | Any | None;
+    datatype eventType = Result | GfcResult | CBResult | ExtSimResult | Any | None;
 
     exception cmdProcessFail of string;
     exception ReqFail of string;	
     exception gfcReqFail of string;
-    exception chartReqFail of string;
-    exception mimicReqFail of string;
     exception stopLoop of unit;
+
+    structure BIS = BIS(structure Stream = Str structure Err = Err)
+    open BIS
 
     val startupMsgTermChar = chr 1;
 
@@ -91,78 +93,97 @@ functor CmdProcess (structure Str : STREAM
 	(Str.destroyIn ins;
 	 Str.destroyOut outs);
 
-    fun interrupt ({outs,ins,...}:gramAppl) = 
-	(Err.log "SYSTEM ERROR: Master mode not supported yet; no interrupts.";
-	 raise cmdProcessFail "SYSTEM ERROR: Master mode not supported yet; no interrupts.");
-
-
-    fun genericWait evalProcess ({outs,ins,...}:gramAppl,event) =
+    fun genericWait evalProcess (stream as {outs,ins,...}:gramAppl,event) =
 	let
-	    fun process () =
-		case (Str.getInteger ins) of
-
-		    1 => (evalProcess(ins);
-			  process())
-
-		  | 2 => if (event = Result) 
-			    orelse (event = Any) then Result
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of result.";
-			       process())
-
-		  | 4 => if (event = Result) 
-			     orelse (event = Any) then 
-			     raise ReqFail "Call failed in GRAM."
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of result error.";
-			       process())
-
-		  | 5 => if (event = GfcResult) 
-			     orelse (event = Any) then GfcResult
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of GFC result.";
-			       process())
-
-		  | 6 => if (event = GfcResult) 
-			     orelse (event = Any) then 
-			     raise gfcReqFail "Call Failed in GRAM"
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of GFC result error.";
-			      process())
-
-		  | 7 => if (event = ChartResult) 
-			     orelse (event = Any) then ChartResult
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of Chart result.";
-			       process())
-
-		  | 8 => if (event = ChartResult) 
-			     orelse (event = Any) then 
-			     raise chartReqFail "Call Failed in GRAM"
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of chart result error.";
-			      process())
-
-		  | 9 => (Sim.process(ins,outs);
-			     process())
-
-		  | 10 => if (event = MimicResult) 
-			     orelse (event = Any) then MimicResult
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of Mimic result.";
-			       process())
-
-		  | 11 => if (event = MimicResult) 
-			     orelse (event = Any) then 
-			     raise mimicReqFail "Call Failed in GRAM"
-			 else (Err.log "SYSTEM ERROR: CmdProcess.genericWait: Unexpected receipt of Mimic result error.";
-			      process())
-
-		  | opcode => (Err.log ("SYSTEM ERROR: CmdProcess.genericWait: Unexpected opcode received.("^(Int.toString opcode)^")");
-			  process());
+          fun evtToString Result = "Result"
+            | evtToString GfcResult = "GfcResult"
+            | evtToString CBResult = "CBResult"
+            | evtToString ExtSimResult = "ExtSimResult"
+            | evtToString Any = "Any"
+            | evtToString None = "None"
+          exception Finished of eventType
+          fun process () =
+          let
+              val streams = ins::(Extension.getStream ())
+              val streams = Str.select streams
+              val _ =
+                  case (streams)
+                    of ((SOME gram)::_) =>
+                         (case (Str.getInteger gram, event)
+                           of (9, _) =>
+                           let
+                               val msg = read_message ins
+                               val result = Sim.process msg
+                               val result' = Extension.watched waitAndRead
+                               (stream, ExtSimResult) (msg, result)
+                           in
+                               send_result Ops.simRes outs result
+                           end
+                            | (1, _) => evalProcess ins
+                            | (2, Result) => raise Finished Result
+                            | (2, Any) => raise Finished Result
+                            | (3, CBResult) => raise Finished CBResult
+                            | (3, Any) => raise Finished CBResult
+                            | (4, Result) => raise ReqFail "Call failed in GRAM"
+                            | (4, Any) => raise ReqFail "Call failed in GRAM"
+                            | (5, GfcResult) => raise Finished GfcResult
+                            | (5, Any) => raise Finished GfcResult
+                            | (6, GfcResult) => raise ReqFail "Call failed in GRAM"
+                            | (6, Any) => raise ReqFail "Call failed in GRAM"
+                            | (opcode, evt) => 
+                                    Err.log ("ERROR: Received unexpected result with opcode "
+                                    ^ (Int.toString opcode) ^ 
+                                    " - " ^ (evtToString evt)))
+                      | _ => ()
+              val _ = 
+                  case (streams)
+                    of [_, SOME ext] =>
+                    let val (extin, extout) = Extension.getStreams ()
+                    in
+                         case (Str.getInteger ext, event)
+                           of (9, _) =>
+                           let
+                               val msg = read_message extin
+                               val result = Sim.process msg
+                           in
+                               send_result Ops.simRes extout result
+                           end
+                            | (1, _) => evalProcess ins
+                            | (3, _) =>
+                           let
+                               val msg = read_message extin
+                               val _ = send_result Ops.cbReq outs msg
+                               val _ = waitWithEval (stream, CBResult)
+                               val result = read_message ins
+                           in
+                               send_result Ops.cbRes extout result
+                           end
+                            | (7, ExtSimResult) =>
+                                        raise Finished ExtSimResult
+                            | (7, Any) => raise Finished ExtSimResult
+                            | (opcode, evt) =>
+                                    Err.log ("ERROR: Received unexpected extension result with opcode "
+                                    ^ (Int.toString opcode) ^ 
+                                    " - " ^ (evtToString evt))
+                    end
+                  | _ => ()
+          in
+              process ()
+          end 
 	in
-	    process() 
-	end;
-	
-			
+	    (process(); event) handle (Finished v) => v
+	end
     (* wait with eval i.e. "use" *)
-    val waitWithEval = genericWait Eval.process;
+    and waitWithEval p = genericWait Eval.process p
     (* wait w/o eval *)
-    val waitWoutEval = genericWait Eval.processStub;
-	
+    and waitWoutEval p = genericWait Eval.processStub p
+    and waitAndRead (stream, event) ins =
+      let
+          val _ = waitWithEval (stream, event)
+      in
+          read_message ins
+      end
+
     fun genericBgLoop waitFn theGram = 
 	let
 	    fun loop () : unit = 
@@ -190,44 +211,28 @@ functor CmdProcess (structure Str : STREAM
 
     val bgLoopWithEval = genericBgLoop waitWithEval;
     val bgLoopWoutEval = genericBgLoop waitWoutEval;
-	
-
-    fun getStreams ({ins,outs,...}:gramAppl) = 
-	(Str.putInteger outs Ops.Req;
-	 (outs,ins));
-	
 
     fun getGfcStreams ({ins,outs,...}:gramAppl) =
 	(Str.putInteger outs Ops.gfcReq;
 	 (outs,ins));
 
-    fun getChartStreams ({ins,outs,...}:gramAppl) =
-	(Str.putInteger outs Ops.chartReq;
-	 (outs,ins));
-    
-    fun getMimicStreams ({ins,outs,...}:gramAppl) =
-	(Str.putInteger outs Ops.mimicReq;
-	 (outs,ins));
-    
-    fun emlProcessOneReq ({outs,ins,...}:gramAppl) = 
-	case (Str.getInteger ins) of
+	val currentStream = ref (NONE: gramAppl option)
 
-	    1 => Eval.process(ins)
+	(* main function for processing a simulator request *)
+(*	fun process stream =
+	    (currentStream:= SOME stream;
+	     send_result Ops.simRes (#outs stream) (Sim.process
+           (read_message (#ins stream)));
+	     currentStream:= NONE)*)
 
-	  | 2 => Err.log "SYSTEM ERROR: CmdProcess.emlProcessOneReq: Unexpected receipt of result."
-
-	  | 4 => Err.log "SYSTEM ERROR: CmdProcess.emlProcessOneReq: Unexpected receipt of result error."
-
-	  | 5 => Err.log "SYSTEM ERROR: CmdProcess.emlProcessOneReq: Unexpected receipt of GFC result."
-
-	  | 6 => Err.log "SYSTEM ERROR: CmdProcess.emlProcessOneReq: Unexpected receipt of GFC result error."
-
-	  | 9 => Sim.process(ins,outs)
-
-	  | _ => Err.log "SYSTEM ERROR: CmdProcess.emlProcessOneReq: Unexpected opcode received.";
- 
-
-
+	fun response (blist,ilist,slist) =
+	    case !theGram of
+		{ins,outs, ...} => 
+		    (send_result Ops.simRes outs (blist, Sim.RESPTAG::ilist, slist);
+		     case Str.getInteger ins of
+			 (* remove opcode before getting lists *)
+			 9 => read_message ins 
+		       | _ => raise Sim.InternalError "Expected opcode not received in response")
 end; (* CMDPROCESS *) 
 
     

@@ -117,7 +117,7 @@ struct
 
   fun protect f x = f x
     in
-	
+
 	fun write (iodesc:OS.IO.iodesc, ba:ByteArray.bytearray, l:int, pos) : int = 
 	    let
 		fun write' (iodesc:OS.IO.iodesc, ba:ByteArray.bytearray, l:int, pos) : int = 

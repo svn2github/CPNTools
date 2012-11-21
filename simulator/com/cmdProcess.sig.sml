@@ -81,38 +81,36 @@ import "stream.sig";
 
 signature CMDPROCESS = sig
     
-    structure Str : STREAM;
+    structure Str : STREAM
 
-    val version : string ref;
-    val copyright : string ref;
+    val version : string ref
+    val copyright : string ref
 
     type gramAppl;
-    datatype connMode = Master of string | Slave;
-    datatype eventType = Result | GfcResult  | ChartResult | MimicResult | Any | None;
+    datatype connMode = Master of string | Slave
+    datatype eventType = Result | GfcResult | CBResult | ExtSimResult | Any | None;
 
-    exception cmdProcessFail of string;
-    exception ReqFail of string;	
-    exception gfcReqFail of string;
-    exception chartReqFail of string;
-    exception mimicReqFail of string;
-    exception stopLoop of unit;
+    exception cmdProcessFail of string
+    exception ReqFail of string
+    exception gfcReqFail of string
+    exception stopLoop of unit
 
     val theGram : gramAppl ref
 
     val estabConnection : connMode -> gramAppl
     val breakConnection : gramAppl -> unit
-    val interrupt : gramAppl -> unit
     val waitWithEval : (gramAppl * eventType) -> eventType
     val waitWoutEval : (gramAppl * eventType) -> eventType
+    val waitAndRead: (gramAppl * eventType) -> Str.instream -> bool list * int list * string list
     val bgLoopWithEval : gramAppl -> unit
     val bgLoopWoutEval : gramAppl -> unit
-    val getStreams : gramAppl -> (Str.outstream * Str.instream)
     val getGfcStreams : gramAppl -> (Str.outstream * Str.instream)
-    val getChartStreams : gramAppl -> (Str.outstream * Str.instream)
-    val getMimicStreams : gramAppl -> (Str.outstream * Str.instream)
 
-    val emlProcessOneReq : gramAppl -> unit
+    (* Main function for processing requests *)
+(*    val process : Str.instream * Str.outstream -> unit*)
 
+    (* Function to send and receive response during a call to process *)
+    val response: bool list * int list * string list -> bool list * int list * string list
 end; (* CMDPROCESS *) 
 
     

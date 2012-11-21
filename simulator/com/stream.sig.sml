@@ -76,6 +76,11 @@ signature STREAM = sig
   type outstream
   val makeIn : OS.IO.iodesc -> instream
   val makeOut : OS.IO.iodesc -> outstream
+  (* Wait on a list of input streams, only return when at least one has data
+   * available; return option list of streams - a stream is returned using SOME
+   * if data is available and NONE otherwise; order of input is preserved
+   *)
+  val select : instream list -> (instream option) list
   val destroyIn : instream -> unit
   val destroyOut : outstream -> unit
   val putBytes : outstream -> ByteArray.bytearray * int * int -> unit

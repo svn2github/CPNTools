@@ -88,7 +88,7 @@ functor MajorOpcodes () : MAJOROPCODES = struct
 
     (* TO GRAM *)
 					(* Eval Result has no opcode *)
-    (*val cbRes = 3;			(* Callback Result *)*)
+    val cbReq = 3;			(* Callback Request*)
     val Req = 4;			(*  Request *)
     val gfcReq = 5;			(* Gram Fn Call Request *)
     val chartReq = 6;			(* Chart Fn Call Request *)
@@ -99,7 +99,7 @@ functor MajorOpcodes () : MAJOROPCODES = struct
     (* Used in 'genericWait'. *)
     val evalReq = 1;			(* Evaluation Request *)
     val Res = 2;			(* Result *)
-    val cbReq = 3;			(* Callback Request *)
+    val cbRes = 3;			(* Callback Result *)
     val ResErr = 4;			(* Result Error *)
     val gfcRes = 5;			(* Gram Fn Call Result *)
     val gfcResErr = 6;			(* Gram Fn Call Result Error *)
@@ -108,6 +108,9 @@ functor MajorOpcodes () : MAJOROPCODES = struct
     val simReq = 9;                     (* Sim Request *)
     val mimicRes = 10;			(* Mimic Fn Call Result *)
     val mimicResErr = 11;		(* Mimic Fn Call Result Error *)
+
+    (* To ext *)
+    val forwardedReqRes = 12;
 
 end; (* functor MajorOpcodes *)
 

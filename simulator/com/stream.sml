@@ -113,20 +113,27 @@ functor Stream (structure Comm : COMM
      * 3. 'streamBufSize' - 'wt' = space available in buffer
      *)
 
-    datatype instream = IstFd of {iodesc:OS.IO.iodesc, buf:ByteArray.bytearray,
-				  rd:int ref, lastrd:int ref};
+    datatype instream = IstFd of {iodesc:OS.IO.iodesc, polldesc:
+                                  OS.IO.poll_desc, buf:ByteArray.bytearray,
+				          rd:int ref, lastrd:int ref};
     datatype outstream = OstFd of {iodesc:OS.IO.iodesc, buf:ByteArray.bytearray, 
 				   wt:int ref};
 	
-    fun makeIn iodesc = IstFd {buf=ByteArray.array(streamBufSize,0),
-			       iodesc=iodesc, rd= ref 0, lastrd= ref 0};
+    fun makeIn iodesc = 
+        let
+            val polldesc = Option.valOf (OS.IO.pollDesc iodesc)
+            val polldesc = OS.IO.pollIn polldesc
+        in
+            IstFd {buf=ByteArray.array(streamBufSize,0),
+            iodesc=iodesc, polldesc = polldesc, rd= ref 0, lastrd= ref 0}
+        end
 
     fun makeOut iodesc = OstFd {buf=ByteArray.array(streamBufSize,0),
-			        iodesc=iodesc, wt= ref 0};
+			        iodesc=iodesc, wt= ref 0}
 
-    fun destroyIn ins = ();
+    fun destroyIn ins = ()
 	
-    fun destroyOut outs = ();
+    fun destroyOut outs = ()
 
     fun flush (stream as OstFd {iodesc,wt,buf}) = 
 	let
@@ -137,7 +144,7 @@ functor Stream (structure Comm : COMM
 	     if (!wt <> 0) then flush stream else ())
 	end;
 
-    fun refill (stream as IstFd {iodesc,rd,lastrd,buf}) =
+    fun refill (stream as IstFd {iodesc,polldesc,rd,lastrd,buf}) =
 	let val size = !lastrd - !rd
 	 in
 	 ByteArrayExt.bcopyrev(buf, !rd, buf, 0, size);
@@ -146,6 +153,48 @@ functor Stream (structure Comm : COMM
 	 lastrd := Comm.recv(iodesc,buf,streamBufSize - size,size) + size
 	 end
 	           handle Comm.exComm (s) => raise connFail s
+
+
+    fun select [] = raise streamFail "Cannot poll on an empty list of streams"
+      | select streams =
+      let
+          fun ready (IstFd {rd,lastrd,...}) = !rd <> !lastrd
+          fun map stream = 
+              if ready stream
+              then SOME stream
+              else NONE
+      in
+          if List.exists ready streams
+          then List.map map streams
+          else
+              let
+                  fun map (IstFd {polldesc, ...}) = polldesc
+                  val descs = List.map map streams
+                  val pollresults = OS.IO.poll (descs, NONE)
+                  handle (OS.SysErr _) => raise connFail "select on closed"
+                  fun zip ([], []) = []
+                    | zip ([], stream::streams) = NONE::(zip ([], streams))
+                    | zip (info::infos, (stream as IstFd { iodesc, ...})::streams) =
+                    let
+                        val desc = OS.IO.infoToPollDesc info
+                        val io = OS.IO.pollToIODesc desc
+                    in
+                        if io = iodesc
+                        then (if OS.IO.isIn info
+                             then ((refill stream; SOME stream)
+                                   handle _ => NONE)::(zip (infos, streams))
+                             else NONE::(zip (infos, streams)))
+                        else NONE::(zip (info::infos, streams))
+                    end
+                  val result' = zip (pollresults, streams)
+                  fun isNone NONE = true | isNone _ = false
+                  val _ = if (List.all isNone result')
+                          then raise connFail "select"
+                          else ()
+              in
+                  result'
+              end
+      end
 
     fun putBytes (stream as OstFd {buf,wt,...}) (data,from,size) =
 	let
@@ -163,7 +212,7 @@ functor Stream (structure Comm : COMM
 		 putBytes stream (data,from+avail,size-avail))
 	end;
 
-    fun getBytes (stream as IstFd {buf,iodesc,rd,lastrd}) (data,to,size) =
+    fun getBytes (stream as IstFd {buf,polldesc, iodesc,rd,lastrd}) (data,to,size) =
 	let
 	    val avail = !lastrd - !rd;
 	in

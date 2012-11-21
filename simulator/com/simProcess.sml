@@ -75,12 +75,12 @@ import "byteArray.sig";
 import "majorOpcodes.sig";
 import "simProcess.sig";
 
-functor SimProcess (structure Str : STREAM
+functor SimProcess (
+                structure Extension : EXTENSION
 		    structure Err : GRAMERROR
 		    structure BAExt : BYTEARRAYEXT
-		    structure Opcodes : MAJOROPCODES) : SIMPROCESS = struct
-
-    structure Stream = Str;
+		    structure Opcodes : MAJOROPCODES
+                ) : SIMPROCESS = struct
 
     type ilist = int list
     type blist = bool list
@@ -97,59 +97,24 @@ functor SimProcess (structure Str : STREAM
 			       starttime: string, 
 			       filename: string) => 
 			   (nil:blist,nil: ilist ,nil: slist));
-    val NSMisc = ref gluefun;
-    val NSCompileDecl = ref gluefun;
-    val NSSyntaxCheck = ref gluefun;
-    val NSSimulate = ref gluefun;
-    val NSMonitor = ref gluefun;
-    val NSChart = ref gluefun;
-    val NSWFA = ref gluefun;
-    val NSStateSpace = ref gluefun;
+    val NSMisc = ref gluefun
+    val NSCompileDecl = ref gluefun
+    val NSSyntaxCheck = ref gluefun
+    val NSSimulate = ref gluefun
+    val NSMonitor = ref gluefun
+    val NSChart = ref gluefun
+    val NSWFA = ref gluefun
+    val NSStateSpace = ref gluefun
+    val NSExtension = ref gluefun
 
     val ERRTAG = ~1
     val TERMTAG = 1
     val RESPTAG = 2
 
-    local
-	(* Function used to read simulator requests from GRAM *)
-	fun ReadMessage ins = let 
+    fun add_termtag(blist,ilist,slist) = (blist, TERMTAG::ilist, slist)
 
-	    fun getList (getFn, 0) = nil
-	      | getList (getFn, n) = (getFn ins)::getList(getFn,n-1);
-
-	    val bargs = Str.getInteger ins;
-	    val iargs = Str.getInteger ins;
-	    val sargs = Str.getInteger ins;
-
-	    val blist = getList (Str.getBool, bargs);
-	    val ilist = getList (Str.getInteger, iargs);
-	    val slist = getList (Str.getString, sargs); 
-	in
-	    Err.dumpBISlists("Read:\n",blist,ilist,slist);
-	    (blist,ilist,slist) 
-	end
-
-   	(* Function used to write simulator responses *)
-	fun WriteMessage outs (blist,ilist,slist) = let 
-
-	    fun putList (putFn, xs) =  app (fn x => putFn outs x) xs;
-		    
-	in
-	    Str.putInteger outs (length blist);
-	    Str.putInteger outs (length ilist);
-	    Str.putInteger outs (length slist);
-	    putList (Str.putBool,blist);
-	    putList (Str.putInteger,ilist);
-	    putList (Str.putString,slist); 
-	    Err.dumpBISlists("Wrote:\n",blist,ilist,slist)
-	end
-
-	(* Dispatch function for simulator requests *)
-	fun receiveRequest (ins,outs) = let
-
-	    fun add_termtag(blist,ilist,slist) = (blist, TERMTAG::ilist, slist)
-	in
-	    (case (ReadMessage ins) of
+        fun process message =
+	    (case message of
 		 (_,100::_,timetype::starttime::dumpfile::_) => 
 		     add_termtag(!NSBootstrap(timetype,starttime,dumpfile))
 	       | (blist,200::ilist,slist) => 
@@ -168,6 +133,8 @@ functor SimProcess (structure Str : STREAM
 		     add_termtag(!NSWFA(blist,ilist,slist))
 	       | (blist,800::ilist,slist) => 
 		     add_termtag(!NSStateSpace(blist,ilist,slist))
+	       | (blist,10000::ilist,slist) => 
+		     (!NSExtension(blist,ilist,slist))
 	       | (_, opcode::list, _) => 
 		     raise InternalError("Unknown Opcode: "^Int.toString(opcode))
 	       | _ => raise InternalError("Missing Opcode"))
@@ -187,40 +154,4 @@ functor SimProcess (structure Str : STREAM
 		     in
 			 (Err.debug err; (nil, [ERRTAG], [err]))
 		     end
-	end 
-
-	fun sendResult (ins,outs) lists = 
-	    (Str.putInteger outs Opcodes.simRes;
-	     WriteMessage outs lists;
-	     Str.flush outs)
-
-	val currentStream = ref (NONE: (Str.instream * Str.outstream) option)
-
-    in
-	(* main function for processing a simulator request *)
-	fun process stream =
-	    (currentStream:= SOME stream;
-	     sendResult stream (receiveRequest stream);
-	     currentStream:= NONE)
-
-	(* KHM: WHY THE FOLLOWING COMMENT ??? *)
-	(* OBS: This repsonse function does not work. The invoke function 
-	 * from glue.sml is to be used instead, i.e., the currentStream
-	 * handling can be removed. *)
-
-	fun response (blist,ilist,slist) =
-	    case !currentStream of
-		SOME (stream as (ins,outs)) => 
-		    (sendResult stream (blist, RESPTAG::ilist, slist);
-		     case Str.getInteger ins of
-			 (* remove opcode before getting lists *)
-			 9 => ReadMessage ins 
-		       | _ => raise InternalError "Expected opcode not received in response")
-	      | NONE => 
-		    let
-			val err = "InternalError: No stream available"
-		    in
-			(Err.debug err; (nil, [ERRTAG], [err]))
-		    end
-    end
 end; (* functor SimProcess *)
