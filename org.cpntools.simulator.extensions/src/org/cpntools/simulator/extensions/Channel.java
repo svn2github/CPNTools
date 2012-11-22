@@ -14,4 +14,6 @@ public interface Channel {
 	 * @throws IOException
 	 */
 	Packet send(Packet p) throws IOException;
+
+	<T extends Extension> T getExtension(Class<T> clazz);
 }

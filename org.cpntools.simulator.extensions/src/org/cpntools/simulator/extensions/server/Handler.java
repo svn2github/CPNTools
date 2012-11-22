@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -105,7 +106,7 @@ public class Handler implements Channel {
 
 	private static final int EXTERNAL_COMMAND = 10000;
 
-	public static Map<Integer, Extension> constructExtensionMap(final List<Extension> exns)
+	public static Map<Integer, Extension> constructExtensionMap(final Collection<Extension> exns)
 	        throws ConflictingExtensionsException {
 		final Map<Integer, Extension> extensions = new HashMap<Integer, Extension>();
 		for (final Extension e : exns) {
@@ -116,7 +117,8 @@ public class Handler implements Channel {
 		return extensions;
 	}
 
-	public static Map<Integer, Map<Integer, List<Extension>>> constructSubscriptions(final List<Extension> extensions) {
+	public static Map<Integer, Map<Integer, List<Extension>>> constructSubscriptions(
+	        final Collection<Extension> extensions) {
 		final Map<Integer, Map<Integer, List<Extension>>> subscriptions = new HashMap<Integer, Map<Integer, List<Extension>>>();
 		for (final Extension e : extensions) { // We do this here as we are sure of no conflicts
 			for (final Command c : e.getSubscriptions()) {
@@ -139,6 +141,7 @@ public class Handler implements Channel {
 	final DataInputStream in;
 	final DataOutputStream out;
 	private final Map<Integer, Extension> extensions;
+	private final Map<Class<? extends Extension>, Extension> extensionTypes = new HashMap<Class<? extends Extension>, Extension>();
 	private final Map<Integer, Map<Integer, List<Extension>>> subscriptions;
 	private final Map<Pair<Integer, String>, Option<?>> options;
 
@@ -164,15 +167,31 @@ public class Handler implements Channel {
 		lock = new ReentrantLock();
 		sendLock = new ReentrantLock();
 		packetQueue = new BlockingQueue<Packet>();
-		this.extensions = Handler.constructExtensionMap(extensions);
-		subscriptions = Handler.constructSubscriptions(extensions);
+		constructTypeMap(extensions);
+		this.extensions = Handler.constructExtensionMap(extensionTypes.values());
+		subscriptions = Handler.constructSubscriptions(extensionTypes.values());
 		new FeederThread("Feeder " + name).start();
 
-		doInjection(extensions);
+		doInjection(extensionTypes.values());
 		makeSubscriptions(subscriptions);
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
-		registerExtensions(extensions);
+		registerExtensions(extensionTypes.values());
 		new DispatcherThread("Dispatcher " + name).start();
+	}
+
+	protected List<Extension> instantiate(final List<Extension> extensions) {
+		final List<Extension> result = new ArrayList<Extension>(extensions.size());
+		for (final Extension e : extensions) {
+			result.add(e.start(this));
+		}
+		return result;
+	}
+
+	public void constructTypeMap(final List<Extension> extensions) {
+		for (final Extension e : extensions) {
+			final Extension instance = e.start(this);
+			extensionTypes.put(instance.getClass(), instance);
+		}
 	}
 
 	public Packet handleCommand(final Packet p) {
@@ -373,7 +392,7 @@ public class Handler implements Channel {
 		return result;
 	}
 
-	private Map<Pair<Integer, String>, Option<?>> registerExtensions(final List<Extension> extensions)
+	private Map<Pair<Integer, String>, Option<?>> registerExtensions(final Collection<Extension> extensions)
 	        throws IOException {
 		for (final Extension e : extensions) {
 			send(createOptions(e));
@@ -381,7 +400,7 @@ public class Handler implements Channel {
 		return options;
 	}
 
-	protected void doInjection(final List<Extension> extensions) throws ErrorInjectingException {
+	protected void doInjection(final Collection<Extension> extensions) throws ErrorInjectingException {
 		for (final Extension e : extensions) {
 			final String s = e.inject();
 			if (s != null && !"".equals(s)) {
@@ -461,5 +480,14 @@ public class Handler implements Channel {
 				}
 			}
 		}
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Channel#getExtension(java.lang.Class)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends Extension> T getExtension(final Class<T> clazz) {
+		return (T) extensionTypes.get(clazz);
 	}
 }
