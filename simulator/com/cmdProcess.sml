@@ -105,11 +105,19 @@ functor CmdProcess (structure Str : STREAM
           fun process () =
           let
               val streams = ins::(Extension.getStream ())
+              (*val _ = Err.log ("Waiting on select for " ^ (evtToString
+              * event))*)
               val streams = Str.select streams
               val _ =
                   case (streams)
                     of ((SOME gram)::_) =>
-                         (case (Str.getInteger gram, event)
+                    let
+                        val opcode = Str.getInteger gram
+(*                        val _ = Err.log ("Received on GRAM "
+                                    ^ (Int.toString opcode) ^ 
+                                    " - " ^ (evtToString event))*)
+                    in
+                         case (opcode, event)
                            of (9, _) =>
                            let
                                val msg = read_message ins
@@ -130,17 +138,23 @@ functor CmdProcess (structure Str : STREAM
                             | (5, Any) => raise Finished GfcResult
                             | (6, GfcResult) => raise ReqFail "Call failed in GRAM"
                             | (6, Any) => raise ReqFail "Call failed in GRAM"
-                            | (opcode, evt) => 
+                            | _ => 
                                     Err.log ("ERROR: Received unexpected result with opcode "
                                     ^ (Int.toString opcode) ^ 
-                                    " - " ^ (evtToString evt)))
+                                    " - " ^ (evtToString event))
+                    end
                       | _ => ()
               val _ = 
                   case (streams)
                     of [_, SOME ext] =>
-                    let val (extin, extout) = Extension.getStreams ()
+                    let
+                        val (extin, extout) = Extension.getStreams ()
+                        val opcode = Str.getInteger ext
+(*                        val _ = Err.log ("Received on EXT "
+                                    ^ (Int.toString opcode) ^ 
+                                    " - " ^ (evtToString event))*)
                     in
-                         case (Str.getInteger ext, event)
+                         case (opcode, event)
                            of (9, _) =>
                            let
                                val msg = read_message extin
@@ -161,10 +175,10 @@ functor CmdProcess (structure Str : STREAM
                             | (7, ExtSimResult) =>
                                         raise Finished ExtSimResult
                             | (7, Any) => raise Finished ExtSimResult
-                            | (opcode, evt) =>
+                            | _ =>
                                     Err.log ("ERROR: Received unexpected extension result with opcode "
                                     ^ (Int.toString opcode) ^ 
-                                    " - " ^ (evtToString evt))
+                                    " - " ^ (evtToString event))
                     end
                   | _ => ()
           in
