@@ -39,6 +39,7 @@ public class Handler implements Channel {
 				while (true) {
 					final Packet p = new Packet();
 					p.receive(in);
+// System.out.println("Received " + p);
 					packetQueue.put(p);
 				}
 			} catch (final IOException e) {

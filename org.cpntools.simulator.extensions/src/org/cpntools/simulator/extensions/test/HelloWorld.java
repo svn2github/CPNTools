@@ -53,6 +53,7 @@ public class HelloWorld extends AbstractExtension implements Observer {
 		addOption(Option.create("String", "string", String.class), Option.create("Integer", "integer", Integer.class),
 		        Option.create("Boolean", "boolean", Boolean.class));
 		addSubscription(new Command(200, 9));
+		addObserver(this);
 	}
 
 	@Override
@@ -124,11 +125,21 @@ public class HelloWorld extends AbstractExtension implements Observer {
 	private final Map<Page, DefaultListModel> lists = new HashMap<Page, DefaultListModel>();
 	private final Map<Page, Integer> indexes = new HashMap<Page, Integer>();
 
+	/**
+	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+	 */
 	@Override
 	public void update(final Observable arg0, final Object arg1) {
 		if (arg0 == this) {
 			if (arg1 instanceof Option) {
-				System.out.println("Option changed - " + arg1 + ": " + getOption((Option<?>) arg1));
+				final Option<?> option = (Option<?>) arg1;
+				if ("string".equals(option.getKey())) {
+					stringOption.setText((String) getOption(option));
+				} else if ("integer".equals(option.getKey())) {
+					integerOption.setText("" + getOption(option));
+				} else if ("boolean".equals(option.getKey())) {
+					booleanOption.setSelected((Boolean) getOption(option));
+				}
 			}
 		}
 		if (arg0 instanceof Scraper && arg1 instanceof Scraper.Event) {
