@@ -7,16 +7,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.Extension;
 
-public class Server implements Runnable {
+public class Server implements Runnable, Iterable<Extension> {
 	/**
 	 * 
 	 */
-	public static final int DEFAULT_PORT = 1985;
+	public static final int DEFAULT_PORT = 1998;
 	protected final ServerSocket socket;
 	private final List<Extension> extensions;
 
@@ -71,5 +72,13 @@ public class Server implements Runnable {
 	 */
 	public void stop() throws IOException {
 		socket.close();
+	}
+
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<Extension> iterator() {
+		return extensions.iterator();
 	}
 }

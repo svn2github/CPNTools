@@ -61,9 +61,16 @@ public class Handler implements Channel {
 					Packet p = packetQueue.get();
 					switch (p.getOpcode()) {
 					case 9: // extension
-						p = handleCommand(p);
-						sendLock.lock();
-						p.send(out);
+						try {
+							p = handleCommand(p);
+							sendLock.lock();
+							p.send(out);
+						} catch (final Exception e) {
+							p = new Packet(7, -1);
+							p.addBoolean(false);
+							p.addString(e.toString());
+							p.send(out);
+						}
 						sendLock.unlock();
 						break;
 					case 5: // GFC
@@ -105,7 +112,7 @@ public class Handler implements Channel {
 		}
 	}
 
-	private static final int EXTERNAL_COMMAND = 10000;
+	public static final int EXTERNAL_COMMAND = 10000;
 
 	public static Map<Integer, Extension> constructExtensionMap(final Collection<Extension> exns)
 	        throws ConflictingExtensionsException {
@@ -213,6 +220,7 @@ public class Handler implements Channel {
 		}
 		try {
 			final Packet result = extension.handle(p);
+			if (result == null) { return new Packet(7, 1); }
 			return result;
 		} catch (final Throwable t) {
 			final Packet error = new Packet(7, -1);
@@ -224,7 +232,6 @@ public class Handler implements Channel {
 	public Packet handleForward(final Packet p) {
 		final Packet request = getRequest(p);
 		Packet response = getResponse(p);
-		final Packet originalResponse = response;
 		request.reset();
 		final int command = request.getInteger();
 		final int subcommand = request.getInteger();
@@ -248,7 +255,7 @@ public class Handler implements Channel {
 				}
 			}
 		}
-		if (response == originalResponse) { return null; }
+// if (response == originalResponse) { return null; }
 		return response;
 	}
 
@@ -374,12 +381,21 @@ public class Handler implements Channel {
 	private Packet getResponse(final Packet p) {
 		assert p.getOpcode() == 12;
 		p.reset();
-		p.getInteger();
-		p.getInteger();
-		p.getInteger(); // Ignore request
+		final int ob = p.getInteger();
+		final int oi = p.getInteger();
+		final int os = p.getInteger();
 		final int b = p.getInteger();
 		final int i = p.getInteger();
 		final int s = p.getInteger();
+		for (int j = 0; j < ob; j++) {
+			p.getBoolean();
+		}
+		for (int j = 0; j < oi; j++) {
+			p.getInteger();
+		}
+		for (int j = 0; j < os; j++) {
+			p.getString();
+		}
 		final Packet result = new Packet(7, p.getInteger());
 		for (int c = 0; c < b; c++) {
 			result.addBoolean(p.getBoolean());

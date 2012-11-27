@@ -147,4 +147,9 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		channel = c;
 	}
 
+	@Override
+	public String toString() {
+		return getName();
+	}
+
 }
