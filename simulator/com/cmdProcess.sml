@@ -105,8 +105,8 @@ functor CmdProcess (structure Str : STREAM
           fun process () =
           let
               val streams = ins::(Extension.getStream ())
-              (*val _ = Err.log ("Waiting on select for " ^ (evtToString
-              * event))*)
+(*              val _ = Err.log ("Waiting on select for " ^ (evtToString
+event))*)
               val streams = Str.select streams
               val _ =
                   case (streams)

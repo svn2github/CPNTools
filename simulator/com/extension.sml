@@ -124,13 +124,29 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
           | attempt n =
           let
               val sock = INetSock.TCP.socket (): socket
-              val _ = Socket.Ctl.setKEEPALIVE (sock, true) handle _ => ()
-              val _ = Socket.Ctl.setLINGER (sock, NONE) handle _ => ()
-              val _ = Socket.Ctl.setSNDBUF (sock, 0) handle _ => ()
+              fun setup sock = 
+              let
+                  val _ = Socket.Ctl.setKEEPALIVE (sock, true) handle _ =>
+                  ()(*Err.log "Failed setting KEEPALIVE")*)
+                  val _ = Socket.Ctl.setDEBUG (sock, true) handle _ =>
+                  ()(*Err.log "Failed setting DEBUG")*)
+(*                  val _ = Socket.Ctl.setLINGER (sock, NONE) handle _ => 
+                  (Err.log "Failed setting LINGER")
+                  val _ = Socket.Ctl.setSNDBUF (sock, 0) handle _ =>
+                  (Err.log "Failed setting SNDBUF")
+                  val _ = Socket.Ctl.setRCVBUF (sock, 0) handle _ =>
+                  (Err.log "Failed setting RCVBUF")*)
+                  val _ = INetSock.TCP.setNODELAY(sock, true) handle _ =>
+                  ()(*Err.log "Failed setting NODELAY")*)
+              in
+                  ()
+              end
           in
              if (!socket = NONE)
              then 
-                 ((Socket.connect (sock, INetSock.toAddr (!host, !port));
+                 (
+                  (Socket.connect (sock, INetSock.toAddr (!host, !port));
+                  setup sock;
                   handshake sock;
                   socket := (SOME sock))
                   handle exn => (Socket.close sock; raise exn))
