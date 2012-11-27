@@ -72,7 +72,7 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
         open BIS
 
         val host = ref (NetHostDB.addr (Option.valOf (NetHostDB.getByName "127.0.0.1")))
-        val port = ref 1985
+        val port = ref 1998
         val unreachable = ref false
         val socket = ref (NONE : socket option)
         val input = ref (NONE : Stream.instream option)
