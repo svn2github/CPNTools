@@ -125,7 +125,7 @@ functor CmdProcess (structure Str : STREAM
                                val result' = Extension.watched waitAndRead
                                (stream, ExtSimResult) (msg, result)
                            in
-                               send_result Ops.simRes outs result
+                               send_result Ops.simRes outs result'
                            end
                             | (1, _) => evalProcess ins
                             | (2, Result) => raise Finished Result
