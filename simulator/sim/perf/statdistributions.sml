@@ -225,6 +225,15 @@ struct
                else 0.0)*Math.ln(uniform(0.0,1.0))-Math.ln(r))/l) handle Beta =>
                raise Gamma
     val beta = beta_01
+
+    exception Weibull
+    fun weibull (lambda, k) =
+    let
+        val _ = if lambda <= 0.0 then raise Weibull else ()
+        val _ = if k <= 0.0 then raise Weibull else ()
+    in
+        Math.exp((Math.ln (exponential(1.0)))/k + Math.ln lambda)
+    end
 end;
 
 open ProbLibDist;
