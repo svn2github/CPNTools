@@ -77,7 +77,7 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
         val socket = ref (NONE : socket option)
         val input = ref (NONE : Stream.instream option)
         val output = ref (NONE : Stream.outstream option)
-        val subscriptions = ref ([] : (int * int list ref) list)
+        val subscriptions = ref ([] : (int * (int * bool) list ref) list)
 
         fun disconnect () =
         let
@@ -203,30 +203,32 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
         fun getSubscription cmd =
             List.find (fn (c, v) => c = cmd) (!subscriptions)
 
-        fun addSubscription cmd subcmd =
+        fun addSubscription cmd subcmd prefilter =
             case (getSubscription cmd)
                of NONE =>
                    if subcmd < 0
                    then subscriptions := (cmd, ref [])::(!subscriptions)
-                   else subscriptions := (cmd, ref [subcmd])::(!subscriptions)
+                   else subscriptions := (cmd, ref [(subcmd, prefilter)])::(!subscriptions)
                | SOME (_, v) =>
                        if !v = []
                        then ()
                        else if subcmd < 0
                             then v := []
-                            else if (List.exists (fn c => c = subcmd) (!v))
-                                 then ()
-                                 else v := subcmd::(!v)
+                            else (if (List.exists (fn c => c = (subcmd, prefilter)) (!v))
+                                  then ()
+                                  else (if (List.exists (fn c => c = (subcmd, true)) (!v))
+                                        then ()
+                                        else v := (subcmd, prefilter)::(!v)))
 
         fun testSubscriptions () = !subscriptions
 
-        fun addSubscriptions [] = ()
-          | addSubscriptions (cmd::subcmd::rest) =
-            (addSubscription cmd subcmd; addSubscriptions rest)
+        fun addSubscriptions [] [] = ()
+          | addSubscriptions (cmd::subcmd::rest) (prefilter::pfrest) =
+            (addSubscription cmd subcmd prefilter; addSubscriptions rest pfrest)
 
         fun dispatchLocally (b, 2::count::i, s) =
             if List.length i = 2 * count
-            then (addSubscriptions i; ([], [1], []))
+            then (addSubscriptions i b; ([], [1], []))
             else ([], [~1], [])
           | dispatchLocally _ = ([], [~1], ["Unknown command"])
 
@@ -250,30 +252,57 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
                 end
         end handle (Local bis) => bis
 
-        fun forward' received param (b, i, s) (b', i', s') =
+        fun forward' received param (b, i, s) (b', i', s') serial =
             forward received param 12
             (List.@ (b, b'),
              (List.length b)::(List.length i)::(List.length s)::
-             (List.length b')::(List.length i')::(List.length s')::
+             (List.length b')::(List.length i')::(List.length s')::serial::
              (List.@ (i, i')),
              List.@ (s, s'))
 
-        fun watched received param ((b, [], s), response) = response
-          | watched received param ((b, [cmd], s), response) =
+        fun forward'' received param (b, i, s) serial =
+            forward received param 12
+            (b,
+             (List.length b)::(List.length i)::(List.length s)::
+             (~1)::(~1)::(~1)::serial::i, s)
+
+        fun prefilter received param (b, [], s) serial = (b, [], s)
+          | prefilter received param (b, [cmd], s) serial = 
+          (case (getSubscription cmd)
+            of NONE => (b, [cmd], s)
+             | SOME (_, v) => 
+                     if (!v) = []
+                     then forward'' received param (b, [cmd], s) serial
+                     else (b, [cmd], s))
+          | prefilter received param (b, cmd::subcmd::i, s) serial =
+            (case (getSubscription cmd)
+            of NONE => (b, cmd::subcmd::i, s)
+             | SOME (_, v) => 
+                     if (!v) = []
+                     then forward'' received param (b, cmd::subcmd::i, s) serial
+                     else if (List.exists (fn (c, pref) => c = subcmd andalso pref) (!v))
+                          then forward'' received param (b, cmd::subcmd::i, s)
+                          serial
+                          else (b, cmd::subcmd::i, s))
+
+        fun watched received param ((b, [], s), response) serial = response
+          | watched received param ((b, [cmd], s), response) serial =
           (case (getSubscription cmd)
             of NONE => response
              | SOME (_, v) => 
                      if (!v) = []
-                     then forward' received param (b, [cmd], s) response
+                     then forward' received param (b, [cmd], s) response serial
                      else response)
-          | watched received param ((b, cmd::subcmd::i, s), response) =
+          | watched received param ((b, cmd::subcmd::i, s), response) serial =
             (case (getSubscription cmd)
             of NONE => response
              | SOME (_, v) => 
                      if (!v) = []
-                     then forward' received param (b, cmd::subcmd::i, s) response
-                     else if (List.exists (fn c => c = subcmd) (!v))
-                          then forward' received param (b, cmd::subcmd::i, s) response
+                     then forward' received param (b, cmd::subcmd::i, s)
+                     response serial
+                     else if (List.exists (fn (c, _) => c = subcmd) (!v))
+                          then forward' received param (b, cmd::subcmd::i, s)
+                          response serial
                           else response)
     end
 end

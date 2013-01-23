@@ -72,9 +72,9 @@ import "error.sig";
 
 functor GramError () : GRAMERROR = struct
 
-    val debugState = ref false;
-    val debugfilename = ref (NONE : (string option));
-    val logstream = ref TextIO.stdErr;
+    val debugState = ref true
+    val debugfilename = ref (NONE : (string option))
+    val logstream = ref TextIO.stdErr
 
     fun log s = (TextIO.output (!logstream, s^"\n");
 		 TextIO.flushOut (!logstream))

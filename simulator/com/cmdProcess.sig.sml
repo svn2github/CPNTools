@@ -88,7 +88,7 @@ signature CMDPROCESS = sig
 
     type gramAppl;
     datatype connMode = Master of string | Slave
-    datatype eventType = Result | GfcResult | CBResult | ExtSimResult | Any | None;
+    datatype eventType = Result | GfcResult | CBResult | ExtSimResult | ExtSimRequest | Any | None;
 
     exception cmdProcessFail of string
     exception ReqFail of string

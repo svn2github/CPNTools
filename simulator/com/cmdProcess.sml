@@ -43,7 +43,7 @@ functor CmdProcess (structure Str : STREAM
     
     val rcsid = "$Header: /users/cpntools/repository/cpn2000/sml/com/cmdProcess.sml,v 1.4.2.2 2006/06/29 06:57:20 mw Exp $";
 
-    val version = ref "Portions Copyright (c) 2010-2012 AIS Group, Eindhoven University of Technology\n";
+    val version = ref "Portions Copyright (c) 2010-2013 AIS Group, Eindhoven University of Technology\n";
 
     fun get id =
         case (List.find (fn (name, _) => name = id) (Posix.ProcEnv.uname ()))
@@ -55,7 +55,8 @@ functor CmdProcess (structure Str : STREAM
                       Date.toString (Date.fromTimeLocal (Time.now())), " by ", 
                       (Posix.ProcEnv.getlogin () handle _ => "<unknown>"), " on ", get "nodename", "]"])
 
-    structure Str = Str;
+    structure Str = Str
+    val serial = ref 0
 
     val std_out = TextIO.stdOut;
     val output = TextIO.output;
@@ -66,7 +67,8 @@ functor CmdProcess (structure Str : STREAM
 		     outs:Str.outstream,
 		     ins:Str.instream};
     datatype connMode = Master of string | Slave;
-    datatype eventType = Result | GfcResult | CBResult | ExtSimResult | Any | None;
+    datatype eventType = Result | GfcResult | CBResult | ExtSimResult |
+    ExtSimRequest | Any | None;
 
     exception cmdProcessFail of string;
     exception ReqFail of string;	
@@ -99,6 +101,7 @@ functor CmdProcess (structure Str : STREAM
             | evtToString GfcResult = "GfcResult"
             | evtToString CBResult = "CBResult"
             | evtToString ExtSimResult = "ExtSimResult"
+            | evtToString ExtSimRequest = "ExtSimRequest"
             | evtToString Any = "Any"
             | evtToString None = "None"
           exception Finished of eventType
@@ -121,9 +124,13 @@ event))*)
                            of (9, _) =>
                            let
                                val msg = read_message ins
-                               val result = Sim.process msg
+                               val s = !serial
+                               val _ = serial := (s + 1)
+                               val msg' = Extension.prefilter waitAndRead
+                               (stream, ExtSimRequest) msg s
+                               val result = Sim.process msg'
                                val result' = Extension.watched waitAndRead
-                               (stream, ExtSimResult) (msg, result)
+                               (stream, ExtSimResult) (msg', result) s
                            in
                                send_result Ops.simRes outs result'
                            end
@@ -155,7 +162,10 @@ event))*)
                                     " - " ^ (evtToString event))*)
                     in
                          case (opcode, event)
-                           of (9, _) =>
+                           of 
+                              (13, ExtSimRequest) => raise Finished
+                              ExtSimRequest
+                            | (9, _) =>
                            let
                                val msg = read_message extin
                                val result = Sim.process msg

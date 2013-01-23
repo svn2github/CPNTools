@@ -1,4 +1,4 @@
-(************************************************************************)
+
 (* CPN Tools Simulator (Simulator/CPN)                                  *)
 (* Copyright 2012 AIS Group, Eindhoven University of Technology         *)
 (* All rights reserved.                                                 *)
@@ -69,10 +69,11 @@ signature EXTENSION = sig
 
     val configure : string * int -> unit
     val forward : ('a -> Stream.instream -> BIS) -> 'a -> int -> BIS -> BIS
-    val watched : ('a -> Stream.instream -> BIS) -> 'a -> BIS * BIS -> BIS
+    val prefilter : ('a -> Stream.instream -> BIS) -> 'a -> BIS -> int -> BIS
+    val watched : ('a -> Stream.instream -> BIS) -> 'a -> BIS * BIS -> int -> BIS
     val getStream : unit -> Stream.instream list
     val getStreams : unit -> Stream.instream * Stream.outstream
 
     (* testing purposes *)
-    val testSubscriptions : unit -> (int * int list ref) list
+    val testSubscriptions : unit -> (int * (int * bool) list ref) list
 end
