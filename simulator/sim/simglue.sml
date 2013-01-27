@@ -568,6 +568,17 @@ in
 	in
 	    (raise Match; (id, Decl.intinf_cs (low,high), param)::wrap(blist,ilist,slist))
 	end
+	  | wrap (blist, 27::ilist, id::range::slist) = let 
+	    (* 27  => int range color-set declaration 
+	     * bool list is   [timed,blist]
+	     * int list is    [27,nv,nms,na,nd,ilist]
+	     * string list is [id,range,name,
+	     *                 var...,msvar...,alias...,declare...,slist]
+	     *)
+	    val (blist,ilist,slist,param) = pick_param (blist,ilist,slist)
+	in
+	    (id, Decl.intrange_cs range, param)::wrap(blist,ilist,slist)
+	end
 	  | wrap _ = 
 	    (CPN'debug "Match error in create_decl wrap"; raise Match);
 

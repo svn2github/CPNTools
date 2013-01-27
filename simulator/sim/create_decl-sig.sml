@@ -70,6 +70,7 @@ signature CPN'DECL = sig
 	unit_cs       of string 
       | bool_cs       of (string * string)
       | int_cs        of (string * string)
+      | intrange_cs   of string
       | intinf_cs     of (string * string)
       | real_cs       of (string * string)
       | char_cs       of (string * string)

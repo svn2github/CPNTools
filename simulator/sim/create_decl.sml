@@ -78,6 +78,7 @@ functor CPN'CreateDecl(structure CS: CPN'COLORSETS): CPN'DECL = struct
 	unit_cs       of string
       | bool_cs       of (string * string)
       | int_cs        of (string * string)
+      | intrange_cs   of string
       | intinf_cs     of (string * string)
       | real_cs       of (string * string)
       | char_cs       of (string * string)
@@ -302,6 +303,19 @@ fun create_int (id, ("",""), {name,timed,var,msvar,alias,declare}) =
 		      \ type ",name," = ",name,".cs;"],[])
 	      handle ErrorLowHigh => (id,error_low_high "int",([],[])))
        | (low_err, high_err) => (id,make_error[low_err,high_err],([],[])))
+
+(******************** int color-set declaration ********************)
+
+fun create_intrange (id, range, {name,timed,var,msvar,alias,declare}) =
+    (case (CPN'Env.is_decl ("val [_, _] = "^range^" : int list"))
+       of NONE => 
+	     (each_cs(name, CPN'CSTable.intrange_cs range,
+		      id,timed,var,msvar,alias,declare,
+		     ["\n structure ",name," = CPN'ColorSets.IntRangeCS\
+		      \ (val CPN'range= ",range,");\n\
+		      \ type ",name," = ",name,".cs;"],[])
+	      handle ErrorLowHigh => (id,error_low_high "int",([],[])))
+       | range_err => (id,make_error[range_err],([],[])))
 
 
 (************************ channel declaration ************************)
@@ -1378,6 +1392,7 @@ fun create_global decls = let
       | create(id, unit_cs arg, SOME par) = create_unit(id,arg,par)
       | create(id, bool_cs arg, SOME par) = create_bool(id,arg,par)
       | create(id, int_cs arg, SOME par) = create_int(id,arg,par)
+      | create(id, intrange_cs arg, SOME par) = create_intrange(id,arg,par)
       | create(id, intinf_cs arg, SOME par) = create_intinf(id,arg,par)
       | create(id, real_cs arg, SOME par) = create_real(id,arg,par)
       | create(id, string_cs arg, SOME par) = create_string(id,arg,par)

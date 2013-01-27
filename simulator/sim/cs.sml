@@ -339,6 +339,12 @@ functor IntWithCS (val CPN'low: int and CPN'high: int): COLORSET = struct
     fun ran ()  = col (CPN'Random.int (size()))
 end
 
+functor IntRangeCS(val CPN'range : int list): COLORSET = struct
+    val [low, high] = CPN'range
+    structure I = IntWithCS(val CPN'low = low val CPN'high = high);
+    open I
+    fun size() = 1
+end
 
 structure IntInfCS: COLORSET = struct
 

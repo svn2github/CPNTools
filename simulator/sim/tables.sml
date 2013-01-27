@@ -104,6 +104,7 @@ structure CPN'CSTable = struct
 	unit_cs       of string option
       | bool_cs       of (string * string) option
       | int_cs        of (string * string) option
+      | intrange_cs   of string
       | intinf_cs     of (string * string) option
       | real_cs       of (string * string) option
       | char_cs       of (string * string) option
@@ -213,6 +214,8 @@ structure CPN'CSTable = struct
 		"int"::tail
 	      | convert_cs (int_cs(SOME(low,high)), tail) =
 		"int with "::low::".."::high::tail
+	      | convert_cs (intrange_cs(range), tail) =
+		"intrange with "::range::tail
 	      | convert_cs (intinf_cs NONE, tail) =
 		"intinf"::tail
 	      | convert_cs (intinf_cs(SOME(low,high)), tail) =

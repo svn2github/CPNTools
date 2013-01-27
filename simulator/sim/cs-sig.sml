@@ -97,6 +97,7 @@ signature CPN'COLORSETS = sig
     functor BoolCS (val CPN'arg: (string * string) option) : COLORSET
     structure IntCS : COLORSET
     functor IntWithCS (val CPN'low: int and CPN'high: int): COLORSET
+    functor IntRangeCS (val CPN'range: int list): COLORSET
     structure IntInfCS : COLORSET
     functor IntInfWithCS (val CPN'low: IntInf.int and CPN'high: IntInf.int): COLORSET
     structure RealCS : COLORSET
