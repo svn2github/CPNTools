@@ -1,4 +1,4 @@
-package org.cpntools.simulator.extensions.server;
+package org.cpntools.simulator.extensions.test;
 
 import java.io.IOException;
 
@@ -6,8 +6,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import org.cpntools.simulator.extensions.Extension;
 import org.cpntools.simulator.extensions.scraper.Scraper;
+import org.cpntools.simulator.extensions.server.Server;
 import org.cpntools.simulator.extensions.server.ui.MainFrame;
-import org.cpntools.simulator.extensions.test.HelloWorld;
 
 public class TestServer {
 
@@ -23,7 +23,7 @@ public class TestServer {
 	public static void main(final String[] args) throws InterruptedException, IOException, ClassNotFoundException,
 	        InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
 		final MainFrame main = new MainFrame();
-		final Server server = new Server(Server.DEFAULT_PORT, Scraper.INSTANCE, new HelloWorld());
+		final Server server = new Server(Server.DEFAULT_PORT, Scraper.INSTANCE);
 		final Thread t = new Thread(server, "Main server on port " + Server.DEFAULT_PORT);
 		for (final Extension e : server) {
 			main.addExtension(e);

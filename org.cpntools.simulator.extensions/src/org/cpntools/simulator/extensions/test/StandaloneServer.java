@@ -1,6 +1,8 @@
-package org.cpntools.simulator.extensions.server;
+package org.cpntools.simulator.extensions.test;
 
 import java.io.IOException;
+
+import org.cpntools.simulator.extensions.server.Server;
 
 public class StandaloneServer {
 

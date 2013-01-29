@@ -7,12 +7,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.Extension;
 
+/**
+ * @author michael
+ */
 public class Server implements Runnable, Iterable<Extension> {
 	/**
 	 * 
@@ -21,6 +25,11 @@ public class Server implements Runnable, Iterable<Extension> {
 	protected final ServerSocket socket;
 	private final List<Extension> extensions;
 
+	/**
+	 * @param port
+	 * @param extensions
+	 * @throws IOException
+	 */
 	public Server(final int port, final Extension... extensions) throws IOException {
 		this.extensions = new ArrayList<Extension>(extensions.length);
 		for (final Extension e : extensions) {
@@ -33,8 +42,8 @@ public class Server implements Runnable, Iterable<Extension> {
 	 * @param port
 	 * @throws IOException
 	 */
-	public Server(final int port, final List<Extension> extensions) throws IOException {
-		this.extensions = extensions;
+	public Server(final int port, final Collection<Extension> extensions) throws IOException {
+		this.extensions = new ArrayList<Extension>(extensions);
 		socket = new ServerSocket(port);
 	}
 

@@ -35,7 +35,7 @@ import org.cpntools.simulator.extensions.scraper.Transition;
 /**
  * @author michael
  */
-public class HelloWorld extends AbstractExtension implements Observer {
+public abstract class HelloWorld extends AbstractExtension implements Observer {
 	/**
 	 * 
 	 */
