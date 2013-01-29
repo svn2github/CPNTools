@@ -7,9 +7,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * @author michael
+ */
 public class Page extends HasName {
 	private final Map<String, Transition> transitions = new HashMap<String, Transition>();
 
+	/**
+	 * @param id
+	 * @param name
+	 */
 	public Page(final String id, final String name) {
 		super(id, name);
 	}

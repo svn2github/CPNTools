@@ -1,5 +1,8 @@
 package org.cpntools.simulator.extensions.scraper;
 
+/**
+ * @author michael
+ */
 public class Arc extends Element {
 	public enum Type {
 		INPUT, OUTPUT, BOTHDIR, INHIBITOR, RESET
@@ -9,6 +12,14 @@ public class Arc extends Element {
 	private final Place p;
 	private final Type type;
 
+	/**
+	 * @param id
+	 * @param inscription
+	 * @param type
+	 * @param page
+	 * @param t
+	 * @param p
+	 */
 	public Arc(final String id, final String inscription, final Type type, final Page page, final Transition t,
 	        final Place p) {
 		super(id);
@@ -41,11 +52,11 @@ public class Arc extends Element {
 	}
 
 	public Transition getTransition() {
-	    return t;
-    }
+		return t;
+	}
 
 	public Place getPlace() {
-	    return p;
-    }
+		return p;
+	}
 
 }

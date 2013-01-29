@@ -56,6 +56,17 @@ public class Transition extends Node {
 	private String channel;
 	private boolean controllable;
 
+	/**
+	 * @param id
+	 * @param name
+	 * @param page
+	 * @param guard
+	 * @param priority
+	 * @param time
+	 * @param code
+	 * @param channel
+	 * @param controllable
+	 */
 	public Transition(final String id, final String name, final Page page, final String guard, final String priority,
 	        final String time, final String code, final String channel, final boolean controllable) {
 		super(id, name, page);

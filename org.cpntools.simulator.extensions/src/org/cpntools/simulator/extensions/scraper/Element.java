@@ -1,5 +1,8 @@
 package org.cpntools.simulator.extensions.scraper;
 
+/**
+ * @author michael
+ */
 public abstract class Element {
 	private String id;
 

@@ -1,10 +1,9 @@
-package org.cpntools.simulator.extensions.export;
+package org.cpntools.simulator.extensions.export.test;
 
 import java.io.IOException;
 
 import org.cpntools.simulator.extensions.Extension;
-import org.cpntools.simulator.extensions.declare.DeclareExtension;
-import org.cpntools.simulator.extensions.ranges.RangeExtension;
+import org.cpntools.simulator.extensions.export.ExportExtension;
 import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.server.Server;
 import org.cpntools.simulator.extensions.server.ui.MainFrame;
@@ -21,8 +20,7 @@ public class ExportTestServer {
 	 */
 	public static void main(final String[] args) throws InterruptedException, IOException {
 		final MainFrame main = new MainFrame();
-		final Server server = new Server(Server.DEFAULT_PORT, Scraper.INSTANCE, new RangeExtension(),
-		        new DeclareExtension(), new ExportExtension());
+		final Server server = new Server(Server.DEFAULT_PORT, Scraper.INSTANCE, new ExportExtension());
 		final Thread t = new Thread(server, "Main server on port " + Server.DEFAULT_PORT);
 		for (final Extension e : server) {
 			main.addExtension(e);

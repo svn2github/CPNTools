@@ -12,6 +12,11 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 
 	private final Page page;
 
+	/**
+	 * @param id
+	 * @param name
+	 * @param page
+	 */
 	public Node(final String id, final String name, final Page page) {
 		super(id, name);
 		this.page = page;
