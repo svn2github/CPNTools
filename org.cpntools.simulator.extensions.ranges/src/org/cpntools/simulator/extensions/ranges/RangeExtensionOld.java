@@ -25,7 +25,7 @@ import dk.klafbang.tools.Pair;
  * @author michael
  * @param <T>
  */
-public class RangeExtensionOld extends AbstractExtension {
+public abstract class RangeExtensionOld extends AbstractExtension {
 	public static final int ID = 10005;
 
 	public RangeExtensionOld() {
