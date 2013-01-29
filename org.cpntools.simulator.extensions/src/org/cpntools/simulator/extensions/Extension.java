@@ -93,4 +93,6 @@ public interface Extension {
 	 */
 	Extension start(Channel c);
 
+	Packet prefilter(Packet request);
+
 }

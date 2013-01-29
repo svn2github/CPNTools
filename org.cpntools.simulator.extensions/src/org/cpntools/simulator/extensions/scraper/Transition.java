@@ -5,6 +5,50 @@ package org.cpntools.simulator.extensions.scraper;
  */
 public class Transition extends Node {
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + (channel == null ? 0 : channel.hashCode());
+		result = prime * result + (code == null ? 0 : code.hashCode());
+		result = prime * result + (controllable ? 1231 : 1237);
+		result = prime * result + (guard == null ? 0 : guard.hashCode());
+		result = prime * result + (priority == null ? 0 : priority.hashCode());
+		result = prime * result + (time == null ? 0 : time.hashCode());
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) { return true; }
+		if (!super.equals(obj)) { return false; }
+		if (!(obj instanceof Transition)) { return false; }
+		final Transition other = (Transition) obj;
+		if (channel == null) {
+			if (other.channel != null) { return false; }
+		} else if (!channel.equals(other.channel)) { return false; }
+		if (code == null) {
+			if (other.code != null) { return false; }
+		} else if (!code.equals(other.code)) { return false; }
+		if (controllable != other.controllable) { return false; }
+		if (guard == null) {
+			if (other.guard != null) { return false; }
+		} else if (!guard.equals(other.guard)) { return false; }
+		if (priority == null) {
+			if (other.priority != null) { return false; }
+		} else if (!priority.equals(other.priority)) { return false; }
+		if (time == null) {
+			if (other.time != null) { return false; }
+		} else if (!time.equals(other.time)) { return false; }
+		return true;
+	}
+
 	private String guard;
 	private String priority;
 	private String time;
@@ -83,4 +127,11 @@ public class Transition extends Node {
 		return true;
 	}
 
+	/**
+	 * @see java.lang.Object#clone()
+	 */
+	@Override
+	public Transition clone() {
+		return (Transition) super.clone();
+	}
 }

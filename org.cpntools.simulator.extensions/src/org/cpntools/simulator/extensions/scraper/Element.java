@@ -1,7 +1,7 @@
 package org.cpntools.simulator.extensions.scraper;
 
 public abstract class Element {
-	private final String id;
+	private String id;
 
 	/**
 	 * @see java.lang.Object#hashCode()
@@ -10,7 +10,7 @@ public abstract class Element {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (id == null ? 0 : id.hashCode());
+		result = prime * result + (getId() == null ? 0 : getId().hashCode());
 		return result;
 	}
 
@@ -23,17 +23,24 @@ public abstract class Element {
 		if (obj == null) { return false; }
 		if (!(obj instanceof Element)) { return false; }
 		final Element other = (Element) obj;
-		if (id == null) {
-			if (other.id != null) { return false; }
-		} else if (!id.equals(other.id)) { return false; }
+		if (getId() == null) {
+			if (other.getId() != null) { return false; }
+		} else if (!getId().equals(other.getId())) { return false; }
 		return true;
 	}
 
 	public Element(final String id) {
-		this.id = id;
+		setId(id);
 	}
 
 	public String getId() {
 		return id;
+	}
+
+	/**
+	 * @param id
+	 */
+	public void setId(final String id) {
+		this.id = id;
 	}
 }

@@ -20,10 +20,11 @@ import org.cpntools.simulator.extensions.server.Handler;
  */
 public class DeclareExtension extends AbstractExtension {
 	public static final int ID = 10001;
-	private final Option<Boolean> ON_THE_FLY = Option.create("On-the-fly", "on_the_fly", Boolean.class);
+	private final Option<Boolean> SMART = Option.create("Smart simulation", "smart", Boolean.class);
+	private final Option<Boolean> DATA_AWARE = Option.create("Data-aware simulation", "data_aware", Boolean.class);
 
 	public DeclareExtension() {
-		addOption(ON_THE_FLY);
+		addOption(DATA_AWARE, SMART);
 		addSubscription(new Command(400, 2), // Syntax check page
 		        new Command(500, 3), // Generate instances
 		        new Command(500, 4), // Update instances
@@ -193,8 +194,9 @@ public class DeclareExtension extends AbstractExtension {
 	}
 
 	private Packet enabled(final Packet p, final Packet response) {
+		response.reset();
 		p.reset();
-		if (p.getBoolean()) {
+		if (response.getBoolean()) {
 			final Packet result = new Packet(7, 1);
 			result.addBoolean(enabled(p.getString(), p.getInteger()));
 			return result;

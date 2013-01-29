@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +107,7 @@ public class Handler implements Channel {
 						// Ignore, this should never happen...
 					}
 				} catch (final IOException ioe) {
+					ioe.printStackTrace();
 					return;
 				}
 			}
@@ -146,11 +148,30 @@ public class Handler implements Channel {
 		return subscriptions;
 	}
 
+	public static Map<Integer, Map<Integer, Boolean>> constructPrefilters(final Collection<Extension> extensions) {
+		final Map<Integer, Map<Integer, Boolean>> prefilters = new HashMap<Integer, Map<Integer, Boolean>>();
+		for (final Extension e : extensions) { // We do this here as we are sure of no conflicts
+			for (final Command c : e.getSubscriptions()) {
+				Map<Integer, Boolean> prefilter = prefilters.get(c.getCommand());
+				if (prefilter == null) {
+					prefilter = new HashMap<Integer, Boolean>();
+					prefilters.put(c.getCommand(), prefilter);
+				}
+				if (c.isPrefilter()) {
+					prefilter.put(c.getSubcommand(), true);
+					prefilter.put(Command.ANY, true);
+				}
+			}
+		}
+		return prefilters;
+	}
+
 	final DataInputStream in;
 	final DataOutputStream out;
 	private final Map<Integer, Extension> extensions;
 	private final Map<Class<? extends Extension>, Extension> extensionTypes = new HashMap<Class<? extends Extension>, Extension>();
 	private final Map<Integer, Map<Integer, List<Extension>>> subscriptions;
+	private final Map<Integer, Map<Integer, Boolean>> prefilters;
 	private final Map<Pair<Integer, String>, Option<?>> options;
 
 	final Lock sendLock;
@@ -178,10 +199,11 @@ public class Handler implements Channel {
 		constructTypeMap(extensions);
 		this.extensions = Handler.constructExtensionMap(extensionTypes.values());
 		subscriptions = Handler.constructSubscriptions(extensionTypes.values());
+		prefilters = Handler.constructPrefilters(extensionTypes.values());
 		new FeederThread("Feeder " + name).start();
 
 		doInjection(extensionTypes.values());
-		makeSubscriptions(subscriptions);
+		makeSubscriptions(subscriptions, prefilters);
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
 		registerExtensions(extensionTypes.values());
 		new DispatcherThread("Dispatcher " + name).start();
@@ -229,32 +251,57 @@ public class Handler implements Channel {
 		}
 	}
 
+	private final Map<Integer, Map<Integer, Packet>> prefilterPackages = new HashMap<Integer, Map<Integer, Packet>>();
+
 	public Packet handleForward(final Packet p) {
-		final Packet request = getRequest(p);
+		final int serial = getSerial(p);
+		Packet request = getRequest(p);
 		Packet response = getResponse(p);
 		request.reset();
 		final int command = request.getInteger();
 		final int subcommand = request.getInteger();
 		final Map<Integer, List<Extension>> subscribers = subscriptions.get(command);
-		if (subscribers == null) { return response; }
+		if (subscribers == null) {
+			if (response == null) {
+				request.setOpcode(13);
+				return request;
+			}
+			return response;
+		}
+		final List<Extension> subs = new ArrayList<Extension>();
 		final List<Extension> allSubscribers = subscribers.get(Command.ANY);
 		if (allSubscribers != null) {
-			for (final Extension e : allSubscribers) {
-				final Packet newResponse = e.handle(request, response);
-				if (newResponse != null) {
-					response = newResponse;
-				}
-			}
+			subs.addAll(allSubscribers);
 		}
 		final List<Extension> subcommandSubscribers = subscribers.get(subcommand);
 		if (subcommandSubscribers != null) {
-			for (final Extension e : subcommandSubscribers) {
-				final Packet newResponse = e.handle(request, response);
+			subs.addAll(subcommandSubscribers);
+		}
+		if (response == null) {
+			final Map<Integer, Packet> prefilterPackage = new HashMap<Integer, Packet>();
+			prefilterPackages.put(serial, prefilterPackage);
+			for (final Extension e : subs) {
+				final Packet newRequest = e.prefilter(request);
+				if (newRequest != null) {
+					request = newRequest;
+				}
+				prefilterPackage.put(e.getIdentifier(), request);
+			}
+		} else {
+			Collections.reverse(subs);
+			final Map<Integer, Packet> prefilterPackage = prefilterPackages.remove(serial);
+			for (final Extension e : subs) {
+				final Packet newResponse = e.handle(
+				        prefilterPackage == null ? request : prefilterPackage.get(e.getIdentifier()), response);
 				if (newResponse != null) {
 					response = newResponse;
 				}
 			}
 		}
+		if (response == null) {
+			request.setOpcode(13);
+			return request;
+		} // Prefilter
 // if (response == originalResponse) { return null; }
 		return response;
 	}
@@ -270,6 +317,10 @@ public class Handler implements Channel {
 
 	public void release() {
 		lock.unlock();
+	}
+
+	public String evaluate(final String expresion) {
+		return "val a = 3 : int\nval b = 5 : int\n";
 	}
 
 	/**
@@ -347,13 +398,30 @@ public class Handler implements Channel {
 		return p;
 	}
 
-	private Packet createSubscriptionMessage(final int command, final int subcommand) {
+	private Packet createSubscriptionMessage(final int command, final int subcommand, final Boolean prefilter) {
 		final Packet p = new Packet(Handler.EXTERNAL_COMMAND);
 		p.addInteger(2); // Command = subscribe
 		p.addInteger(1); // # subscriptions
 		p.addInteger(command);
 		p.addInteger(subcommand);
+		if (prefilter != null && prefilter.booleanValue()) {
+			p.addBoolean(true);
+		} else {
+			p.addBoolean(false);
+		}
 		return p;
+	}
+
+	private int getSerial(final Packet p) {
+		assert p.getOpcode() == 12;
+		p.reset();
+		p.getInteger();
+		p.getInteger();
+		p.getInteger(); // Ignore request
+		p.getInteger();
+		p.getInteger();
+		p.getInteger(); // Ignore response
+		return p.getInteger();
 	}
 
 	private Packet getRequest(final Packet p) {
@@ -365,6 +433,7 @@ public class Handler implements Channel {
 		p.getInteger();
 		p.getInteger();
 		p.getInteger(); // Ignore response
+		p.getInteger(); // Ignore serial
 		final Packet result = new Packet(9, p.getInteger());
 		for (int c = 0; c < b; c++) {
 			result.addBoolean(p.getBoolean());
@@ -387,6 +456,9 @@ public class Handler implements Channel {
 		final int b = p.getInteger();
 		final int i = p.getInteger();
 		final int s = p.getInteger();
+		p.getInteger(); // Ignore serial
+		if (b < 0) { return null; // Prefilter
+		}
 		for (int j = 0; j < ob; j++) {
 			p.getBoolean();
 		}
@@ -486,14 +558,15 @@ public class Handler implements Channel {
 		return result;
 	}
 
-	protected void makeSubscriptions(final Map<Integer, Map<Integer, List<Extension>>> subscriptions2)
-	        throws IOException {
+	protected void makeSubscriptions(final Map<Integer, Map<Integer, List<Extension>>> subscriptions2,
+	        final Map<Integer, Map<Integer, Boolean>> prefilters2) throws IOException {
 		for (final Entry<Integer, Map<Integer, List<Extension>>> entry : subscriptions2.entrySet()) {
 			if (entry.getValue().containsKey(Command.ANY)) {
-				send(createSubscriptionMessage(entry.getKey(), Command.ANY));
+				send(createSubscriptionMessage(entry.getKey(), Command.ANY,
+				        prefilters2.get(entry.getKey()).get(Command.ANY)));
 			} else {
 				for (final int i : entry.getValue().keySet()) {
-					send(createSubscriptionMessage(entry.getKey(), i));
+					send(createSubscriptionMessage(entry.getKey(), i, prefilters2.get(entry.getKey()).get(i)));
 				}
 			}
 		}

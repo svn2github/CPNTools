@@ -50,8 +50,10 @@ public class HelloWorld extends AbstractExtension implements Observer {
 	 * 
 	 */
 	public HelloWorld() {
-		addOption(Option.create("String", "string", String.class), Option.create("Integer", "integer", Integer.class),
-		        Option.create("Boolean", "boolean", Boolean.class));
+		// addOption(Option.create("String", "string", String.class), Option.create("Integer", "integer",
+// Integer.class),
+		// Option.create("Boolean", "boolean", Boolean.class));
+		addOption(Option.create("Smart simulation", "safe", Boolean.class));
 		addSubscription(new Command(200, 9));
 		addObserver(this);
 	}
@@ -105,7 +107,7 @@ public class HelloWorld extends AbstractExtension implements Observer {
 
 	@Override
 	public String getName() {
-		return "Hello World";
+		return "DCR Graph";
 	}
 
 	@Override

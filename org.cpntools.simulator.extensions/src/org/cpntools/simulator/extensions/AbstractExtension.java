@@ -43,6 +43,11 @@ public abstract class AbstractExtension extends Observable implements Extension 
 	}
 
 	@Override
+	public Packet prefilter(final Packet p) {
+		return null;
+	}
+
+	@Override
 	public String inject() {
 		return null;
 	}

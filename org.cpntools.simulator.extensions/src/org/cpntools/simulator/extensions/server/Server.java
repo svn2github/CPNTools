@@ -62,7 +62,7 @@ public class Server implements Runnable, Iterable<Extension> {
 					se.printStackTrace();
 				}
 			} catch (final Exception _) {
-
+				_.printStackTrace();
 			}
 		}
 	}

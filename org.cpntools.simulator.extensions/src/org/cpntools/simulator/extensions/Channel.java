@@ -15,5 +15,7 @@ public interface Channel {
 	 */
 	Packet send(Packet p) throws IOException;
 
+	String evaluate(String expression) throws Exception;
+
 	<T extends Extension> T getExtension(Class<T> clazz);
 }

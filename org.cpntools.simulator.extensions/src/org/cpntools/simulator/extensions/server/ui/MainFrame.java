@@ -13,25 +13,25 @@ import java.net.UnknownHostException;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
+import javax.swing.table.DefaultTableModel;
 
 import org.cpntools.simulator.extensions.Extension;
 import org.cpntools.simulator.extensions.server.Server;
 
 public class MainFrame extends JFrame {
-	private final DefaultListModel model;
+	private final DefaultTableModel model;
 
 	static {
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -116,8 +116,26 @@ public class MainFrame extends JFrame {
 		port.setEditable(false);
 		main.add(portPanel);
 
-		model = new DefaultListModel();
-		final JList extensionList = new JList(model);
+		model = new DefaultTableModel() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Class<?> getColumnClass(final int column) {
+				if (column == 0) { return Boolean.class; }
+				return super.getColumnClass(column);
+			}
+
+			@Override
+			public boolean isCellEditable(final int row, final int column) {
+				return false;
+			}
+		};
+		model.setColumnIdentifiers(new Object[] { "Enabled", "Name" });
+		final JTable extensionList = new JTable(model);
+		extensionList.getColumnModel().getColumn(0).setMaxWidth(50);
 		final JScrollPane scroller = new JScrollPane(extensionList);
 		scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -132,6 +150,6 @@ public class MainFrame extends JFrame {
 	}
 
 	public void addExtension(final Extension e) {
-		model.addElement(e);
+		model.addRow(new Object[] { true, e });
 	}
 }
