@@ -660,7 +660,7 @@
         <xsl:variable name="wmax">
             <xsl:call-template name="maxvalue">
                 <xsl:with-param name="values" select="/workspaceElements//ellipse/@w | /workspaceElements//box/@w"/>
-                <xsl:with-param name="min" select="0"/>
+                <xsl:with-param name="max" select="0"/>
             </xsl:call-template>
         </xsl:variable>
         <xsl:variable name="hmax">
@@ -697,7 +697,7 @@
 	</xsl:template>
 
 	<xsl:template match="place/fillattr[@filled='false']|trans|fillattr[@filled='false']" mode="graphics" priority="2">
-		<pnml:fill color="white"/>
+		<pnml:fill color="#ffffff"/>
 	</xsl:template>
 
 	<xsl:template match="lineattr" mode="graphics">
