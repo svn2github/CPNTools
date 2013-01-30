@@ -2,24 +2,18 @@ package org.cpntools.simulator.extensions.server;
 
 import java.awt.HeadlessException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import javax.swing.ProgressMonitor;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.clapper.util.classutil.AbstractClassFilter;
-import org.clapper.util.classutil.AndClassFilter;
-import org.clapper.util.classutil.ClassFilter;
-import org.clapper.util.classutil.ClassFinder;
 import org.clapper.util.classutil.ClassInfo;
-import org.clapper.util.classutil.InterfaceOnlyClassFilter;
-import org.clapper.util.classutil.NotClassFilter;
-import org.clapper.util.classutil.SubclassClassFilter;
 import org.cpntools.simulator.extensions.Extension;
 import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.server.ui.MainFrame;
+import org.cpntools.simulator.extensions.utils.Discovery;
+
+import dk.klafbang.tools.Pair;
 
 /**
  * @author michael
@@ -36,11 +30,13 @@ public class DiscoveryServer {
 		        0, 4);
 		int progress = 0;
 
-		final Collection<ClassInfo> extensionsClasses = findExtensions();
+		final Pair<Collection<ClassInfo>, Class<Extension>> extensionsClasses = Discovery
+		        .findExtensions(Extension.class);
 
 		progressMonitor.setNote("Instantiating extensions...");
 		progressMonitor.setProgress(++progress);
-		final Collection<Extension> extensions = instantiate(extensionsClasses);
+		final Collection<Extension> extensions = Discovery.instantiate(extensionsClasses);
+		extensions.add(Scraper.INSTANCE);
 
 		progressMonitor.setNote("Starting server thread...");
 		progressMonitor.setProgress(++progress);
@@ -60,35 +56,6 @@ public class DiscoveryServer {
 		main.setVisible(true);
 		t.start();
 		t.join();
-	}
-
-	private Collection<Extension> instantiate(final Collection<ClassInfo> extensionsClasses) {
-		final List<Extension> result = new ArrayList<Extension>();
-		result.add(Scraper.INSTANCE);
-		for (final ClassInfo ci : extensionsClasses) {
-			try {
-				final Class<Extension> clazz = (Class<Extension>) Class.forName(ci.getClassName());
-				if (!clazz.equals(Scraper.class)) {
-					final Extension instance = clazz.newInstance();
-					result.add(instance);
-				}
-			} catch (final Exception _) {
-				_.printStackTrace();
-			}
-		}
-		return result;
-	}
-
-	private Collection<ClassInfo> findExtensions() {
-		final ClassFinder finder = new ClassFinder();
-		finder.addClassPath();
-
-		final ClassFilter filter = new AndClassFilter(new NotClassFilter(new InterfaceOnlyClassFilter()),
-		        new SubclassClassFilter(Extension.class), new NotClassFilter(new AbstractClassFilter()));
-
-		final Collection<ClassInfo> foundClasses = new ArrayList<ClassInfo>();
-		finder.findClasses(foundClasses, filter);
-		return foundClasses;
 	}
 
 	/**
