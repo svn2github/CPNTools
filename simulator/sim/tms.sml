@@ -182,3 +182,5 @@ end = struct
 	    
     fun ms (tms: 'a tms): 'a CPN'MS.ms = map Time.col tms
 end;
+
+

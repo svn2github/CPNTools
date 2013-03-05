@@ -283,13 +283,36 @@ infix 3 >>==
 val (op >>==) = (op >>=);
 
 (* SML/NJ overload does not work anymore *)
-(* _overload +   : ('a * 'a -> 'a) as Int.+ and Real.+ and CPN'MS.++; *)
-(* _overload -   : ('a * 'a -> 'a) as Int.- and Real.- and CPN'MS.--; *)
-(* _overload *   : ('a * 'b -> 'b) as Int.* and Real.* and CPN'MS.**; *)
-(* _overload /   : ('a * 'b -> 'b) as Real./ and CPN'MS.//; *)
-(* _overload <   : ('a * 'a -> bool) as Int.< and Real.< and Char.< and String.< and CPN'MS.<<; *)
-(* _overload <=  : ('a * 'a -> bool) as Int.<= and Real.<= and Char.<= and String.<= and CPN'MS.<<==; *)
-(* _overload >   : ('a * 'a -> bool) as Int.> and Real.> and Char.> and String.> and CPN'MS.>>; *)
-(* _overload >=  : ('a * 'a -> bool) as Int.>= and Real.>= and Char.>= and String.>= and CPN'MS.>>==; *)
+(* Control.overloadKW := true;
+overload + :   ('a * 'a -> 'a)
+  as  Int31.+ and Int32.+ and Int64.+ and IntInf.+
+  and Word8.+ and Word31.+ and Word32.+ and Word64.+
+  and Real64.+ and CPN'MS.++
+overload - :   ('a * 'a -> 'a)
+  as  Int31.- and Int32.- and Int64.- and IntInf.-
+  and Word8.- and Word31.- and Word32.- and Word64.-
+  and Real64.- and CPN'MS.--
+overload * :   ('a * 'a -> 'a)
+  as  Int31.* and Int32.* and Int64.* and IntInf.*
+  and Word8.* and Word31.* and Word32.* and Word64.*
+  and Real64.* and CPN'MS.**
+overload /   : ('a * 'b -> 'b) as Real./ and CPN'MS.//;
+overload < :   ('a * 'a -> bool)
+  as  Int31.< and Int32.< and Int64.< and IntInf.<
+  and W8.< and Word31.< and Word32.< and Word64.<
+  and Real64.<
+  and InlineT.Char.<
+  and stringlt and CPN'MS.<<
+overload > :   ('a * 'a -> bool)
+  as  Int31.> and Int32.> and Int64.> and IntInf.>
+  and W8.> and Word31.> and Word32.> and Word64.>
+  and Real64.>
+  and InlineT.Char.>
+  and stringgt and CPN'MS.>>
+(*_overload <=  : ('a * 'a -> bool) as Int.<= and Real.<= and Char.<= and
+* String.<= and CPN'MS.<<==;*)
+(*_overload >=  : ('a * 'a -> bool) as Int.>= and Real.>= and Char.>= and
+* String.>= and CPN'MS.>>==;*)
 (*  *)
-(* _overload size: ('a -> int) as String.size and CPN'MS.size; *)
+overload size: ('a -> int) as String.size and CPN'MS.size;
+Control.overloadKW := false;*)

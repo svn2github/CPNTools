@@ -348,14 +348,11 @@ fun create_intinf (id, ("",""), {name,timed,var,msvar,alias,declare}) =
 (******************** real color-set declaration ********************)
 
 fun create_real (id, ("",""), {name,timed,var,msvar,alias,declare}) =
-(* Disable declarations of real color-sets
     each_cs(name, CPN'CSTable.real_cs NONE,
 	     id,timed,var,msvar,alias,declare,
 	    ["\n structure ",name," = CPN'ColorSets.RealCS;\n\
-	     \ type ",name," = ",name,".cs;"]) *)
-    raise CPN'Error "Error: real color sets are not supported!"
+          \ type ",name," = ",name,".cs;"], [])
   | create_real (id, (low,high), {name,timed,var,msvar,alias,declare}) =
-(* Disable declarations of real color-sets
     (case (CPN'Env.is_decl ("val _ = "^low^" : real"),
 	   CPN'Env.is_decl ("val _ = "^high^" : real")) of
 	 (NONE,NONE) => 
@@ -363,11 +360,9 @@ fun create_real (id, ("",""), {name,timed,var,msvar,alias,declare}) =
 		      id,timed,var,msvar,alias,declare,
 		     ["\n structure ",name," = CPN'ColorSets.RealWithCS\
 		      \ (val CPN'low= ",low," and CPN'high= ",high,");\n\
-		      \ type ",name," = ",name,".cs;"])
+		      \ type ",name," = ",name,".cs;"], [])
 	      handle ErrorLowHigh => (id,error_low_high "real",([],[])))
        | (low_err, high_err) => (id,make_error[low_err,high_err],([],[])))
-*)
-    raise CPN'Error "Error: real color sets are not supported!"
 
 (******************** string color-set declaration ********************)
 
