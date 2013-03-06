@@ -3,8 +3,8 @@ MIN=74
 MAX_TESTED=75
 
 if [ "x$1" == "x" ]; then
-	echo "Please enter the minor version you want to install, e.g., \`buildml.sh $MIN' to install version 110.$MIN"
-	echo "The minor version must be >= $MIN and should not be > $MAX_TESTED as that is the latest tested version."
+	echo "Please enter the minor version you want to install, e.g., \`buildml.sh $MAX_TESTED' to install version 110.$MAX_TESTED"
+	echo "The minor version must be >= $MIN and should not be > $MAX_TESTED (unless you know what you are doing) as that is the latest tested version."
 	exit
 fi
 
@@ -14,10 +14,10 @@ if [ $1 -lt $MIN ]; then
 fi
 
 if [ $1 -gt $MAX_TESTED ]; then
-	echo "You have entered a version above the latest tested one (110.$MAX_TESTED); press enter to continue at your own risk or Ctrl-C to cancel"
+	echo -ne "You have entered a version above the latest tested one (110.$MAX_TESTED); press enter to continue at your own risk or Ctrl-C to cancel."
 	read
 else
-	echo "Will install in current directory and remove the sml directory.  Ctri-C to cancel."
+	echo -ne "Will install in current directory and remove the sml directory.  Ctri-C to cancel."
 	read
 fi
 
@@ -25,7 +25,8 @@ rm -Rf sml/*
 
 function pause() {
 	echo -ne $*
-#	read
+	#	read
+	echo
 }
 
 cd "$( dirname "$0" )/../"
@@ -65,7 +66,6 @@ echo "ARCH="$ARCH
 echo "MLARCH="$MLARCH
 pause "Found Arch"
 
-
 # Perform installation using our settings
 cp "$runDir/config/targets" "$runDir/config/preloads" config
 ./config/install.sh
@@ -95,7 +95,7 @@ patch -p0 < "$runDir/simulator/patch/system.diff"
 pause "Patched system"
 patch -p0 < "$runDir/simulator/patch/cm.diff"
 pause "Patched cm"
-
+~/patch.sh
 
 # Build patched runtime
 cd runtime/objs
@@ -111,13 +111,29 @@ pause "Runtime built"
 # Recompile compiler
 cd compiler
 echo | ../../bin/sml "core.cm"
-cd ../
-pause "Compiled 2nd"
+cd Elaborator
+pause "Core built"
+echo | ../../../bin/sml "elaborate.cm"
+cd ../../
+pause "Elaborator built"
 
 # Make and install new image
 cd system
 echo "CMB.make();" | ../../bin/sml '$smlnj/cmb.cm'
 pause "Made image"
+./makeml
+pause "makeml"
+#./installml
+#pause "installml"
+./makeml -rebuild replacement
+pause "makeml replacement"
+read
+BOOT="$( basename sml.boot.* )"
+BIN="$( basename sml.bin.* )"
+rm -Rf sml.boot.* sml.bin.*
+mv replacement.boot.* "$BOOT"
+mv replacement.bin.* "$BIN"
+pause "New bootfiles ($BOOT - $BIN)"
 ./makeml
 pause "makeml"
 ./installml
