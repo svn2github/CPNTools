@@ -1,18 +1,19 @@
-diff -ru runtime/c-libs/c-libraries.c ../runtime/c-libs/c-libraries.c
---- runtime/c-libs/c-libraries.c	2006-01-30 21:51:19.000000000 +0100
-+++ ../runtime/c-libs/c-libraries.c	2006-11-06 10:48:03.000000000 +0100
-@@ -14,6 +14,7 @@
- #include "ml-values.h"
+diff -ur runtime/c-libs/c-libraries.c /Users/michael/sml/base/runtime/c-libs/c-libraries.c
+--- runtime/c-libs/c-libraries.c	2013-03-07 15:48:20.000000000 +0400
++++ /Users/michael/sml/base/runtime/c-libs/c-libraries.c	2013-03-07 15:50:52.000000000 +0400
+@@ -15,6 +15,7 @@
  #include "c-library.h"
+ #include "c-globals-tbl.h"
  #include <stdio.h>
 +#include <string.h>
  
  #define C_LIBRARY(lib)  extern c_library_t lib;
  #include "clib-list.h"
-diff -ru runtime/c-libs/smlnj-runtime/cfun-list.h ../runtime/c-libs/smlnj-runtime/cfun-list.h
---- runtime/c-libs/smlnj-runtime/cfun-list.h	2002-03-08 22:05:27.000000000 +0100
-+++ ../runtime/c-libs/smlnj-runtime/cfun-list.h	2006-11-07 15:35:03.000000000 +0100
-@@ -21,6 +21,8 @@
+Only in /Users/michael/sml/base/runtime/c-libs: c-libraries.c.orig
+diff -ur runtime/c-libs/smlnj-runtime/cfun-list.h /Users/michael/sml/base/runtime/c-libs/smlnj-runtime/cfun-list.h
+--- runtime/c-libs/smlnj-runtime/cfun-list.h	2013-03-07 15:48:23.000000000 +0400
++++ /Users/michael/sml/base/runtime/c-libs/smlnj-runtime/cfun-list.h	2013-03-07 15:50:52.000000000 +0400
+@@ -22,6 +22,8 @@
  CFUNC("exportHeap",	_ml_RunT_export_heap,	"string -> bool")
  CFUNC("exportFn",	_ml_RunT_export_fun,	"(string * (string list -> unit)) -> unit")
  CFUNC("gcControl",	_ml_RunT_gc_ctl,	"(string * int ref) list -> unit")
@@ -21,18 +22,19 @@ diff -ru runtime/c-libs/smlnj-runtime/cfun-list.h ../runtime/c-libs/smlnj-runtim
  CFUNC("intervalTick",	_ml_RunT_itick,		"unit -> (int * int)")
  CFUNC("allocCode",	_ml_RunT_alloc_code,	"")
  CFUNC("mkExec",		_ml_RunT_mkexec,	"Word8Vector * int -> object -> object")
-diff -ru runtime/c-libs/smlnj-runtime/gc-ctl.c ../runtime/c-libs/smlnj-runtime/gc-ctl.c
---- runtime/c-libs/smlnj-runtime/gc-ctl.c	2005-05-05 18:25:11.000000000 +0200
-+++ ../runtime/c-libs/smlnj-runtime/gc-ctl.c	2006-11-07 21:28:33.000000000 +0100
+Only in /Users/michael/sml/base/runtime/c-libs/smlnj-runtime: cfun-list.h.orig
+diff -ur runtime/c-libs/smlnj-runtime/gc-ctl.c /Users/michael/sml/base/runtime/c-libs/smlnj-runtime/gc-ctl.c
+--- runtime/c-libs/smlnj-runtime/gc-ctl.c	2013-03-07 15:48:23.000000000 +0400
++++ /Users/michael/sml/base/runtime/c-libs/smlnj-runtime/gc-ctl.c	2013-03-07 15:50:52.000000000 +0400
 @@ -5,6 +5,7 @@
   * General interface for GC control functions.
   */
  
 +#include "ml-osdep.h"
  #include "ml-base.h"
+ #include <string.h>
  #include "ml-values.h"
- #include "ml-state.h"
-@@ -12,6 +13,9 @@
+@@ -13,6 +14,9 @@
  #include "heap.h"
  #include "ml-objects.h"
  #include "cfun-proto-list.h"
@@ -42,7 +44,7 @@ diff -ru runtime/c-libs/smlnj-runtime/gc-ctl.c ../runtime/c-libs/smlnj-runtime/g
  
  #define STREQ(s1, s2)	(strcmp((s1), STR_MLtoC(s2)) == 0)
  
-@@ -65,6 +69,40 @@
+@@ -66,6 +70,40 @@
  
  } /* end of _ml_RunT_gc_ctl */
  
@@ -83,9 +85,10 @@ diff -ru runtime/c-libs/smlnj-runtime/gc-ctl.c ../runtime/c-libs/smlnj-runtime/g
  
  /* SetVMCache:
   *
-diff -ru runtime/c-libs/unix-raise-syserr.c ../runtime/c-libs/unix-raise-syserr.c
---- runtime/c-libs/unix-raise-syserr.c	2000-06-01 20:33:45.000000000 +0200
-+++ ../runtime/c-libs/unix-raise-syserr.c	2006-11-06 10:42:52.000000000 +0100
+Only in /Users/michael/sml/base/runtime/c-libs/smlnj-runtime: gc-ctl.c.orig
+diff -ur runtime/c-libs/unix-raise-syserr.c /Users/michael/sml/base/runtime/c-libs/unix-raise-syserr.c
+--- runtime/c-libs/unix-raise-syserr.c	2013-03-07 15:48:24.000000000 +0400
++++ /Users/michael/sml/base/runtime/c-libs/unix-raise-syserr.c	2013-03-07 15:50:52.000000000 +0400
 @@ -15,25 +15,6 @@
  #include "ml-globals.h"
  #include "ml-c.h"
@@ -112,9 +115,9 @@ diff -ru runtime/c-libs/unix-raise-syserr.c ../runtime/c-libs/unix-raise-syserr.
  /* RaiseSysError:
   *
   * Raise the ML exception SysErr, which has the spec:
-diff -ru runtime/config/gen-sizes.c ../runtime/config/gen-sizes.c
---- runtime/config/gen-sizes.c	2006-01-30 21:48:19.000000000 +0100
-+++ ../runtime/config/gen-sizes.c	2006-11-06 10:41:36.000000000 +0100
+diff -ur runtime/config/gen-sizes.c /Users/michael/sml/base/runtime/config/gen-sizes.c
+--- runtime/config/gen-sizes.c	2013-03-07 15:48:25.000000000 +0400
++++ /Users/michael/sml/base/runtime/config/gen-sizes.c	2013-03-07 15:50:52.000000000 +0400
 @@ -24,7 +24,7 @@
      unsigned long   l;
  } U;
@@ -134,8 +137,8 @@ diff -ru runtime/config/gen-sizes.c ../runtime/config/gen-sizes.c
  int main (void)
  {
 @@ -84,8 +84,8 @@
-     fprintf (f, "#define ADDR_SZB           %d\n", ADDR_SZB);
-     fprintf (f, "#define REALD_SZB          %d\n", sizeof(double));
+     fprintf (f, "#define ADDR_SZB           %d\n", (int)ADDR_SZB);
+     fprintf (f, "#define REALD_SZB          %d\n", (int)sizeof(double));
      fprintf (f, "#define BITS_PER_WORD      %d\n", 8*WORD_SZB);
 -    fprintf (f, "#define LOG_BITS_PER_WORD  %d\n", log2(8*WORD_SZB));
 -    fprintf (f, "#define LOG_BYTES_PER_WORD %d\n", log2(WORD_SZB));
@@ -144,3 +147,4 @@ diff -ru runtime/config/gen-sizes.c ../runtime/config/gen-sizes.c
      fprintf (f, "\n");
  
      U.bytes[0] = 0x01;
+Only in /Users/michael/sml/base/runtime/config: gen-sizes.c.orig

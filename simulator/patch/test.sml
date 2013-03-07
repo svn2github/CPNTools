@@ -1,0 +1,11 @@
+if 1.1 = 1.1 then print "Ok\n" else print "Error\n";
+val f = op=;
+if f (1.1, 1.1) then print "Ok\n" else print "Error\n";
+fun f (x: real) = x = x;
+if f (1.1) then print "Ok\n" else print "Error\n";
+fun f (a:real, b) = a = b;
+if f (1.1, 1.1) then print "Ok\n" else print "Error\n";
+fun f (a, b) = a = b;
+if f (1.1, 1.1) then print "Ok\n" else print "Error\n";
+if f (1.2, 1.1) then print "Error\n" else print "Ok\n";
+if f (1.0, 1.1) then print "Error\n" else print "Ok\n";

@@ -1,6 +1,6 @@
-diff -r -u system/Basis/Implementation/NJ/gc.sig /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sig
---- system/Basis/Implementation/NJ/gc.sig	2000-06-01 20:34:03.000000000 +0200
-+++ /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sig	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/Basis/Implementation/NJ/gc.sig /Users/michael/sml/base/system/Basis/Implementation/NJ/gc.sig
+--- system/Basis/Implementation/NJ/gc.sig	2013-03-07 15:48:30.000000000 +0400
++++ /Users/michael/sml/base/system/Basis/Implementation/NJ/gc.sig	2013-03-07 15:50:52.000000000 +0400
 @@ -10,6 +10,8 @@
  
      val doGC : int -> unit
@@ -10,9 +10,9 @@ diff -r -u system/Basis/Implementation/NJ/gc.sig /usr/local/smlnj/base/system/Ba
  
    end
  
-diff -r -u system/Basis/Implementation/NJ/gc.sml /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sml
---- system/Basis/Implementation/NJ/gc.sml	2000-06-01 20:34:03.000000000 +0200
-+++ /usr/local/smlnj/base/system/Basis/Implementation/NJ/gc.sml	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/Basis/Implementation/NJ/gc.sml /Users/michael/sml/base/system/Basis/Implementation/NJ/gc.sml
+--- system/Basis/Implementation/NJ/gc.sml	2013-03-07 15:48:30.000000000 +0400
++++ /Users/michael/sml/base/system/Basis/Implementation/NJ/gc.sml	2013-03-07 15:50:52.000000000 +0400
 @@ -11,11 +11,18 @@
      val gcCtl : ((string * int ref) list -> unit) =
  	  CInterface.c_function "SMLNJ-RunT" "gcControl"
@@ -33,9 +33,9 @@ diff -r -u system/Basis/Implementation/NJ/gc.sml /usr/local/smlnj/base/system/Ba
    end
  
  
-diff -r -u system/smlnj/compiler/alpha32.cm /usr/local/smlnj/base/system/smlnj/compiler/alpha32.cm
---- system/smlnj/compiler/alpha32.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/alpha32.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/alpha32.cm /Users/michael/sml/base/system/smlnj/compiler/alpha32.cm
+--- system/smlnj/compiler/alpha32.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/alpha32.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -66,6 +66,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -54,9 +54,9 @@ diff -r -u system/smlnj/compiler/alpha32.cm /usr/local/smlnj/base/system/smlnj/c
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/compiler/amd64.cm /usr/local/smlnj/base/system/smlnj/compiler/amd64.cm
---- system/smlnj/compiler/amd64.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/amd64.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/amd64.cm /Users/michael/sml/base/system/smlnj/compiler/amd64.cm
+--- system/smlnj/compiler/amd64.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/amd64.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -65,6 +65,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -75,9 +75,9 @@ diff -r -u system/smlnj/compiler/amd64.cm /usr/local/smlnj/base/system/smlnj/com
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/compiler/current.cm /usr/local/smlnj/base/system/smlnj/compiler/current.cm
---- system/smlnj/compiler/current.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/current.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/current.cm /Users/michael/sml/base/system/smlnj/compiler/current.cm
+--- system/smlnj/compiler/current.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/current.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -68,6 +68,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -96,9 +96,9 @@ diff -r -u system/smlnj/compiler/current.cm /usr/local/smlnj/base/system/smlnj/c
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/compiler/hppa.cm /usr/local/smlnj/base/system/smlnj/compiler/hppa.cm
---- system/smlnj/compiler/hppa.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/hppa.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/hppa.cm /Users/michael/sml/base/system/smlnj/compiler/hppa.cm
+--- system/smlnj/compiler/hppa.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/hppa.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -66,6 +66,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -117,9 +117,9 @@ diff -r -u system/smlnj/compiler/hppa.cm /usr/local/smlnj/base/system/smlnj/comp
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/compiler/ppc.cm /usr/local/smlnj/base/system/smlnj/compiler/ppc.cm
---- system/smlnj/compiler/ppc.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/ppc.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/ppc.cm /Users/michael/sml/base/system/smlnj/compiler/ppc.cm
+--- system/smlnj/compiler/ppc.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/ppc.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -66,6 +66,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -138,9 +138,9 @@ diff -r -u system/smlnj/compiler/ppc.cm /usr/local/smlnj/base/system/smlnj/compi
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/compiler/sparc.cm /usr/local/smlnj/base/system/smlnj/compiler/sparc.cm
---- system/smlnj/compiler/sparc.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/sparc.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/sparc.cm /Users/michael/sml/base/system/smlnj/compiler/sparc.cm
+--- system/smlnj/compiler/sparc.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/sparc.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -66,6 +66,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -159,9 +159,9 @@ diff -r -u system/smlnj/compiler/sparc.cm /usr/local/smlnj/base/system/smlnj/com
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/compiler/x86.cm /usr/local/smlnj/base/system/smlnj/compiler/x86.cm
---- system/smlnj/compiler/x86.cm	2007-05-04 05:39:10.000000000 +0200
-+++ /usr/local/smlnj/base/system/smlnj/compiler/x86.cm	2007-10-03 00:08:42.000000000 +0200
+diff -ur system/smlnj/compiler/x86.cm /Users/michael/sml/base/system/smlnj/compiler/x86.cm
+--- system/smlnj/compiler/x86.cm	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/compiler/x86.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -66,6 +66,7 @@
  	structure UnpickleSymPid
  	structure PrettyPrint
@@ -180,9 +180,30 @@ diff -r -u system/smlnj/compiler/x86.cm /usr/local/smlnj/base/system/smlnj/compi
          structure BasicTypes
          structure PPType
          structure Access
-diff -r -u system/smlnj/viscomp/elaborate.cm /usr/local/smlnj/base/system/smlnj/viscomp/elaborate.cm
---- system/smlnj/viscomp/elaborate.cm	2001-11-21 22:03:17.000000000 +0100
-+++ /usr/local/smlnj/base/system/smlnj/viscomp/elaborate.cm	2007-10-03 00:11:55.000000000 +0200
+diff -ur system/smlnj/init/core.sml /Users/michael/sml/base/system/smlnj/init/core.sml
+--- system/smlnj/init/core.sml	2013-03-07 15:48:31.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/init/core.sml	2013-03-07 15:50:52.000000000 +0400
+@@ -110,7 +110,8 @@
+           val peql : 'a * 'a -> bool = InLine.ptreql
+           val ineq : int * int -> bool = InLine.i31ne
+ 	  val i32eq : int32 * int32 -> bool = InLine.i32eq
+-          val boxed : 'a -> bool = InLine.boxed
++        val f64eq : real * real -> bool = InLine.f64eq
++        val boxed : 'a -> bool = InLine.boxed
+           val op + : int * int -> int = InLine.i31add
+           val op - : int * int -> int = InLine.i31sub
+           val op * : int * int -> int = InLine.i31mul
+@@ -267,6 +268,7 @@
+ 		  | 0x0a (* tag_arr_hdr *) => peql(getData a, getData b)
+ 		  | 0x0e (* tag_arr_data and tag_ref *) => false
+ 		  | 0x12 (* tag_raw32 *) => i32eq(cast a, cast b)
++              | 0x16 (* tag_raw64 *) => f64eq(cast a, cast b)
+ 		  | _ (* tagless pair *) => pairEq()
+ 		(* end case *)
+ 	      end)
+diff -ur system/smlnj/viscomp/elaborate.cm /Users/michael/sml/base/system/smlnj/viscomp/elaborate.cm
+--- system/smlnj/viscomp/elaborate.cm	2013-03-07 15:48:37.000000000 +0400
++++ /Users/michael/sml/base/system/smlnj/viscomp/elaborate.cm	2013-03-07 15:50:52.000000000 +0400
 @@ -5,7 +5,8 @@
   * The SML/NJ elaborator.
   *)

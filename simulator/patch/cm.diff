@@ -1,6 +1,6 @@
-diff -ur cm/paths/fileid.sml ../cm/paths/fileid.sml
---- cm/paths/fileid.sml	2010-08-19 16:50:47.865633700 +0200
-+++ ../cm/paths/fileid.sml	2010-08-19 16:49:59.052841800 +0200
+diff -ur cm/paths/fileid.sml /Users/michael/sml/base/cm/paths/fileid.sml
+--- cm/paths/fileid.sml	2013-03-07 15:48:12.000000000 +0400
++++ /Users/michael/sml/base/cm/paths/fileid.sml	2013-03-07 15:50:52.000000000 +0400
 @@ -52,7 +52,8 @@
  	    loop (P.splitDirFile f)
  	end

@@ -1,15 +1,27 @@
-diff -ur compiler/Elaborator/elaborate.cm ../compiler/Elaborator/elaborate.cm
---- compiler/Elaborator/elaborate.cm	2005-11-15 23:38:49.000000000 +0100
-+++ ../compiler/Elaborator/elaborate.cm	2006-11-13 14:09:55.000000000 +0100
-@@ -7,6 +7,7 @@
- Group
+diff -ur compiler/ElabData/types/core-basictypes.sml /Users/michael/sml/base/compiler/ElabData/types/core-basictypes.sml
+--- compiler/ElabData/types/core-basictypes.sml	2013-03-07 15:48:15.000000000 +0400
++++ /Users/michael/sml/base/compiler/ElabData/types/core-basictypes.sml	2013-03-07 15:50:52.000000000 +0400
+@@ -99,7 +99,7 @@
+     val (intTycon, intTy) = pt2tct ("int", 0, T.YES, PTN.ptn_int)
+     val (stringTycon, stringTy) = pt2tct ("string", 0, T.YES, PTN.ptn_string)
+     val (charTycon, charTy) = pt2tct ("char", 0, T.YES, PTN.ptn_int)
+-    val (realTycon, realTy) = pt2tct ("real", 0, T.NO, PTN.ptn_real)
++    val (realTycon, realTy) = pt2tct ("real", 0, T.YES, PTN.ptn_real)
+     val (exnTycon, exnTy) = pt2tct ("exn", 0, T.NO, PTN.ptn_exn)
+ 
+     val arrayTycon = pt2tc ("array", 1, T.OBJ, PTN.ptn_array)
+diff -ur compiler/Elaborator/elaborate.cm /Users/michael/sml/base/compiler/Elaborator/elaborate.cm
+--- compiler/Elaborator/elaborate.cm	2013-03-07 15:48:15.000000000 +0400
++++ /Users/michael/sml/base/compiler/Elaborator/elaborate.cm	2013-03-07 15:50:45.000000000 +0400
+@@ -8,6 +8,7 @@
+         signature ELAB_CONTROL
  	structure ElabControl
  
 +	signature PRECEDENCE
  	signature PRIM_TYC_NUM
  	signature DEB_INDEX
  	signature BASICTYPES
-@@ -23,6 +24,7 @@
+@@ -25,6 +26,7 @@
  	functor ElabModFn
  	functor ElabTopFn
  
@@ -17,9 +29,34 @@ diff -ur compiler/Elaborator/elaborate.cm ../compiler/Elaborator/elaborate.cm
  	structure PrimTycNum
  	structure DebIndex
  	structure BasicTypes
-diff -ur compiler/TopLevel/backend/backend-fn.sml ../compiler/TopLevel/backend/backend-fn.sml
---- compiler/TopLevel/backend/backend-fn.sml	2006-02-15 00:31:16.000000000 +0100
-+++ ../compiler/TopLevel/backend/backend-fn.sml	2006-11-13 14:09:55.000000000 +0100
+Only in /Users/michael/sml/base/compiler/Elaborator: elaborate.cm.orig
+diff -ur compiler/Elaborator/types/unify.sml /Users/michael/sml/base/compiler/Elaborator/types/unify.sml
+--- compiler/Elaborator/types/unify.sml	2013-03-07 15:48:16.000000000 +0400
++++ /Users/michael/sml/base/compiler/Elaborator/types/unify.sml	2013-03-07 15:50:52.000000000 +0400
+@@ -92,7 +92,7 @@
+ val eqLabel = Symbol.eq
+ 
+ fun eqLitKind (lk : T.litKind) =
+-    case lk of (INT | WORD | CHAR | STRING) => true | REAL => false
++    case lk of (INT | WORD | CHAR | STRING | REAL) => true
+ 
+ (*
+  * tyconEqprop tycon:
+diff -ur compiler/FLINT/reps/equal.sml /Users/michael/sml/base/compiler/FLINT/reps/equal.sml
+--- compiler/FLINT/reps/equal.sml	2013-03-07 15:48:19.000000000 +0400
++++ /Users/michael/sml/base/compiler/FLINT/reps/equal.sml	2013-03-07 15:50:52.000000000 +0400
+@@ -111,6 +111,8 @@
+ 	    BRANCH((NONE, PO.IEQL, int32eqty, []), [x,y], te, fe)
+ 	else if tcEqv(tc,LT.tcc_bool) then
+ 	    BRANCH((NONE, PO.IEQL, booleqty, []), [x,y], te, fe)
++	else if tcEqv(tc,LT.tcc_real) then
++	    BRANCH((NONE, PO.IEQL, realeqty, []), [x,y], te, fe)
+ 	else if tcEqv(tc,LT.tcc_string) then
+ 	    branch(APP(VAR seqv, [x,y]), te, fe)
+ 	else if (LT.tcp_app tc) andalso
+diff -ur compiler/TopLevel/backend/backend-fn.sml /Users/michael/sml/base/compiler/TopLevel/backend/backend-fn.sml
+--- compiler/TopLevel/backend/backend-fn.sml	2013-03-07 15:48:20.000000000 +0400
++++ /Users/michael/sml/base/compiler/TopLevel/backend/backend-fn.sml	2013-03-07 15:50:47.000000000 +0400
 @@ -4,10 +4,8 @@
   *)
  functor BackendFn (structure M : CODEGENERATOR
@@ -47,9 +84,9 @@ diff -ur compiler/TopLevel/backend/backend-fn.sml ../compiler/TopLevel/backend/b
  
      structure Compile =
      CompileF (val cproto_conv = cproto_conv
-diff -ur compiler/TopLevel/backend/backend.sig ../compiler/TopLevel/backend/backend.sig
---- compiler/TopLevel/backend/backend.sig	2006-02-15 00:31:16.000000000 +0100
-+++ ../compiler/TopLevel/backend/backend.sig	2006-11-13 14:09:55.000000000 +0100
+diff -ur compiler/TopLevel/backend/backend.sig /Users/michael/sml/base/compiler/TopLevel/backend/backend.sig
+--- compiler/TopLevel/backend/backend.sig	2013-03-07 15:48:20.000000000 +0400
++++ /Users/michael/sml/base/compiler/TopLevel/backend/backend.sig	2013-03-07 15:50:47.000000000 +0400
 @@ -7,6 +7,7 @@
      structure Compile : COMPILE
      structure Interact : INTERACT
@@ -58,9 +95,9 @@ diff -ur compiler/TopLevel/backend/backend.sig ../compiler/TopLevel/backend/back
      val architecture: string
      val abi_variant: string option
  end
-diff -ur compiler/TopLevel/interact/evalloop.sig ../compiler/TopLevel/interact/evalloop.sig
---- compiler/TopLevel/interact/evalloop.sig	2004-11-23 21:44:10.000000000 +0100
-+++ ../compiler/TopLevel/interact/evalloop.sig	2006-11-14 12:02:33.000000000 +0100
+diff -ur compiler/TopLevel/interact/evalloop.sig /Users/michael/sml/base/compiler/TopLevel/interact/evalloop.sig
+--- compiler/TopLevel/interact/evalloop.sig	2013-03-07 15:48:20.000000000 +0400
++++ /Users/michael/sml/base/compiler/TopLevel/interact/evalloop.sig	2013-03-07 15:50:47.000000000 +0400
 @@ -4,6 +4,7 @@
  signature EVALLOOP =
  sig
@@ -69,9 +106,9 @@ diff -ur compiler/TopLevel/interact/evalloop.sig ../compiler/TopLevel/interact/e
  
    val interact    : unit -> unit
    val evalStream  : string * TextIO.instream -> unit
-diff -ur compiler/TopLevel/interact/interact.sig ../compiler/TopLevel/interact/interact.sig
---- compiler/TopLevel/interact/interact.sig	2005-05-17 06:46:12.000000000 +0200
-+++ ../compiler/TopLevel/interact/interact.sig	2006-11-14 12:06:11.000000000 +0100
+diff -ur compiler/TopLevel/interact/interact.sig /Users/michael/sml/base/compiler/TopLevel/interact/interact.sig
+--- compiler/TopLevel/interact/interact.sig	2013-03-07 15:48:20.000000000 +0400
++++ /Users/michael/sml/base/compiler/TopLevel/interact/interact.sig	2013-03-07 15:50:47.000000000 +0400
 @@ -4,6 +4,7 @@
  signature INTERACT =
  sig
@@ -80,9 +117,9 @@ diff -ur compiler/TopLevel/interact/interact.sig ../compiler/TopLevel/interact/i
  
    val interact : unit -> unit
    val useFile  : string -> unit
-diff -ur compiler/TopLevel/interact/interact.sml ../compiler/TopLevel/interact/interact.sml
---- compiler/TopLevel/interact/interact.sml	2005-05-17 06:46:12.000000000 +0200
-+++ ../compiler/TopLevel/interact/interact.sml	2006-11-14 12:06:47.000000000 +0100
+diff -ur compiler/TopLevel/interact/interact.sml /Users/michael/sml/base/compiler/TopLevel/interact/interact.sml
+--- compiler/TopLevel/interact/interact.sml	2013-03-07 15:48:20.000000000 +0400
++++ /Users/michael/sml/base/compiler/TopLevel/interact/interact.sml	2013-03-07 15:50:51.000000000 +0400
 @@ -4,6 +4,7 @@
  functor Interact(EvalLoop : EVALLOOP) : INTERACT =
  struct

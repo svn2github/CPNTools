@@ -1,5 +1,5 @@
 #!/bin/bash
-MIN=74
+MIN=75
 MAX_TESTED=75
 
 if [ "x$1" == "x" ]; then
@@ -95,7 +95,6 @@ patch -p0 < "$runDir/simulator/patch/system.diff"
 pause "Patched system"
 patch -p0 < "$runDir/simulator/patch/cm.diff"
 pause "Patched cm"
-~/patch.sh
 
 # Build patched runtime
 cd runtime/objs
