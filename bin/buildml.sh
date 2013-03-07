@@ -122,8 +122,6 @@ echo "CMB.make();" | ../../bin/sml '$smlnj/cmb.cm'
 pause "Made image"
 ./makeml
 pause "makeml"
-#./installml
-#pause "installml"
 ./makeml -rebuild replacement
 pause "makeml replacement"
 BOOT="$( basename sml.boot.* )"
