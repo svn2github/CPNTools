@@ -127,7 +127,6 @@ pause "makeml"
 #pause "installml"
 ./makeml -rebuild replacement
 pause "makeml replacement"
-read
 BOOT="$( basename sml.boot.* )"
 BIN="$( basename sml.bin.* )"
 rm -Rf sml.boot.* sml.bin.*
