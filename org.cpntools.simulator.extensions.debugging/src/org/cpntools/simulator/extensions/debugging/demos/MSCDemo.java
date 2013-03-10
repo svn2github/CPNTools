@@ -1,5 +1,6 @@
-package org.cpntools.simulator.extensions.debugging;
+package org.cpntools.simulator.extensions.debugging.demos;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -8,7 +9,7 @@ import javax.swing.JButton;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
 
-public class MSCDemo extends DebuggingPanel {
+public class MSCDemo extends DemoPanel {
 
 	/**
 	 * 
@@ -30,22 +31,17 @@ public class MSCDemo extends DebuggingPanel {
 				if (step == 0) {
 					try {
 						canvas = createCanvas("Message Sequence Chart");
+						p1 = createProcess(canvas, "Sender", -168);
+						p2 = createProcess(canvas, "Network", 0);
+						p3 = createProcess(canvas, "Receiver", 168);
+						centerCanvas(canvas);
+						pos = 0;
 						button.setText("Step 2");
 						step = 1;
 					} catch (final Exception _) {
 
 					}
 				} else if (step == 1) {
-					try {
-						p1 = createProcess(canvas, "Sender", -168);
-						p2 = createProcess(canvas, "Network", 0);
-						p3 = createProcess(canvas, "Receiver", 168);
-						button.setText("Step 3");
-						step = 2;
-					} catch (final Exception _) {
-
-					}
-				} else if (step == 2) {
 					try {
 						createInternal(canvas, p1, -168, "Compute");
 						sleep(500);
@@ -99,22 +95,37 @@ public class MSCDemo extends DebuggingPanel {
 
 	protected void highlight(final String pid) throws Exception {
 		lolight();
-		setBackground(pid, "green");
+		setBackground(pid, Color.GREEN);
 		highlighted = pid;
 	}
 
 	private void lolight() throws Exception {
 		if (highlighted != null) {
-			setBackground(highlighted, "white");
+			setBackground(highlighted, Color.WHITE);
 		}
 		highlighted = null;
 	}
 
-	private void setBackground(final String pid, final String color) throws Exception {
+	private void centerCanvas(final String canvas) throws Exception {
+		Packet p = new Packet(3, 9);
+		p.addString(canvas);
+		p.addBoolean(true);
+		p.addBoolean(true);
+		p = channel.send(p);
+		if (p.getInteger() == 1) { return; }
+		throw new Exception("Wrong result");
+	}
+
+	private void setBackground(final String pid, final Color color) throws Exception {
 		Packet p = new Packet(3, 4);
 		p.addString(pid);
-		p.addString("black");
-		p.addString(color);
+		p.addInteger(-1);
+		p.addInteger(-1);
+		p.addInteger(-1);
+		p.addInteger(color.getRed());
+		p.addInteger(color.getGreen());
+		p.addInteger(color.getBlue());
+		p.addInteger(-1);
 		p = channel.send(p);
 		if (p.getInteger() == 1) { return; }
 		throw new Exception("Wrong result");
@@ -182,7 +193,7 @@ public class MSCDemo extends DebuggingPanel {
 	protected String createCanvas(final String name) throws Exception {
 		Packet p = new Packet(3, 2);
 		p.addBoolean(false);
-		p.addBoolean(false);
+		p.addBoolean(true);
 		p.addString(name);
 		p = channel.send(p);
 		if (p.getInteger() == 1) { return p.getString(); }
@@ -191,7 +202,7 @@ public class MSCDemo extends DebuggingPanel {
 
 	@Override
 	public String getName() {
-		return "Demo";
+		return "MSC";
 	}
 
 }

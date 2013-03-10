@@ -10,7 +10,6 @@ import java.io.IOException;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -63,16 +62,22 @@ public class PacketSender extends DebuggingPanel {
 		b.add(new JScrollPane(bs, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 		        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS));
 		JPanel value = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		final JCheckBox binput = new JCheckBox();
-		value.add(binput);
-		final JButton badd = new JButton("Add");
-		badd.addActionListener(new ActionListener() {
+		final JButton btrue = new JButton("True");
+		btrue.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
-				bmodel.addElement(binput.isSelected());
+				bmodel.addElement(true);
 			}
 		});
-		value.add(badd);
+		value.add(btrue);
+		final JButton bfalse = new JButton("False");
+		bfalse.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent arg0) {
+				bmodel.addElement(false);
+			}
+		});
+		value.add(bfalse);
 		final JButton bremove = new JButton("Remove");
 		bremove.addActionListener(new ActionListener() {
 			@Override
@@ -89,7 +94,6 @@ public class PacketSender extends DebuggingPanel {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				bmodel.clear();
-				binput.setSelected(false);
 			}
 		});
 		value.add(bclear);
@@ -255,7 +259,6 @@ public class PacketSender extends DebuggingPanel {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				bmodel.clear();
-				binput.setSelected(false);
 				imodel.clear();
 				iinput.setText("0");
 				smodel.clear();
