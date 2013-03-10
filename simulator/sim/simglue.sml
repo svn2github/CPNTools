@@ -1451,6 +1451,9 @@ end (* local *)
     | chart _ = (CPN'debug "Match error in chart"; raise Match);
 
     fun extension (b, i, s) =
+        if (not (List.null i)) andalso (List.hd i > 400) andalso (List.hd i < 500)
+        then ([], [1], [])
+        else
         CpnMLSys.Extension.forward CpnMLSys.CmdProcess.waitAndRead
         (!CpnMLSys.CmdProcess.theGram, CpnMLSys.CmdProcess.ExtSimResult) 9
         (b, 10000::i, s)
