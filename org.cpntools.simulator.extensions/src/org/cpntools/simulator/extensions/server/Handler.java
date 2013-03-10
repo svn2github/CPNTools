@@ -29,27 +29,6 @@ import dk.klafbang.tools.Pair;
  */
 public class Handler implements Channel {
 
-	class FeederThread extends Thread {
-		public FeederThread(final String name) {
-			super(name);
-		}
-
-		@Override
-		public void run() {
-			try {
-				while (true) {
-					final Packet p = new Packet();
-					p.receive(in);
-// System.out.println("Received " + p);
-					packetQueue.put(p);
-				}
-			} catch (final IOException e) {
-				// Add a fake termination packet
-				packetQueue.put(new Packet(-1, EXTERNAL_COMMAND));
-			}
-		}
-	}
-
 	class DispatcherThread extends Thread {
 		public DispatcherThread(final String name) {
 			super(name);
@@ -95,8 +74,9 @@ public class Handler implements Channel {
 						packetQueue.put(p);
 						if (delay) {
 							try {
-								sleep(100);
+								Thread.sleep(100);
 							} catch (final InterruptedException ie) {
+								// Ignore
 							}
 						}
 						break;
@@ -114,8 +94,37 @@ public class Handler implements Channel {
 		}
 	}
 
+	class FeederThread extends Thread {
+		public FeederThread(final String name) {
+			super(name);
+		}
+
+		@Override
+		public void run() {
+			try {
+				while (true) {
+					final Packet p = new Packet();
+					p.receive(in);
+// System.out.println("Received " + p);
+					packetQueue.put(p);
+				}
+			} catch (final IOException e) {
+				// Add a fake termination packet
+				packetQueue.put(new Packet(-1, Handler.EXTERNAL_COMMAND));
+			}
+		}
+	}
+
+	/**
+	 * 
+	 */
 	public static final int EXTERNAL_COMMAND = 10000;
 
+	/**
+	 * @param exns
+	 * @return
+	 * @throws ConflictingExtensionsException
+	 */
 	public static Map<Integer, Extension> constructExtensionMap(final Collection<Extension> exns)
 	        throws ConflictingExtensionsException {
 		final Map<Integer, Extension> extensions = new HashMap<Integer, Extension>();
@@ -127,6 +136,32 @@ public class Handler implements Channel {
 		return extensions;
 	}
 
+	/**
+	 * @param extensions
+	 * @return
+	 */
+	public static Map<Integer, Map<Integer, Boolean>> constructPrefilters(final Collection<Extension> extensions) {
+		final Map<Integer, Map<Integer, Boolean>> prefilters = new HashMap<Integer, Map<Integer, Boolean>>();
+		for (final Extension e : extensions) { // We do this here as we are sure of no conflicts
+			for (final Command c : e.getSubscriptions()) {
+				Map<Integer, Boolean> prefilter = prefilters.get(c.getCommand());
+				if (prefilter == null) {
+					prefilter = new HashMap<Integer, Boolean>();
+					prefilters.put(c.getCommand(), prefilter);
+				}
+				if (c.isPrefilter()) {
+					prefilter.put(c.getSubcommand(), true);
+					prefilter.put(Command.ANY, true);
+				}
+			}
+		}
+		return prefilters;
+	}
+
+	/**
+	 * @param extensions
+	 * @return
+	 */
 	public static Map<Integer, Map<Integer, List<Extension>>> constructSubscriptions(
 	        final Collection<Extension> extensions) {
 		final Map<Integer, Map<Integer, List<Extension>>> subscriptions = new HashMap<Integer, Map<Integer, List<Extension>>>();
@@ -148,43 +183,27 @@ public class Handler implements Channel {
 		return subscriptions;
 	}
 
-	public static Map<Integer, Map<Integer, Boolean>> constructPrefilters(final Collection<Extension> extensions) {
-		final Map<Integer, Map<Integer, Boolean>> prefilters = new HashMap<Integer, Map<Integer, Boolean>>();
-		for (final Extension e : extensions) { // We do this here as we are sure of no conflicts
-			for (final Command c : e.getSubscriptions()) {
-				Map<Integer, Boolean> prefilter = prefilters.get(c.getCommand());
-				if (prefilter == null) {
-					prefilter = new HashMap<Integer, Boolean>();
-					prefilters.put(c.getCommand(), prefilter);
-				}
-				if (c.isPrefilter()) {
-					prefilter.put(c.getSubcommand(), true);
-					prefilter.put(Command.ANY, true);
-				}
-			}
-		}
-		return prefilters;
-	}
-
-	final DataInputStream in;
-	final DataOutputStream out;
 	private final Map<Integer, Extension> extensions;
 	private final Map<Class<? extends Extension>, Extension> extensionTypes = new HashMap<Class<? extends Extension>, Extension>();
-	private final Map<Integer, Map<Integer, List<Extension>>> subscriptions;
-	private final Map<Integer, Map<Integer, Boolean>> prefilters;
-	private final Map<Pair<Integer, String>, Option<?>> options;
-
-	final Lock sendLock;
-
 	private final Lock lock;
+	private final Map<Pair<Integer, String>, Option<?>> options;
+	private final Map<Integer, Map<Integer, Packet>> prefilterPackages = new HashMap<Integer, Map<Integer, Packet>>();
+	private final Map<Integer, Map<Integer, Boolean>> prefilters;
+	private final Map<Integer, Map<Integer, List<Extension>>> subscriptions;
+
+	final DataInputStream in;
+
+	final DataOutputStream out;
 
 	final BlockingQueue<Packet> packetQueue;
+
+	final Lock sendLock;
 
 	/**
 	 * @param in
 	 * @param out
 	 * @param extensions
-	 * @param string
+	 * @param name
 	 * @throws ConflictingExtensionsException
 	 * @throws ErrorInjectingException
 	 * @throws IOException
@@ -209,21 +228,37 @@ public class Handler implements Channel {
 		new DispatcherThread("Dispatcher " + name).start();
 	}
 
-	protected List<Extension> instantiate(final List<Extension> extensions) {
-		final List<Extension> result = new ArrayList<Extension>(extensions.size());
-		for (final Extension e : extensions) {
-			result.add(e.start(this));
-		}
-		return result;
-	}
-
-	public void constructTypeMap(final List<Extension> extensions) {
+	/**
+	 * @param extensions
+	 */
+	public void constructTypeMap(@SuppressWarnings("hiding") final List<Extension> extensions) {
 		for (final Extension e : extensions) {
 			final Extension instance = e.start(this);
 			extensionTypes.put(instance.getClass(), instance);
 		}
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Channel#evaluate(java.lang.String)
+	 */
+	@Override
+	public String evaluate(final String expresion) {
+		return "val a = 3 : int\nval b = 5 : int\n";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Channel#getExtension(java.lang.Class)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends Extension> T getExtension(final Class<T> clazz) {
+		return (T) extensionTypes.get(clazz);
+	}
+
+	/**
+	 * @param p
+	 * @return
+	 */
 	public Packet handleCommand(final Packet p) {
 		assert p.getOpcode() == 9;
 		assert p.getCommand() == Handler.EXTERNAL_COMMAND;
@@ -251,8 +286,10 @@ public class Handler implements Channel {
 		}
 	}
 
-	private final Map<Integer, Map<Integer, Packet>> prefilterPackages = new HashMap<Integer, Map<Integer, Packet>>();
-
+	/**
+	 * @param p
+	 * @return
+	 */
 	public Packet handleForward(final Packet p) {
 		final int serial = getSerial(p);
 		Packet request = getRequest(p);
@@ -306,21 +343,27 @@ public class Handler implements Channel {
 		return response;
 	}
 
+	/**
+	 * @param p
+	 * @return
+	 */
 	public Packet handleGFC(final Packet p) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	/**
+	 * 
+	 */
 	public void lock() {
 		lock.lock();
 	}
 
+	/**
+	 * 
+	 */
 	public void release() {
 		lock.unlock();
-	}
-
-	public String evaluate(final String expresion) {
-		return "val a = 3 : int\nval b = 5 : int\n";
 	}
 
 	/**
@@ -383,6 +426,7 @@ public class Handler implements Channel {
 		p.addInteger(101);
 		p.addInteger(e.getIdentifier());
 		p.addString(e.getName());
+		@SuppressWarnings("hiding")
 		final List<Option<?>> options = e.getOptions();
 		if (options == null) {
 			p.addInteger(0);
@@ -410,18 +454,6 @@ public class Handler implements Channel {
 			p.addBoolean(false);
 		}
 		return p;
-	}
-
-	private int getSerial(final Packet p) {
-		assert p.getOpcode() == 12;
-		p.reset();
-		p.getInteger();
-		p.getInteger();
-		p.getInteger(); // Ignore request
-		p.getInteger();
-		p.getInteger();
-		p.getInteger(); // Ignore response
-		return p.getInteger();
 	}
 
 	private Packet getRequest(final Packet p) {
@@ -481,15 +513,28 @@ public class Handler implements Channel {
 		return result;
 	}
 
-	private Map<Pair<Integer, String>, Option<?>> registerExtensions(final Collection<Extension> extensions)
-	        throws IOException {
+	private int getSerial(final Packet p) {
+		assert p.getOpcode() == 12;
+		p.reset();
+		p.getInteger();
+		p.getInteger();
+		p.getInteger(); // Ignore request
+		p.getInteger();
+		p.getInteger();
+		p.getInteger(); // Ignore response
+		return p.getInteger();
+	}
+
+	private Map<Pair<Integer, String>, Option<?>> registerExtensions(
+	        @SuppressWarnings("hiding") final Collection<Extension> extensions) throws IOException {
 		for (final Extension e : extensions) {
 			send(createOptions(e));
 		}
 		return options;
 	}
 
-	protected void doInjection(final Collection<Extension> extensions) throws ErrorInjectingException {
+	protected void doInjection(@SuppressWarnings("hiding") final Collection<Extension> extensions)
+	        throws ErrorInjectingException {
 		for (final Extension e : extensions) {
 			final String s = e.inject();
 			if (s != null && !"".equals(s)) {
@@ -503,6 +548,7 @@ public class Handler implements Channel {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Packet handleLocal(final Packet p) {
 		assert p.getOpcode() == 9;
 		assert p.getCommand() == Handler.EXTERNAL_COMMAND;
@@ -558,6 +604,14 @@ public class Handler implements Channel {
 		return result;
 	}
 
+	protected List<Extension> instantiate(@SuppressWarnings("hiding") final List<Extension> extensions) {
+		final List<Extension> result = new ArrayList<Extension>(extensions.size());
+		for (final Extension e : extensions) {
+			result.add(e.start(this));
+		}
+		return result;
+	}
+
 	protected void makeSubscriptions(final Map<Integer, Map<Integer, List<Extension>>> subscriptions2,
 	        final Map<Integer, Map<Integer, Boolean>> prefilters2) throws IOException {
 		for (final Entry<Integer, Map<Integer, List<Extension>>> entry : subscriptions2.entrySet()) {
@@ -570,14 +624,5 @@ public class Handler implements Channel {
 				}
 			}
 		}
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Channel#getExtension(java.lang.Class)
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T extends Extension> T getExtension(final Class<T> clazz) {
-		return (T) extensionTypes.get(clazz);
 	}
 }

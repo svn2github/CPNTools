@@ -16,6 +16,9 @@ public class Tracer extends DebuggingPanel {
 	public Tracer() {
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.debugging.DebuggingPanel#getName()
+	 */
 	@Override
 	public String getName() {
 		return "Tracer";

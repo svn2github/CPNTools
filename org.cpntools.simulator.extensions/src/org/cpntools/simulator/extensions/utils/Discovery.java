@@ -22,6 +22,22 @@ import dk.klafbang.tools.Pair;
 public class Discovery {
 
 	/**
+	 * @param clazz
+	 * @return
+	 */
+	public static <T> Pair<Collection<ClassInfo>, Class<T>> findExtensions(final Class<T> clazz) {
+		final ClassFinder finder = new ClassFinder();
+		finder.addClassPath();
+
+		final ClassFilter filter = new AndClassFilter(new NotClassFilter(new InterfaceOnlyClassFilter()),
+		        new SubclassClassFilter(clazz), new NotClassFilter(new AbstractClassFilter()));
+
+		final Collection<ClassInfo> foundClasses = new ArrayList<ClassInfo>();
+		finder.findClasses(foundClasses, filter);
+		return Pair.createPair(foundClasses, clazz);
+	}
+
+	/**
 	 * @param extensionsClasses
 	 * @return
 	 */
@@ -42,22 +58,6 @@ public class Discovery {
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * @param clazz
-	 * @return
-	 */
-	public static <T> Pair<Collection<ClassInfo>, Class<T>> findExtensions(final Class<T> clazz) {
-		final ClassFinder finder = new ClassFinder();
-		finder.addClassPath();
-
-		final ClassFilter filter = new AndClassFilter(new NotClassFilter(new InterfaceOnlyClassFilter()),
-		        new SubclassClassFilter(clazz), new NotClassFilter(new AbstractClassFilter()));
-
-		final Collection<ClassInfo> foundClasses = new ArrayList<ClassInfo>();
-		finder.findClasses(foundClasses, filter);
-		return Pair.createPair(foundClasses, clazz);
 	}
 
 }

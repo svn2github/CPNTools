@@ -15,15 +15,21 @@ import org.cpntools.simulator.extensions.graphics.Canvas;
 import org.cpntools.simulator.extensions.graphics.Rectangle;
 import org.cpntools.simulator.extensions.graphics.charts.BarChart;
 
+/**
+ * @author michael
+ */
 public class ImageDemo extends DemoPanel {
 
-	@Override
-	public String getName() {
-		return "Image";
-	}
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	BarChart lastChart;
 
+	/**
+	 * 
+	 */
 	public ImageDemo() {
 		final JButton button = new JButton("Load...");
 		button.addActionListener(new ActionListener() {
@@ -63,5 +69,13 @@ public class ImageDemo extends DemoPanel {
 			}
 		});
 		add(button);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.debugging.demos.DemoPanel#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Image";
 	}
 }

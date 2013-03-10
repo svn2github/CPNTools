@@ -9,13 +9,13 @@ import org.cpntools.simulator.extensions.Extension;
  */
 public class ErrorInjectingException extends ExtensionException {
 
-	private final String code;
-	private final String error;
-
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	private final String code;
+
+	private final String error;
 
 	/**
 	 * @param extension
@@ -39,10 +39,16 @@ public class ErrorInjectingException extends ExtensionException {
 		this.error = error;
 	}
 
+	/**
+	 * @return
+	 */
 	public String getCode() {
 		return code;
 	}
 
+	/**
+	 * @return
+	 */
 	public String getError() {
 		return error;
 	}

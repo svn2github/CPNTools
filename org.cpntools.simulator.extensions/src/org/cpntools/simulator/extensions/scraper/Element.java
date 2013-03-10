@@ -7,14 +7,10 @@ public abstract class Element {
 	private String id;
 
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param id
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (getId() == null ? 0 : getId().hashCode());
-		return result;
+	public Element(final String id) {
+		setId(id);
 	}
 
 	/**
@@ -32,12 +28,22 @@ public abstract class Element {
 		return true;
 	}
 
-	public Element(final String id) {
-		setId(id);
-	}
-
+	/**
+	 * @return
+	 */
 	public String getId() {
 		return id;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (getId() == null ? 0 : getId().hashCode());
+		return result;
 	}
 
 	/**

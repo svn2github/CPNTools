@@ -16,13 +16,25 @@ import org.cpntools.simulator.extensions.server.Handler;
 
 /**
  * @author michael
- * @param <T>
  */
 public class DeclareExtension extends AbstractExtension {
+	/**
+	 * 
+	 */
 	public static final int ID = 10001;
-	private final Option<Boolean> SMART = Option.create("Smart simulation", "smart", Boolean.class);
+	private final Map<String, Automaton> automata = new HashMap<String, Automaton>();
 	private final Option<Boolean> DATA_AWARE = Option.create("Data-aware simulation", "data_aware", Boolean.class);
 
+	private final Map<String, Module> modules = new HashMap<String, Module>();
+
+	private final Option<Boolean> SMART = Option.create("Smart simulation", "smart", Boolean.class);
+
+	private final Map<String, Integer> states = new HashMap<String, Integer>();
+	private final Map<String, Task> tasks = new HashMap<String, Task>();
+
+	/**
+	 * 
+	 */
 	public DeclareExtension() {
 		addOption(DATA_AWARE, SMART);
 		addSubscription(new Command(400, 2), // Syntax check page
@@ -42,6 +54,22 @@ public class DeclareExtension extends AbstractExtension {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
+	 */
+	@Override
+	public int getIdentifier() {
+		return DeclareExtension.ID;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Declare";
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
 	 */
 	@Override
@@ -51,7 +79,7 @@ public class DeclareExtension extends AbstractExtension {
 		final int extension = p.getInteger();
 		final int subcommand = p.getInteger();
 		assert command == Handler.EXTERNAL_COMMAND;
-		assert extension == ID;
+		assert extension == DeclareExtension.ID;
 		Packet result;
 		switch (subcommand) {
 		case 1:
@@ -65,10 +93,84 @@ public class DeclareExtension extends AbstractExtension {
 		return result;
 	}
 
-	private final Map<String, Task> tasks = new HashMap<String, Task>();
-	private final Map<String, Module> modules = new HashMap<String, Module>();
-	private final Map<String, Integer> states = new HashMap<String, Integer>();
-	private final Map<String, Automaton> automata = new HashMap<String, Automaton>();
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
+	 *      org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p, final Packet response) {
+		p.reset();
+		final int command = p.getInteger();
+		if (command == 500) {
+			final int subcommand = p.getInteger();
+			switch (subcommand) {
+			case 12:
+				execute(p);
+				return response;
+			case 13:
+			case 14:
+				return enabled(p, response);
+			case 20:
+			case 21:
+				reset();
+				return response;
+			case 35:
+			case 36:
+				return multipleEnabled(p, response);
+			}
+		}
+		return null;
+	}
+
+	private boolean acceptable(final Automaton a, final int state, final Object transition) {
+		int next = a.next(state, transition);
+		if (next < 0) {
+			next = a.next(state, Automaton.OTHERWISE);
+		}
+		if (next < 0) { return false; }
+		return !AcceptabilityFlavor.isImpossible(a, next);
+	}
+
+	private Packet enabled(final Packet p, final Packet response) {
+		response.reset();
+		p.reset();
+		if (response.getBoolean()) {
+			final Packet result = new Packet(7, 1);
+			result.addBoolean(enabled(p.getString(), p.getInteger()));
+			return result;
+		}
+		return response;
+	}
+
+	private boolean enabled(final String string, final int integer) {
+		Object task = tasks.get(string);
+		if (task == null) {
+			task = Automaton.OTHERWISE;
+		}
+		for (final String pageId : new ArrayList<String>(automata.keySet())) {
+			final Automaton a = automata.get(pageId);
+			final int state = states.get(pageId);
+			if (!acceptable(a, state, task)) { return false; }
+		}
+		return true;
+	}
+
+	private void execute(final Packet p) {
+		p.reset();
+		Object task = tasks.get(p.getString());
+		if (task == null) {
+			task = Automaton.OTHERWISE;
+		}
+		for (final String pageId : new ArrayList<String>(automata.keySet())) {
+			final Automaton a = automata.get(pageId);
+			final int state = states.get(pageId);
+			int next = a.next(state, task);
+			if (next < 0) {
+				next = a.next(state, Automaton.OTHERWISE);
+			}
+			states.put(pageId, next);
+		}
+	}
 
 	private Packet handleCheckPage(final Packet p) {
 		final Packet result = new Packet(7, 1);
@@ -122,48 +224,6 @@ public class DeclareExtension extends AbstractExtension {
 		return result;
 	}
 
-	@Override
-	public Packet handle(final Packet p, final Packet response) {
-		p.reset();
-		final int command = p.getInteger();
-		if (command == 500) {
-			final int subcommand = p.getInteger();
-			switch (subcommand) {
-			case 12:
-				execute(p);
-				return response;
-			case 13:
-			case 14:
-				return enabled(p, response);
-			case 20:
-			case 21:
-				reset();
-				return response;
-			case 35:
-			case 36:
-				return multipleEnabled(p, response);
-			}
-		}
-		return null;
-	}
-
-	private void execute(final Packet p) {
-		p.reset();
-		Object task = tasks.get(p.getString());
-		if (task == null) {
-			task = Automaton.OTHERWISE;
-		}
-		for (final String pageId : new ArrayList<String>(automata.keySet())) {
-			final Automaton a = automata.get(pageId);
-			final int state = states.get(pageId);
-			int next = a.next(state, task);
-			if (next < 0) {
-				next = a.next(state, Automaton.OTHERWISE);
-			}
-			states.put(pageId, next);
-		}
-	}
-
 	private Packet multipleEnabled(final Packet p, final Packet response) {
 		p.reset();
 		response.reset();
@@ -184,59 +244,10 @@ public class DeclareExtension extends AbstractExtension {
 		return result;
 	}
 
-	private boolean acceptable(final Automaton a, final int state, final Object transition) {
-		int next = a.next(state, transition);
-		if (next < 0) {
-			next = a.next(state, Automaton.OTHERWISE);
-		}
-		if (next < 0) { return false; }
-		return !AcceptabilityFlavor.isImpossible(a, next);
-	}
-
-	private Packet enabled(final Packet p, final Packet response) {
-		response.reset();
-		p.reset();
-		if (response.getBoolean()) {
-			final Packet result = new Packet(7, 1);
-			result.addBoolean(enabled(p.getString(), p.getInteger()));
-			return result;
-		}
-		return response;
-	}
-
-	private boolean enabled(final String string, final int integer) {
-		Object task = tasks.get(string);
-		if (task == null) {
-			task = Automaton.OTHERWISE;
-		}
-		for (final String pageId : new ArrayList<String>(automata.keySet())) {
-			final Automaton a = automata.get(pageId);
-			final int state = states.get(pageId);
-			if (!acceptable(a, state, task)) { return false; }
-		}
-		return true;
-	}
-
 	private void reset() {
 		for (final String page : new ArrayList<String>(modules.keySet())) {
 			states.put(page, automata.get(page).getInit());
 		}
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
-	 */
-	@Override
-	public int getIdentifier() {
-		return ID;
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#getName()
-	 */
-	@Override
-	public String getName() {
-		return "Declare";
 	}
 
 }

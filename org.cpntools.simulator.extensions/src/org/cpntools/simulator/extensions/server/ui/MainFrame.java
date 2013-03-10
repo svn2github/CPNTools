@@ -30,18 +30,30 @@ import javax.swing.table.DefaultTableModel;
 import org.cpntools.simulator.extensions.Extension;
 import org.cpntools.simulator.extensions.server.Server;
 
+/**
+ * @author michael
+ */
 public class MainFrame extends JFrame {
-	private final DefaultTableModel model;
-
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	static {
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "CPN Tools Extensions");
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (final Exception e) {
+			// Ignore
 		}
 	}
 
+	private final DefaultTableModel model;
+
+	/**
+	 * @throws HeadlessException
+	 * @throws UnknownHostException
+	 */
 	public MainFrame() throws HeadlessException, UnknownHostException {
 		super("CPN Tools Simulator Extension Server");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -149,6 +161,9 @@ public class MainFrame extends JFrame {
 		pack();
 	}
 
+	/**
+	 * @param e
+	 */
 	public void addExtension(final Extension e) {
 		model.addRow(new Object[] { true, e });
 	}

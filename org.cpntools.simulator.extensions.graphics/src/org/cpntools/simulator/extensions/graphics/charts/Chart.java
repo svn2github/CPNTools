@@ -6,12 +6,22 @@ import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.graphics.Canvas;
 import org.cpntools.simulator.extensions.graphics.Text;
 
+/**
+ * @author michael
+ */
 public abstract class Chart {
-	protected Canvas c;
-	protected final int width;
-	protected final int height;
 	private final Text header;
+	protected Canvas c;
+	protected final int height;
+	protected final int width;
 
+	/**
+	 * @param c
+	 * @param title
+	 * @param width
+	 * @param height
+	 * @throws Exception
+	 */
 	public Chart(final Channel c, final String title, final int width, final int height) throws Exception {
 		this.width = width;
 		this.height = height;

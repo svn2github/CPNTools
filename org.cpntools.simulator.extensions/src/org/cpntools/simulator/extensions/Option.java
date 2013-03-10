@@ -2,14 +2,9 @@ package org.cpntools.simulator.extensions;
 
 /**
  * @author michael
+ * @param <T>
  */
 public class Option<T> {
-	private final String name;
-
-	private final String key;
-
-	private final Class<T> type;
-
 	/**
 	 * @param name
 	 * @param key
@@ -19,6 +14,12 @@ public class Option<T> {
 	public static final <T> Option<T> create(final String name, final String key, final Class<T> type) {
 		return new Option<T>(name, key, type);
 	}
+
+	private final String key;
+
+	private final String name;
+
+	private final Class<T> type;
 
 	/**
 	 * @param name
@@ -40,7 +41,7 @@ public class Option<T> {
 		if (this == obj) { return true; }
 		if (obj == null) { return false; }
 		if (!(obj instanceof Option)) { return false; }
-		final Option other = (Option) obj;
+		final Option<?> other = (Option<?>) obj;
 		if (key == null) {
 			if (other.key != null) { return false; }
 		} else if (!key.equals(other.key)) { return false; }
@@ -50,18 +51,30 @@ public class Option<T> {
 		return true;
 	}
 
+	/**
+	 * @return
+	 */
 	public String getKey() {
 		return key;
 	}
 
+	/**
+	 * @return
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @return
+	 */
 	public Class<T> getType() {
 		return type;
 	}
 
+	/**
+	 * @return
+	 */
 	public int getTypeId() {
 		if (type == Boolean.class) { return 0; }
 		if (type == Integer.class) { return 1; }
@@ -81,18 +94,19 @@ public class Option<T> {
 		return result;
 	}
 
-	protected void checkType(final Class<?> type) {
-		if (type == Integer.class) { return; }
-		if (type == Boolean.class) { return; }
-		if (type == String.class) { return; }
-		throw new IllegalArgumentException(type + " is not of type integer, boolean or string");
-	}
-
 	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		return name + " (" + type.getSimpleName() + ')';
+	}
+
+	@SuppressWarnings("hiding")
+	protected void checkType(final Class<?> type) {
+		if (type == Integer.class) { return; }
+		if (type == Boolean.class) { return; }
+		if (type == String.class) { return; }
+		throw new IllegalArgumentException(type + " is not of type integer, boolean or string");
 	}
 }

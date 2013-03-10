@@ -40,11 +40,15 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 	 * 
 	 */
 	public static final int ID = 10000;
-	private JDialog dialog;
-	private JTabbedPane tabs;
-	private JTextField stringOption;
-	private JTextField integerOption;
 	private JCheckBox booleanOption;
+	private JDialog dialog;
+	private final Map<Page, Integer> indexes = new HashMap<Page, Integer>();
+	private JTextField integerOption;
+	private final Map<Page, DefaultListModel> lists = new HashMap<Page, DefaultListModel>();
+
+	private JTextField stringOption;
+
+	private JTabbedPane tabs;
 
 	/**
 	 * 
@@ -58,6 +62,46 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 		addObserver(this);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
+	 */
+	@Override
+	public int getIdentifier() {
+		return HelloWorld.ID;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getName()
+	 */
+	@Override
+	public String getName() {
+		return "DCR Graph";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p) {
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
+	 *      org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p, final Packet r) {
+		p.reset();
+		if (p.getInteger() == 200 && p.getInteger() == 9) {
+			dialog.setTitle("Hello World [" + p.getString() + "]");
+		}
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#setChannel(org.cpntools.simulator.extensions.Channel)
+	 */
 	@Override
 	public void setChannel(final Channel c) {
 		super.setChannel(c);
@@ -99,33 +143,6 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 			e.printStackTrace();
 		}
 	}
-
-	@Override
-	public int getIdentifier() {
-		return ID;
-	}
-
-	@Override
-	public String getName() {
-		return "DCR Graph";
-	}
-
-	@Override
-	public Packet handle(final Packet p) {
-		return null;
-	}
-
-	@Override
-	public Packet handle(final Packet p, final Packet r) {
-		p.reset();
-		if (p.getInteger() == 200 && p.getInteger() == 9) {
-			dialog.setTitle("Hello World [" + p.getString() + "]");
-		}
-		return null;
-	}
-
-	private final Map<Page, DefaultListModel> lists = new HashMap<Page, DefaultListModel>();
-	private final Map<Page, Integer> indexes = new HashMap<Page, Integer>();
 
 	/**
 	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)

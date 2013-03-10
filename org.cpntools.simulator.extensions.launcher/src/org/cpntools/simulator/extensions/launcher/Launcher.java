@@ -10,15 +10,6 @@ import org.cpntools.simulator.extensions.server.DiscoveryServer;
  */
 public class Launcher extends DiscoveryServer {
 	/**
-	 * @throws HeadlessException
-	 * @throws IOException
-	 * @throws InterruptedException
-	 */
-	public Launcher() throws HeadlessException, IOException, InterruptedException {
-		super();
-	}
-
-	/**
 	 * @param args
 	 * @throws InterruptedException
 	 * @throws IOException
@@ -26,6 +17,15 @@ public class Launcher extends DiscoveryServer {
 	 */
 	public static void main(final String[] args) throws HeadlessException, IOException, InterruptedException {
 		new Launcher();
+	}
+
+	/**
+	 * @throws HeadlessException
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public Launcher() throws HeadlessException, IOException, InterruptedException {
+		super();
 	}
 
 }

@@ -78,6 +78,12 @@ public interface Extension {
 	String inject();
 
 	/**
+	 * @param request
+	 * @return
+	 */
+	Packet prefilter(Packet request);
+
+	/**
 	 * Set the value of the option.
 	 * 
 	 * @param option
@@ -92,7 +98,5 @@ public interface Extension {
 	 * @return
 	 */
 	Extension start(Channel c);
-
-	Packet prefilter(Packet request);
 
 }

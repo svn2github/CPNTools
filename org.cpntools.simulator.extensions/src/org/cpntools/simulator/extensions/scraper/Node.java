@@ -22,19 +22,16 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 		this.page = page;
 	}
 
-	public Page getPage() {
-		return page;
-	}
-
+	/**
+	 * @param a
+	 */
 	public void addArc(final Arc a) {
 		arcs.add(a);
 	}
 
-	@Override
-	public Iterator<Arc> iterator() {
-		return arcs.iterator();
-	}
-
+	/**
+	 * @see java.lang.Object#clone()
+	 */
 	@Override
 	public Node clone() {
 		try {
@@ -45,5 +42,20 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 			assert false;
 		}
 		return null;
+	}
+
+	/**
+	 * @return
+	 */
+	public Page getPage() {
+		return page;
+	}
+
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<Arc> iterator() {
+		return arcs.iterator();
 	}
 }

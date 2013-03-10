@@ -9,13 +9,22 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  */
 public interface Channel {
 	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	String evaluate(String expression) throws Exception;
+
+	/**
+	 * @param clazz
+	 * @return
+	 */
+	<T extends Extension> T getExtension(Class<T> clazz);
+
+	/**
 	 * @param p
 	 * @return
 	 * @throws IOException
 	 */
 	Packet send(Packet p) throws IOException;
-
-	String evaluate(String expression) throws Exception;
-
-	<T extends Extension> T getExtension(Class<T> clazz);
 }

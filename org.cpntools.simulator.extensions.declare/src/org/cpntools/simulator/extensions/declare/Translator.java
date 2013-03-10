@@ -22,48 +22,19 @@ import ltl2aut.formula.visitor.Mapper;
  * @author michael
  */
 public class Translator {
+	/**
+	 * 
+	 */
 	public static final Translator INSTANCE = new Translator();
 
 	private Translator() {
 	}
 
-	public Formula<String> parse(final String formula) throws Exception {
-		final Formula<String> parsed = CupParser.parse(formula);
-		final Formula<String> simplified = SimplifyVisitor.apply(parsed);
-		return simplified;
-	}
-
-	public Formula<Task> parse(final Constraint c) throws Exception {
-		final Formula<String> formula = parse(c.getFormula());
-		final SortedSet<String> aps = getAPs(formula);
-		final Map<String, Collection<Task>> map = buildMap(aps, c);
-		final Formula<Task> mappedFormula = replaceParameters(formula, map);
-		return mappedFormula;
-	}
-
-	public <AP> Automaton translateRaw(final Map<Formula<AP>, Constraint> formulas) throws Exception {
-		return LTL2Automaton.INSTANCE.translate(formulas.keySet());
-	}
-
-	public Map<Formula<Task>, Constraint> parse(final Module module) throws Exception {
-		final Map<Formula<Task>, Constraint> result = new HashMap<Formula<Task>, Constraint>();
-		for (final Constraint c : module.constraints()) {
-			result.put(parse(c), c);
-		}
-		return result;
-	}
-
-	public void colorAutomaton(final Automaton a) {
-		final SCCGraph<Automaton> sccGraph = new SCCGraph<Automaton>(a);
-		AcceptabilityFlavor.apply(sccGraph);
-		AcceptableFlavor.apply(sccGraph);
-
-	}
-
-	public <T> SortedSet<T> getAPs(final Formula<T> formula) {
-		return new TreeSet<T>(APCollector.apply(formula));
-	}
-
+	/**
+	 * @param aps
+	 * @param c
+	 * @return
+	 */
 	public Map<String, Collection<Task>> buildMap(final SortedSet<String> aps, final Constraint c) {
 		assert aps.size() == c.parameterCount();
 		final Map<String, Collection<Task>> result = new HashMap<String, Collection<Task>>();
@@ -72,6 +43,61 @@ public class Translator {
 			result.put(ap, c.getParameters(i++));
 		}
 		return result;
+	}
+
+	/**
+	 * @param a
+	 */
+	public void colorAutomaton(final Automaton a) {
+		final SCCGraph<Automaton> sccGraph = new SCCGraph<Automaton>(a);
+		AcceptabilityFlavor.apply(sccGraph);
+		AcceptableFlavor.apply(sccGraph);
+
+	}
+
+	/**
+	 * @param formula
+	 * @return
+	 */
+	public <T> SortedSet<T> getAPs(final Formula<T> formula) {
+		return new TreeSet<T>(APCollector.apply(formula));
+	}
+
+	/**
+	 * @param c
+	 * @return
+	 * @throws Exception
+	 */
+	public Formula<Task> parse(final Constraint c) throws Exception {
+		final Formula<String> formula = parse(c.getFormula());
+		final SortedSet<String> aps = getAPs(formula);
+		final Map<String, Collection<Task>> map = buildMap(aps, c);
+		final Formula<Task> mappedFormula = replaceParameters(formula, map);
+		return mappedFormula;
+	}
+
+	/**
+	 * @param module
+	 * @return
+	 * @throws Exception
+	 */
+	public Map<Formula<Task>, Constraint> parse(final Module module) throws Exception {
+		final Map<Formula<Task>, Constraint> result = new HashMap<Formula<Task>, Constraint>();
+		for (final Constraint c : module.constraints()) {
+			result.put(parse(c), c);
+		}
+		return result;
+	}
+
+	/**
+	 * @param formula
+	 * @return
+	 * @throws Exception
+	 */
+	public Formula<String> parse(final String formula) throws Exception {
+		final Formula<String> parsed = CupParser.parse(formula);
+		final Formula<String> simplified = SimplifyVisitor.apply(parsed);
+		return simplified;
 	}
 
 	/**
@@ -98,6 +124,11 @@ public class Translator {
 		});
 	}
 
+	/**
+	 * @param f
+	 * @param parameters
+	 * @return
+	 */
 	public <S, T> Formula<T> replaceParametersPrimitive(final Formula<S> f, final Map<S, T> parameters) {
 		return f.traverse(new Mapper<S, T>(null) {
 			@Override
@@ -107,6 +138,15 @@ public class Translator {
 				return new Atomic<T>(tasks);
 			}
 		});
+	}
+
+	/**
+	 * @param formulas
+	 * @return
+	 * @throws Exception
+	 */
+	public <AP> Automaton translateRaw(final Map<Formula<AP>, Constraint> formulas) throws Exception {
+		return LTL2Automaton.INSTANCE.translate(formulas.keySet());
 	}
 
 }

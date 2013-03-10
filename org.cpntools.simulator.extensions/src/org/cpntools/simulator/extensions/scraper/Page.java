@@ -21,6 +21,25 @@ public class Page extends HasName {
 		super(id, name);
 	}
 
+	/**
+	 * @param t
+	 */
+	public void add(final Transition t) {
+		transitions.put(t.getId(), t);
+	}
+
+	/**
+	 * @param id
+	 * @return
+	 */
+	public Transition getTransition(final String id) {
+		return transitions.get(id);
+	}
+
+	/**
+	 * @param ids
+	 * @return
+	 */
 	public Map<String, Transition> retainTransitions(final Collection<String> ids) {
 		final Set<String> idset = new HashSet<String>(ids);
 		final Map<String, Transition> result = new HashMap<String, Transition>();
@@ -32,14 +51,9 @@ public class Page extends HasName {
 		return result;
 	}
 
-	public void add(final Transition t) {
-		transitions.put(t.getId(), t);
-	}
-
-	public Transition getTransition(final String id) {
-		return transitions.get(id);
-	}
-
+	/**
+	 * @return
+	 */
 	public Iterable<Transition> transitions() {
 		return transitions.values();
 	}

@@ -26,20 +26,33 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  */
 public class PacketSender extends DebuggingPanel {
 
+	/**
+	 * @author michael
+	 */
 	public class NamedInteger {
 
 		private final String name;
 		private final int value;
 
+		/**
+		 * @param name
+		 * @param value
+		 */
 		public NamedInteger(final String name, final int value) {
 			this.name = name;
 			this.value = value;
 		}
 
+		/**
+		 * @return
+		 */
 		public int getValue() {
 			return value;
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
 		@Override
 		public String toString() {
 			return name;
@@ -51,6 +64,9 @@ public class PacketSender extends DebuggingPanel {
 	 */
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * 
+	 */
 	public PacketSender() {
 		final JPanel bis = new JPanel();
 		bis.setLayout(new BoxLayout(bis, BoxLayout.Y_AXIS));
@@ -116,6 +132,7 @@ public class PacketSender extends DebuggingPanel {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
 				try {
+					@SuppressWarnings("hiding")
 					final int value = Integer.parseInt(iinput.getText());
 					imodel.addElement(value);
 					iinput.selectAll();
@@ -132,7 +149,8 @@ public class PacketSender extends DebuggingPanel {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
 				final int[] selectedIndices = is.getSelectedIndices();
-				for (int i = selectedIndices.length - 1; i >= 0; i--) {
+				for (@SuppressWarnings("hiding")
+				int i = selectedIndices.length - 1; i >= 0; i--) {
 					imodel.removeElementAt(selectedIndices[i]);
 				}
 			}
@@ -176,7 +194,8 @@ public class PacketSender extends DebuggingPanel {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
 				final int[] selectedIndices = ss.getSelectedIndices();
-				for (int i = selectedIndices.length - 1; i >= 0; i--) {
+				for (@SuppressWarnings("hiding")
+				int i = selectedIndices.length - 1; i >= 0; i--) {
 					smodel.removeElementAt(selectedIndices[i]);
 				}
 			}
@@ -216,6 +235,7 @@ public class PacketSender extends DebuggingPanel {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				try {
+					@SuppressWarnings("hiding")
 					int type = 7;
 					final Object tobject = opcode.getSelectedItem();
 					if (tobject instanceof NamedInteger) {
@@ -229,13 +249,16 @@ public class PacketSender extends DebuggingPanel {
 					final int cmd = Integer.parseInt(command.getText());
 
 					final Packet p = new Packet(type, cmd);
-					for (int i = 0; i < bmodel.size(); i++) {
+					for (@SuppressWarnings("hiding")
+					int i = 0; i < bmodel.size(); i++) {
 						p.addBoolean((Boolean) bmodel.getElementAt(i));
 					}
-					for (int i = 0; i < imodel.size(); i++) {
+					for (@SuppressWarnings("hiding")
+					int i = 0; i < imodel.size(); i++) {
 						p.addInteger((Integer) imodel.getElementAt(i));
 					}
-					for (int i = 0; i < smodel.size(); i++) {
+					for (@SuppressWarnings("hiding")
+					int i = 0; i < smodel.size(); i++) {
 						p.addString((String) smodel.getElementAt(i));
 					}
 
@@ -269,6 +292,9 @@ public class PacketSender extends DebuggingPanel {
 		add(buttons, BorderLayout.SOUTH);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.debugging.DebuggingPanel#getName()
+	 */
 	@Override
 	public String getName() {
 		return "Send Packets";

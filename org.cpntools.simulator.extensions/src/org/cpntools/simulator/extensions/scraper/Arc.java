@@ -4,12 +4,34 @@ package org.cpntools.simulator.extensions.scraper;
  * @author michael
  */
 public class Arc extends Element {
+	/**
+	 * @author michael
+	 */
 	public enum Type {
-		INPUT, OUTPUT, BOTHDIR, INHIBITOR, RESET
-	};
+		/**
+		 * 
+		 */
+		BOTHDIR, /**
+		 * 
+		 */
+		INHIBITOR, /**
+		 * 
+		 */
+		INPUT, /**
+		 * 
+		 */
+		OUTPUT, /**
+		 * 
+		 */
+		RESET
+	}
+
+	private String inscription;
+	private final Place p;
+	private final Page page;
 
 	private final Transition t;
-	private final Place p;
+
 	private final Type type;
 
 	/**
@@ -30,33 +52,49 @@ public class Arc extends Element {
 		setInscription(inscription);
 	}
 
-	private final Page page;
-	private String inscription;
-
-	public boolean setInscription(final String inscription) {
-		if (inscription.equals(this.inscription)) { return false; }
-		this.inscription = inscription;
-		return true;
-	}
-
-	public Page getPage() {
-		return page;
-	}
-
+	/**
+	 * @return
+	 */
 	public String getInscription() {
 		return inscription;
 	}
 
-	public Type getType() {
-		return type;
+	/**
+	 * @return
+	 */
+	public Page getPage() {
+		return page;
 	}
 
+	/**
+	 * @return
+	 */
+	public Place getPlace() {
+		return p;
+	}
+
+	/**
+	 * @return
+	 */
 	public Transition getTransition() {
 		return t;
 	}
 
-	public Place getPlace() {
-		return p;
+	/**
+	 * @return
+	 */
+	public Type getType() {
+		return type;
+	}
+
+	/**
+	 * @param inscription
+	 * @return
+	 */
+	public boolean setInscription(final String inscription) {
+		if (inscription.equals(this.inscription)) { return false; }
+		this.inscription = inscription;
+		return true;
 	}
 
 }

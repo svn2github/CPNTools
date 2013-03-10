@@ -22,14 +22,18 @@ import org.cpntools.simulator.extensions.graphics.charts.BarChart;
  */
 public class ChartDemo extends DemoPanel {
 
-	@Override
-	public String getName() {
-		return "Bar Chart";
-	}
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-	BarChart lastChart;
 	Map<String, Bar> bars;
 
+	BarChart lastChart;
+
+	/**
+	 * 
+	 */
 	public ChartDemo() {
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		final JComboBox barsDropdown = new JComboBox();
@@ -50,6 +54,7 @@ public class ChartDemo extends DemoPanel {
 					barsDropdown.removeAllItems();
 					fieldName.removeAllItems();
 				} catch (final Exception e) {
+					// Ignore
 				}
 			}
 		});
@@ -70,6 +75,7 @@ public class ChartDemo extends DemoPanel {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
 				if (lastChart != null) {
+					@SuppressWarnings("hiding")
 					final String name = fieldName.getSelectedItem().toString().trim();
 					final int height = Integer.parseInt(value.getText());
 					final Bar b = bars.get(name);
@@ -103,5 +109,13 @@ public class ChartDemo extends DemoPanel {
 		});
 		delete.add(removeButton, BorderLayout.EAST);
 		add(delete);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.debugging.demos.DemoPanel#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Bar Chart";
 	}
 }

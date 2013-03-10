@@ -15,11 +15,16 @@ import org.cpntools.simulator.extensions.AbstractExtension;
 
 /**
  * @author michael
- * @param <T>
  */
 public class ExportExtension extends AbstractExtension {
+	/**
+	 * 
+	 */
 	public static final int ID = 10003;
 
+	/**
+	 * 
+	 */
 	public ExportExtension() {
 	}
 
@@ -28,7 +33,7 @@ public class ExportExtension extends AbstractExtension {
 	 */
 	@Override
 	public int getIdentifier() {
-		return ID;
+		return ExportExtension.ID;
 	}
 
 	/**
@@ -39,6 +44,9 @@ public class ExportExtension extends AbstractExtension {
 		return "Export Helper";
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
 	@Override
 	public Packet handle(final Packet p) {
 		try {

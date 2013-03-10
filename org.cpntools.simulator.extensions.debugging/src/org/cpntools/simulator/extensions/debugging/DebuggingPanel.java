@@ -18,9 +18,18 @@ public abstract class DebuggingPanel extends JPanel {
 	protected Channel channel;
 	protected DebuggingExtension orphanage;
 
+	/**
+	 * 
+	 */
 	public DebuggingPanel() {
 		super(new BorderLayout());
 	}
+
+	/**
+	 * @see java.awt.Component#getName()
+	 */
+	@Override
+	public abstract String getName();
 
 	/**
 	 * @param orphanage
@@ -30,8 +39,5 @@ public abstract class DebuggingPanel extends JPanel {
 		this.orphanage = orphanage;
 		channel = c;
 	}
-
-	@Override
-	public abstract String getName();
 
 }

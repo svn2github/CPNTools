@@ -17,18 +17,23 @@ public abstract class DemoPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	protected Channel channel;
 
+	/**
+	 * 
+	 */
 	public DemoPanel() {
 		super(new BorderLayout());
 	}
 
 	/**
-	 * @param orphanage
+	 * @see java.awt.Component#getName()
+	 */
+	@Override
+	public abstract String getName();
+
+	/**
 	 * @param c
 	 */
 	public void setChannel(final Channel c) {
 		channel = c;
 	}
-
-	@Override
-	public abstract String getName();
 }

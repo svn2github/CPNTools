@@ -5,20 +5,43 @@ package org.cpntools.simulator.extensions.scraper;
  */
 public class Transition extends Node {
 
+	private String channel;
+
+	private String code;
+
+	private boolean controllable;
+	private String guard;
+	private String priority;
+	private String time;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param id
+	 * @param name
+	 * @param page
+	 * @param guard
+	 * @param priority
+	 * @param time
+	 * @param code
+	 * @param channel
+	 * @param controllable
+	 */
+	public Transition(final String id, final String name, final Page page, final String guard, final String priority,
+	        final String time, final String code, final String channel, final boolean controllable) {
+		super(id, name, page);
+		setChannel(channel);
+		setControllable(controllable);
+		setGuard(guard);
+		setPriority(priority);
+		setTime(time);
+		setCode(code);
+	}
+
+	/**
+	 * @see java.lang.Object#clone()
 	 */
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + (channel == null ? 0 : channel.hashCode());
-		result = prime * result + (code == null ? 0 : code.hashCode());
-		result = prime * result + (controllable ? 1231 : 1237);
-		result = prime * result + (guard == null ? 0 : guard.hashCode());
-		result = prime * result + (priority == null ? 0 : priority.hashCode());
-		result = prime * result + (time == null ? 0 : time.hashCode());
-		return result;
+	public Transition clone() {
+		return (Transition) super.clone();
 	}
 
 	/**
@@ -49,89 +72,88 @@ public class Transition extends Node {
 		return true;
 	}
 
-	private String guard;
-	private String priority;
-	private String time;
-	private String code;
-	private String channel;
-	private boolean controllable;
-
 	/**
-	 * @param id
-	 * @param name
-	 * @param page
-	 * @param guard
-	 * @param priority
-	 * @param time
-	 * @param code
-	 * @param channel
-	 * @param controllable
+	 * @return
 	 */
-	public Transition(final String id, final String name, final Page page, final String guard, final String priority,
-	        final String time, final String code, final String channel, final boolean controllable) {
-		super(id, name, page);
-		setChannel(channel);
-		setControllable(controllable);
-		setGuard(guard);
-		setPriority(priority);
-		setTime(time);
-		setCode(code);
-	}
-
-	public String getGuard() {
-		return guard;
-	}
-
-	public boolean setGuard(final String guard) {
-		if (guard.equals(this.guard)) { return false; }
-		this.guard = guard;
-		return true;
-	}
-
-	public String getPriority() {
-		return priority;
-	}
-
-	public boolean setPriority(final String priority) {
-		if (priority.equals(this.priority)) { return false; }
-		this.priority = priority;
-		return true;
-	}
-
-	public String getTime() {
-		return time;
-	}
-
-	public boolean setTime(final String time) {
-		if (time.equals(this.time)) { return false; }
-		this.time = time;
-		return true;
-	}
-
-	public String getCode() {
-		return code;
-	}
-
-	public boolean setCode(final String code) {
-		if (code.equals(this.code)) { return false; }
-		this.code = code;
-		return true;
-	}
-
 	public String getChannel() {
 		return channel;
 	}
 
+	/**
+	 * @return
+	 */
+	public String getCode() {
+		return code;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getGuard() {
+		return guard;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getPriority() {
+		return priority;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getTime() {
+		return time;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + (channel == null ? 0 : channel.hashCode());
+		result = prime * result + (code == null ? 0 : code.hashCode());
+		result = prime * result + (controllable ? 1231 : 1237);
+		result = prime * result + (guard == null ? 0 : guard.hashCode());
+		result = prime * result + (priority == null ? 0 : priority.hashCode());
+		result = prime * result + (time == null ? 0 : time.hashCode());
+		return result;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isControllable() {
+		return controllable;
+	}
+
+	/**
+	 * @param channel
+	 * @return
+	 */
 	public boolean setChannel(final String channel) {
 		if (channel.equals(this.channel)) { return false; }
 		this.channel = channel;
 		return true;
 	}
 
-	public boolean isControllable() {
-		return controllable;
+	/**
+	 * @param code
+	 * @return
+	 */
+	public boolean setCode(final String code) {
+		if (code.equals(this.code)) { return false; }
+		this.code = code;
+		return true;
 	}
 
+	/**
+	 * @param controllable
+	 * @return
+	 */
 	public boolean setControllable(final boolean controllable) {
 		if (controllable == this.controllable) { return false; }
 		this.controllable = controllable;
@@ -139,10 +161,32 @@ public class Transition extends Node {
 	}
 
 	/**
-	 * @see java.lang.Object#clone()
+	 * @param guard
+	 * @return
 	 */
-	@Override
-	public Transition clone() {
-		return (Transition) super.clone();
+	public boolean setGuard(final String guard) {
+		if (guard.equals(this.guard)) { return false; }
+		this.guard = guard;
+		return true;
+	}
+
+	/**
+	 * @param priority
+	 * @return
+	 */
+	public boolean setPriority(final String priority) {
+		if (priority.equals(this.priority)) { return false; }
+		this.priority = priority;
+		return true;
+	}
+
+	/**
+	 * @param time
+	 * @return
+	 */
+	public boolean setTime(final String time) {
+		if (time.equals(this.time)) { return false; }
+		this.time = time;
+		return true;
 	}
 }

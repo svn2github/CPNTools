@@ -22,8 +22,9 @@ public abstract class XChart extends Chart {
 	 */
 	public XChart(final Channel c, final String title, final int width, final int height) throws Exception {
 		super(c, title, width, height);
-		xaxis = new Line(new Point(0, TEXT_SPACE), new Point(width, TEXT_SPACE), new Point(width - 10, TEXT_SPACE + 5),
-		        new Point(width - 10, TEXT_SPACE - 5), new Point(width, TEXT_SPACE));
+		xaxis = new Line(new Point(0, XChart.TEXT_SPACE), new Point(width, XChart.TEXT_SPACE), new Point(width - 10,
+		        XChart.TEXT_SPACE + 5), new Point(width - 10, XChart.TEXT_SPACE - 5), new Point(width,
+		        XChart.TEXT_SPACE));
 		this.c.add(xaxis);
 	}
 }

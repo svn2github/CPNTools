@@ -18,65 +18,100 @@ import org.cpntools.simulator.extensions.Extension;
  */
 public class Scraper extends AbstractExtension {
 	/**
-	 * 
+	 * @author michael
 	 */
-	public static final int ID = 10002;
-
-	private final Map<String, Page> pages = new HashMap<String, Page>();
-
-	public static enum EventType {
-		ADDED, REMOVED, CHANGED;
+	public static class Added extends Event {
+		/**
+		 * @param elm
+		 */
+		public Added(final Element elm) {
+			super(EventType.ADDED, elm);
+		}
 	}
 
+	/**
+	 * @author michael
+	 */
+	public static class Changed extends Event {
+		/**
+		 * @param elm
+		 */
+		public Changed(final Element elm) {
+			super(EventType.CHANGED, elm);
+		}
+	}
+
+	/**
+	 * @author michael
+	 */
 	public abstract static class Event {
-		private final EventType type;
 		private final Element elm;
+		private final EventType type;
 
 		protected Event(final EventType type, final Element elm) {
 			this.type = type;
 			this.elm = elm;
 		}
 
-		public EventType getType() {
-			return type;
-		}
-
+		/**
+		 * @return
+		 */
 		public Element getElm() {
 			return elm;
 		}
-	}
 
-	public static class Added extends Event {
-		public Added(final Element elm) {
-			super(EventType.ADDED, elm);
+		/**
+		 * @return
+		 */
+		public EventType getType() {
+			return type;
 		}
 	}
 
+	/**
+	 * @author michael
+	 */
+	public static enum EventType {
+		/**
+		 * 
+		 */
+		ADDED, /**
+		 * 
+		 */
+		CHANGED, /**
+		 * 
+		 */
+		REMOVED;
+	}
+
+	/**
+	 * @author michael
+	 */
 	public static class Removed extends Event {
+		/**
+		 * @param elm
+		 */
 		public Removed(final Element elm) {
 			super(EventType.REMOVED, elm);
 		}
 	}
 
-	public static class Changed extends Event {
-		public Changed(final Element elm) {
-			super(EventType.CHANGED, elm);
-		}
-	}
+	/**
+	 * 
+	 */
+	public static final int ID = 10002;
 
+	/**
+	 * 
+	 */
 	public static final Scraper INSTANCE = new Scraper();
+
+	private final Map<String, Page> pages = new HashMap<String, Page>();
 
 	final BlockingQueue<Packet> packets = new BlockingQueue<Packet>();
 
 	private Scraper() {
 		// Hide constructor
-	}
-
-	@Override
-	public Extension start(final Channel c) {
-		final Scraper s = new Scraper(true);
-		s.setChannel(c);
-		return s;
 	}
 
 	private Scraper(final boolean b) {
@@ -96,32 +131,70 @@ public class Scraper extends AbstractExtension {
 		}.start();
 	}
 
+	/**
+	 * @param p
+	 */
 	public void add(final Page p) {
 		pages.put(p.getId(), p);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
+	 */
+	@Override
+	public int getIdentifier() {
+		return Scraper.ID;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Model Scraper";
+	}
+
+	/**
+	 * @param id
+	 * @return
+	 */
 	public Page getPage(final String id) {
 		return pages.get(id);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p) {
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
+	 *      org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p, final Packet r) {
+		packets.put(p);
+		return null;
+	}
+
+	/**
+	 * @return
+	 */
 	public Iterable<Page> pages() {
 		return pages.values();
 	}
 
-	protected void scrape(final Packet packet) {
-		packet.reset();
-		final int command = packet.getInteger();
-		switch (command) {
-		case 400: {
-			final int subcommand = packet.getInteger();
-			switch (subcommand) {
-			case 2:
-				handleSyntaxCheck(packet);
-			}
-		}
-			break;
-		}
-
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#start(org.cpntools.simulator.extensions.Channel)
+	 */
+	@Override
+	public Extension start(final Channel c) {
+		final Scraper s = new Scraper(true);
+		s.setChannel(c);
+		return s;
 	}
 
 	private void handleSyntaxCheck(final Packet packet) {
@@ -269,24 +342,19 @@ public class Scraper extends AbstractExtension {
 		notifyObservers(e);
 	}
 
-	@Override
-	public int getIdentifier() {
-		return ID;
-	}
+	protected void scrape(final Packet packet) {
+		packet.reset();
+		final int command = packet.getInteger();
+		switch (command) {
+		case 400: {
+			final int subcommand = packet.getInteger();
+			switch (subcommand) {
+			case 2:
+				handleSyntaxCheck(packet);
+			}
+		}
+			break;
+		}
 
-	@Override
-	public String getName() {
-		return "Model Scraper";
-	}
-
-	@Override
-	public Packet handle(final Packet p, final Packet r) {
-		packets.put(p);
-		return null;
-	}
-
-	@Override
-	public Packet handle(final Packet p) {
-		return null;
 	}
 }

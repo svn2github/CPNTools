@@ -5,15 +5,15 @@ package org.cpntools.simulator.extensions.scraper;
  */
 public class HasName extends Element {
 
+	private String name;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param id
+	 * @param name
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		return result;
+	public HasName(final String id, final String name) {
+		super(id);
+		setName(name);
 	}
 
 	/**
@@ -31,17 +31,6 @@ public class HasName extends Element {
 		return true;
 	}
 
-	private String name;
-
-	/**
-	 * @param id
-	 * @param name
-	 */
-	public HasName(final String id, final String name) {
-		super(id);
-		setName(name);
-	}
-
 	/**
 	 * @return
 	 */
@@ -49,6 +38,21 @@ public class HasName extends Element {
 		return name;
 	}
 
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		return result;
+	}
+
+	/**
+	 * @param name
+	 * @return
+	 */
 	public boolean setName(final String name) {
 		if (name == null) {
 			if (this.name == null) { return false; }

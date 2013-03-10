@@ -9,22 +9,37 @@ import java.util.Set;
 public class Module {
 	private final Set<Constraint> constraints = new HashSet<Constraint>();
 
+	/**
+	 * 
+	 */
 	public Module() {
 	}
 
+	/**
+	 * @param c
+	 */
 	public void addConstraint(final Constraint c) {
 		constraints.add(c);
 	}
 
-	public void removeConstraint(final Constraint c) {
-		constraints.remove(c);
-	}
-
+	/**
+	 * @return
+	 */
 	public Iterable<Constraint> constraints() {
 		return constraints;
 	}
 
+	/**
+	 * 
+	 */
 	public void removeAllConstraints() {
 		constraints.clear();
+	}
+
+	/**
+	 * @param c
+	 */
+	public void removeConstraint(final Constraint c) {
+		constraints.remove(c);
 	}
 }

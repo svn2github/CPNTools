@@ -15,16 +15,57 @@ import org.cpntools.simulator.extensions.Command;
 
 /**
  * @author michael
- * @param <T>
  */
 public class RangeExtension extends AbstractExtension {
+	/**
+	 * 
+	 */
 	public static final int ID = 10005;
 
+	private static final Pattern constantRange = Pattern.compile("@ *\\[ *([0-9]+)* *, *([0-9]+) *\\]");
+
+	private static final Pattern range = Pattern.compile("@ *(\\[[^\\],]*,[^\\]]*\\])");
+
+	private int counter = 0;
+	private final Map<String, String> types = new HashMap<String, String>();
+	private final Map<String, String> variables = new HashMap<String, String>();
+	boolean inited = false;
+
+	/**
+	 * 
+	 */
 	public RangeExtension() {
 		addSubscription(new Command(400, 2, true) // Syntax check page
 		);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
+	 */
+	@Override
+	public int getIdentifier() {
+		return RangeExtension.ID;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Time Ranges";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p) {
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#prefilter(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
 	@Override
 	public Packet prefilter(final Packet p) {
 		p.reset();
@@ -39,10 +80,45 @@ public class RangeExtension extends AbstractExtension {
 		return null;
 	}
 
-	private final Map<String, String> types = new HashMap<String, String>();
-	private final Map<String, String> variables = new HashMap<String, String>();
-	private int counter = 0;
-	boolean inited = false;
+	private String addToGuard(final String guard, final String string) {
+		final String filtered = guard.trim();
+		if (filtered.isEmpty()) { return "[" + string + "]"; }
+		if (guard.charAt(0) == '[') { return "[" + string + ", " + guard.substring(1); }
+		return "(" + string + ")::(" + guard + ")";
+	}
+
+	private String createConstRange(final String id, final int a, final int b) throws Exception {
+		return createRange(id, "[" + a + ", " + b + "]");
+	}
+
+	private String createRange(final String id, @SuppressWarnings("hiding") final String range) throws Exception {
+		delete(id);
+		final int serial = counter++;
+		Packet p = new Packet(300);
+		p.addInteger(1); // check decl
+		p.addBoolean(false); // timed
+		p.addInteger(27); // intrange cs
+		p.addInteger(1); // # vars
+		p.addInteger(0); // # ms vars
+		p.addInteger(0); // # aliases
+		p.addInteger(0); // # declares
+		p.addString(id + "_cs"); // id
+		p.addString(range);
+		final String type = "CPN'TIMERANGE'" + serial;
+		p.addString(type); // name
+		final String variable = "timerange" + serial;
+		p.addString(variable); // var1
+		p = channel.send(p);
+		System.out.println(p);
+		types.put(id, type);
+		variables.put(id, variable);
+		return variable;
+	}
+
+	private void delete(final String id) {
+		types.remove(id);
+		variables.remove(id);
+	}
 
 	private Packet filter(final Packet packet) {
 		final Packet filtered = new Packet(packet.getOpcode(), 400);
@@ -172,13 +248,6 @@ public class RangeExtension extends AbstractExtension {
 		return filtered;
 	}
 
-	private String addToGuard(final String guard, final String string) {
-		final String filtered = guard.trim();
-		if (filtered.isEmpty()) { return "[" + string + "]"; }
-		if (guard.charAt(0) == '[') { return "[" + string + ", " + guard.substring(1); }
-		return "(" + string + ")::(" + guard + ")";
-	}
-
 	private void keep(final List<String> keepers) {
 		final Set<String> remove = new HashSet<String>(types.keySet());
 		remove.removeAll(keepers);
@@ -190,7 +259,7 @@ public class RangeExtension extends AbstractExtension {
 	private String timeArc(final String tid, final String aid, final String string) {
 		String result = string;
 		while (true) {
-			final Matcher m = range.matcher(result);
+			final Matcher m = RangeExtension.range.matcher(result);
 			if (m.find()) {
 				try {
 					final String variable = createRange(aid, m.group(1));
@@ -210,79 +279,22 @@ public class RangeExtension extends AbstractExtension {
 
 	private String timeRegion(final String id, final String string) {
 		final String time = string.trim();
-		final Matcher n = constantRange.matcher(time);
+		final Matcher n = RangeExtension.constantRange.matcher(time);
 		if (n.matches()) {
 			final int a = Integer.parseInt(n.group(1));
 			final int b = Integer.parseInt(n.group(2));
 			try {
 				return createConstRange(id, a, b);
-			} catch (final Exception e) {
+			} catch (final Exception e) { // Ignore
 			}
 		}
-		final Matcher m = range.matcher(time);
+		final Matcher m = RangeExtension.range.matcher(time);
 		if (m.matches()) {
 			try {
 				return createRange(id, m.group(1));
-			} catch (final Exception e) {
+			} catch (final Exception e) { // Ignore
 			}
 		}
-		return null;
-	}
-
-	private String createConstRange(final String id, final int a, final int b) throws Exception {
-		return createRange(id, "[" + a + ", " + b + "]");
-	}
-
-	private String createRange(final String id, final String range) throws Exception {
-		delete(id);
-		final int serial = counter++;
-		Packet p = new Packet(300);
-		p.addInteger(1); // check decl
-		p.addBoolean(false); // timed
-		p.addInteger(27); // intrange cs
-		p.addInteger(1); // # vars
-		p.addInteger(0); // # ms vars
-		p.addInteger(0); // # aliases
-		p.addInteger(0); // # declares
-		p.addString(id + "_cs"); // id
-		p.addString(range);
-		final String type = "CPN'TIMERANGE'" + serial;
-		p.addString(type); // name
-		final String variable = "timerange" + serial;
-		p.addString(variable); // var1
-		p = channel.send(p);
-		System.out.println(p);
-		types.put(id, type);
-		variables.put(id, variable);
-		return variable;
-	}
-
-	private void delete(final String id) {
-		types.remove(id);
-		variables.remove(id);
-	}
-
-	private static final Pattern constantRange = Pattern.compile("@ *\\[ *([0-9]+)* *, *([0-9]+) *\\]");
-	private static final Pattern range = Pattern.compile("@ *(\\[[^\\],]*,[^\\]]*\\])");
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
-	 */
-	@Override
-	public int getIdentifier() {
-		return ID;
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#getName()
-	 */
-	@Override
-	public String getName() {
-		return "Time Ranges";
-	}
-
-	@Override
-	public Packet handle(final Packet p) {
 		return null;
 	}
 

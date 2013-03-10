@@ -21,6 +21,20 @@ import dk.klafbang.tools.Pair;
 public class DiscoveryServer {
 
 	/**
+	 * @param args
+	 * @throws InterruptedException
+	 * @throws IOException
+	 * @throws UnsupportedLookAndFeelException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 * @throws ClassNotFoundException
+	 */
+	public static void main(final String[] args) throws InterruptedException, IOException, ClassNotFoundException,
+	        InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
+		new DiscoveryServer();
+	}
+
+	/**
 	 * @throws HeadlessException
 	 * @throws IOException
 	 * @throws InterruptedException
@@ -56,19 +70,5 @@ public class DiscoveryServer {
 		main.setVisible(true);
 		t.start();
 		t.join();
-	}
-
-	/**
-	 * @param args
-	 * @throws InterruptedException
-	 * @throws IOException
-	 * @throws UnsupportedLookAndFeelException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 * @throws ClassNotFoundException
-	 */
-	public static void main(final String[] args) throws InterruptedException, IOException, ClassNotFoundException,
-	        InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
-		new DiscoveryServer();
 	}
 }

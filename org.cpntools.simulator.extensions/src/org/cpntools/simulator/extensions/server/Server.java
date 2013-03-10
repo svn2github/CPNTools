@@ -22,8 +22,18 @@ public class Server implements Runnable, Iterable<Extension> {
 	 * 
 	 */
 	public static final int DEFAULT_PORT = 1998;
-	protected final ServerSocket socket;
 	private final List<Extension> extensions;
+	protected final ServerSocket socket;
+
+	/**
+	 * @param port
+	 * @param extensions
+	 * @throws IOException
+	 */
+	public Server(final int port, final Collection<Extension> extensions) throws IOException {
+		this.extensions = new ArrayList<Extension>(extensions);
+		socket = new ServerSocket(port);
+	}
 
 	/**
 	 * @param port
@@ -39,12 +49,11 @@ public class Server implements Runnable, Iterable<Extension> {
 	}
 
 	/**
-	 * @param port
-	 * @throws IOException
+	 * @see java.lang.Iterable#iterator()
 	 */
-	public Server(final int port, final Collection<Extension> extensions) throws IOException {
-		this.extensions = new ArrayList<Extension>(extensions);
-		socket = new ServerSocket(port);
+	@Override
+	public Iterator<Extension> iterator() {
+		return extensions.iterator();
 	}
 
 	/**
@@ -81,13 +90,5 @@ public class Server implements Runnable, Iterable<Extension> {
 	 */
 	public void stop() throws IOException {
 		socket.close();
-	}
-
-	/**
-	 * @see java.lang.Iterable#iterator()
-	 */
-	@Override
-	public Iterator<Extension> iterator() {
-		return extensions.iterator();
 	}
 }

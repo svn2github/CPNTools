@@ -22,6 +22,9 @@ public class ConflictingExtensionsException extends ExtensionException {
 		conflict = extension;
 	}
 
+	/**
+	 * @return
+	 */
 	public Extension getConflict() {
 		return conflict;
 	}

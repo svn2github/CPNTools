@@ -11,11 +11,11 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
 /**
  * @author michael
  */
-public class Line extends Node {
+public class Line extends Node<Line> {
 	private final List<Point> points = new ArrayList<Point>();
 
 	/**
-	 * @param line
+	 * @param points
 	 */
 	public Line(final Iterable<Point> points) {
 		super(new Rectangle(points.iterator().next()));
@@ -24,10 +24,16 @@ public class Line extends Node {
 		}
 	}
 
+	/**
+	 * @param points
+	 */
 	public Line(final Point... points) {
 		this(Arrays.asList(points));
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.graphics.Node#getCreatePackage(java.lang.String)
+	 */
 	@Override
 	public Packet getCreatePackage(final String canvasid) {
 		final Packet p = super.getCreatePackage(canvasid);

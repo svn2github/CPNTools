@@ -13,15 +13,20 @@ import org.cpntools.simulator.extensions.utils.Discovery;
 
 import dk.klafbang.tools.Pair;
 
+/**
+ * @author michael
+ */
 public class Demos extends DebuggingPanel {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Collection<DemoPanel> extensions;
 
-	@Override
-	public String getName() {
-		return "Demos";
-	}
-
+	/**
+	 * 
+	 */
 	public Demos() {
 		final JTabbedPane tabs = new JTabbedPane(SwingConstants.TOP, JTabbedPane.WRAP_TAB_LAYOUT);
 		final Pair<Collection<ClassInfo>, Class<DemoPanel>> extensionDescriptors = Discovery
@@ -33,6 +38,18 @@ public class Demos extends DebuggingPanel {
 		add(tabs);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.debugging.DebuggingPanel#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Demos";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.debugging.DebuggingPanel#setChannel(org.cpntools.simulator.extensions.debugging.DebuggingExtension,
+	 *      org.cpntools.simulator.extensions.Channel)
+	 */
 	@Override
 	public void setChannel(final DebuggingExtension orphanage, final Channel c) {
 		super.setChannel(orphanage, c);

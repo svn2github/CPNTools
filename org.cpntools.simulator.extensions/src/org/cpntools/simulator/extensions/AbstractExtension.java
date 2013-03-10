@@ -13,45 +13,68 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  * @author michael
  */
 public abstract class AbstractExtension extends Observable implements Extension {
-	protected Map<Option<String>, String> stringOptions = new HashMap<Option<String>, String>();
-	protected Map<Option<Integer>, Integer> integerOptions = new HashMap<Option<Integer>, Integer>();
-	protected Map<Option<Boolean>, Boolean> booleanOptions = new HashMap<Option<Boolean>, Boolean>();
 	private final List<Option<?>> options = new ArrayList<Option<?>>();
-	private final List<Option<?>> u_options = Collections.unmodifiableList(options);
 	private final List<Command> subscriptions = new ArrayList<Command>();
+	private final List<Option<?>> u_options = Collections.unmodifiableList(options);
 	private final List<Command> u_subscriptions = Collections.unmodifiableList(subscriptions);
+	protected Map<Option<Boolean>, Boolean> booleanOptions = new HashMap<Option<Boolean>, Boolean>();
 	protected Channel channel;
+	protected Map<Option<Integer>, Integer> integerOptions = new HashMap<Option<Integer>, Integer>();
+	protected Map<Option<String>, String> stringOptions = new HashMap<Option<String>, String>();
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getOptions()
+	 */
 	@Override
 	public List<Option<?>> getOptions() {
 		return u_options;
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getRPCHandler()
+	 */
 	@Override
 	public Object getRPCHandler() {
 		return null;
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getSubscriptions()
+	 */
 	@Override
 	public List<Command> getSubscriptions() {
 		return u_subscriptions;
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
+	 *      org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
 	@Override
 	public Packet handle(final Packet p, final Packet response) {
 		return null;
 	}
 
-	@Override
-	public Packet prefilter(final Packet p) {
-		return null;
-	}
-
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#inject()
+	 */
 	@Override
 	public String inject() {
 		return null;
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#prefilter(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet prefilter(final Packet p) {
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#setOption(org.cpntools.simulator.extensions.Option,
+	 *      java.lang.Object)
+	 */
 	@Override
 	public <T> void setOption(final Option<T> option, final T value) {
 		setOptionInternal(option, value);
@@ -59,34 +82,9 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		notifyObservers(option);
 	}
 
-	@SuppressWarnings("unchecked")
-	protected <T> T getOption(final Option<T> option) {
-		if (option.getType() == Integer.class) { return (T) integerOptions.get(option); }
-		if (option.getType() == Boolean.class) { return (T) booleanOptions.get(option); }
-		if (option.getType() == String.class) { return (T) stringOptions.get(option); }
-		return null;
-	}
-
-	protected int getInt(final Option<Integer> option) {
-		try {
-			return getOption(option);
-		} catch (final NullPointerException _) {
-			return 0;
-		}
-	}
-
-	protected boolean getBoolean(final Option<Boolean> option) {
-		try {
-			return getOption(option);
-		} catch (final NullPointerException _) {
-			return false;
-		}
-	}
-
-	protected String getString(final Option<String> option) {
-		return getOption(option);
-	}
-
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#start(org.cpntools.simulator.extensions.Channel)
+	 */
 	@Override
 	public Extension start(final Channel c) {
 		try {
@@ -94,11 +92,22 @@ public abstract class AbstractExtension extends Observable implements Extension 
 			instance.setChannel(c);
 			return instance;
 		} catch (final InstantiationException e) {
+			// IGnore
 		} catch (final IllegalAccessException e) {
+			// Ignore
 		}
 		return null;
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return getName();
+	}
+
+	@SuppressWarnings("unchecked")
 	private <T> void setOptionInternal(final Option<T> option, final T value) {
 		if (option.getType() == Integer.class) {
 			int intValue = 0;
@@ -123,6 +132,7 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		}
 	}
 
+	@SuppressWarnings("hiding")
 	protected void addOption(final Option<?>... options) {
 		for (final Option<?> option : options) {
 			addOption(option);
@@ -148,13 +158,36 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		}
 	}
 
-	protected void setChannel(final Channel c) {
-		channel = c;
+	protected boolean getBoolean(final Option<Boolean> option) {
+		try {
+			return getOption(option);
+		} catch (final NullPointerException _) {
+			return false;
+		}
 	}
 
-	@Override
-	public String toString() {
-		return getName();
+	protected int getInt(final Option<Integer> option) {
+		try {
+			return getOption(option);
+		} catch (final NullPointerException _) {
+			return 0;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <T> T getOption(final Option<T> option) {
+		if (option.getType() == Integer.class) { return (T) integerOptions.get(option); }
+		if (option.getType() == Boolean.class) { return (T) booleanOptions.get(option); }
+		if (option.getType() == String.class) { return (T) stringOptions.get(option); }
+		return null;
+	}
+
+	protected String getString(final Option<String> option) {
+		return getOption(option);
+	}
+
+	protected void setChannel(final Channel c) {
+		channel = c;
 	}
 
 }

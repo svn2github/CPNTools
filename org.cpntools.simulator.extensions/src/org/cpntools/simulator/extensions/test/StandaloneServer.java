@@ -4,6 +4,9 @@ import java.io.IOException;
 
 import org.cpntools.simulator.extensions.server.Server;
 
+/**
+ * @author michael
+ */
 public class StandaloneServer {
 
 	/**

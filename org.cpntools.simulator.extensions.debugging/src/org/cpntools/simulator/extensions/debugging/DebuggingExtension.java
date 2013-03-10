@@ -33,9 +33,9 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 	 */
 	public static final int ID = 10004;
 	private JDialog dialog;
-	private JTabbedPane tabs;
-	private JTextArea packet;
 	private Collection<DebuggingPanel> extensions;
+	private JTextArea packet;
+	private JTabbedPane tabs;
 
 	/**
 	 * 
@@ -71,6 +71,43 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 		addObserver(this);
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getIdentifier()
+	 */
+	@Override
+	public int getIdentifier() {
+		return DebuggingExtension.ID;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Debugger";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p) {
+		packet.setText(p.toString());
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
+	 *      org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p, final Packet r) {
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#setChannel(org.cpntools.simulator.extensions.Channel)
+	 */
 	@Override
 	public void setChannel(final Channel channel) {
 		super.setChannel(channel);
@@ -79,6 +116,10 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 		}
 	}
 
+	/**
+	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+	 */
+	@Override
 	public void update(final Observable arg0, final Object arg1) {
 		if (arg0 == this) {
 			if (arg1 instanceof Option) {
@@ -88,27 +129,6 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 				}
 			}
 		}
-	}
-
-	@Override
-	public int getIdentifier() {
-		return ID;
-	}
-
-	@Override
-	public String getName() {
-		return "Debugger";
-	}
-
-	@Override
-	public Packet handle(final Packet p) {
-		packet.setText(p.toString());
-		return null;
-	}
-
-	@Override
-	public Packet handle(final Packet p, final Packet r) {
-		return null;
 	}
 
 }

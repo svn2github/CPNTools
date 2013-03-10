@@ -9,6 +9,9 @@ import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.server.Server;
 import org.cpntools.simulator.extensions.server.ui.MainFrame;
 
+/**
+ * @author michael
+ */
 public class TestServer {
 
 	/**

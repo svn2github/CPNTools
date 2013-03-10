@@ -9,17 +9,33 @@ import java.util.Set;
  * @author michael
  */
 public class Constraint {
+	private final String formula;
+
+	private final String name;
+
+	private final Set<Task>[] parameters;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param name
+	 * @param formula
+	 * @param parameters
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (getFormula() == null ? 0 : getFormula().hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + Arrays.hashCode(parameters);
-		return result;
+	@SuppressWarnings("unchecked")
+	public Constraint(final String name, final String formula, final int parameters) {
+		this.name = name;
+		this.formula = formula;
+		this.parameters = new Set[parameters];
+		for (int i = 0; i < this.parameters.length; i++) {
+			this.parameters[i] = new HashSet<Task>();
+		}
+	}
+
+	/**
+	 * @param i
+	 * @param task
+	 */
+	public void addParameter(final int i, final Task task) {
+		parameters[i].add(task);
 	}
 
 	/**
@@ -41,23 +57,32 @@ public class Constraint {
 		return true;
 	}
 
-	private final String formula;
-	private final String name;
-	private final Set<Task>[] parameters;
+	/**
+	 * @return
+	 */
+	public String getFormula() {
+		return formula;
+	}
 
 	/**
-	 * @param name
-	 * @param formula
-	 * @param parameters
+	 * @param i
+	 * @return
 	 */
-	@SuppressWarnings("unchecked")
-	public Constraint(final String name, final String formula, final int parameters) {
-		this.name = name;
-		this.formula = formula;
-		this.parameters = new Set[parameters];
-		for (int i = 0; i < this.parameters.length; i++) {
-			this.parameters[i] = new HashSet<Task>();
-		}
+	public Collection<Task> getParameters(final int i) {
+		return parameters[i];
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (getFormula() == null ? 0 : getFormula().hashCode());
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + Arrays.hashCode(parameters);
+		return result;
 	}
 
 	/**
@@ -67,8 +92,11 @@ public class Constraint {
 		return parameters.length;
 	}
 
-	public Collection<Task> getParameters(final int i) {
-		return parameters[i];
+	/**
+	 * @return
+	 */
+	public Iterable<Set<Task>> parameters() {
+		return Arrays.asList(parameters);
 	}
 
 	/**
@@ -81,20 +109,4 @@ public class Constraint {
 			addParameter(i, task);
 		}
 	}
-
-	/**
-	 * @param i
-	 * @param task
-	 */
-	public void addParameter(final int i, final Task task) {
-		parameters[i].add(task);
-	}
-
-	public Iterable<Set<Task>> parameters() {
-		return Arrays.asList(parameters);
-	}
-
-	public String getFormula() {
-	    return formula;
-    }
 }

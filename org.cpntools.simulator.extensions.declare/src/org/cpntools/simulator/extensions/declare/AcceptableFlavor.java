@@ -16,33 +16,6 @@ import ltl2aut.automaton.scc.SCCVisitor;
  * @author michael
  */
 public class AcceptableFlavor implements Flavor<Object> {
-	public static final AcceptableFlavor INSTANCE = new AcceptableFlavor();
-	private static final Set<Object> all = Collections.unmodifiableSet(Collections.singleton(Automaton.OTHERWISE));
-
-	@Override
-	public boolean providesColor(final Object c) {
-		if (c != null && c instanceof Task) { return true; }
-		if (c == Automaton.OTHERWISE) { return true; }
-		return false;
-	}
-
-	@Override
-	public Task[] union(final Object[] c1, final Object[] c2) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Task[] intersection(final Object[] c1, final Object[] c2) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String toString() {
-		return "Acceptable";
-	}
-
 	/**
 	 * @author michael
 	 */
@@ -54,15 +27,6 @@ public class AcceptableFlavor implements Flavor<Object> {
 		}
 
 		/**
-		 * @see ltl2aut.automaton.scc.SCCVisitor#visitFrom(ltl2aut.automaton.Automaton, java.util.List,
-		 *      java.lang.Object)
-		 */
-		@Override
-		public Set<Object> visitFrom(final Automaton automaton, final List<Integer> list, final Set<Object> value) {
-			return null;
-		}
-
-		/**
 		 * @see ltl2aut.automaton.scc.SCCVisitor#color(ltl2aut.automaton.Automaton, java.util.List, java.util.List)
 		 */
 		@Override
@@ -71,16 +35,14 @@ public class AcceptableFlavor implements Flavor<Object> {
 			for (final Set<Object> child : value) {
 				if (child != null) {
 					result.addAll(child);
-					if (child == all) {
+					if (child == AcceptableFlavor.all) {
 						break;
 					} // Terminate early if some child accepts all
 				}
 			}
 
-			if (result.contains(Automaton.OTHERWISE) || result.size() == allTransitions.size()) { // Terminate
-				// children accept all
-				return markAllAccepting(automaton, list);
-			}
+			if (result.contains(Automaton.OTHERWISE) || result.size() == allTransitions.size()) { return markAllAccepting(
+			        automaton, list); }
 
 			boolean hasAccepting = !result.isEmpty();
 			for (final int state : list) {
@@ -121,13 +83,6 @@ public class AcceptableFlavor implements Flavor<Object> {
 			return result;
 		}
 
-		private Set<Object> markAllAccepting(final Automaton automaton, final List<Integer> list) {
-			for (final Integer s : list) {
-				automaton.addColor(s, AcceptableFlavor.INSTANCE, Automaton.OTHERWISE);
-			}
-			return all;
-		}
-
 		/**
 		 * @see ltl2aut.automaton.scc.SCCVisitor#init()
 		 */
@@ -135,13 +90,36 @@ public class AcceptableFlavor implements Flavor<Object> {
 		public Set<Object> init() {
 			return Collections.emptySet();
 		}
+
+		/**
+		 * @see ltl2aut.automaton.scc.SCCVisitor#visitFrom(ltl2aut.automaton.Automaton, java.util.List,
+		 *      java.lang.Object)
+		 */
+		@Override
+		public Set<Object> visitFrom(final Automaton automaton, final List<Integer> list, final Set<Object> value) {
+			return null;
+		}
+
+		private Set<Object> markAllAccepting(final Automaton automaton, final List<Integer> list) {
+			for (final Integer s : list) {
+				automaton.addColor(s, AcceptableFlavor.INSTANCE, Automaton.OTHERWISE);
+			}
+			return AcceptableFlavor.all;
+		}
 	}
+
+	/**
+	 * 
+	 */
+	public static final AcceptableFlavor INSTANCE = new AcceptableFlavor();
+
+	static final Set<Object> all = Collections.unmodifiableSet(Collections.singleton(Automaton.OTHERWISE));
 
 	/**
 	 * @param a
 	 */
 	public static void apply(final Automaton a) {
-		apply(new SCCGraph<Automaton>(a));
+		AcceptableFlavor.apply(new SCCGraph<Automaton>(a));
 	}
 
 	/**
@@ -151,6 +129,42 @@ public class AcceptableFlavor implements Flavor<Object> {
 		final Set<Object> allTransitions = new HashSet<Object>(sccGraph.getUnderlying().getTransitions());
 		allTransitions.remove(Automaton.OTHERWISE);
 		sccGraph.color(new AcceptablePainter(allTransitions));
+	}
+
+	/**
+	 * @see ltl2aut.automaton.Flavor#intersection(java.lang.Object[], java.lang.Object[])
+	 */
+	@Override
+	public Task[] intersection(final Object[] c1, final Object[] c2) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * @see ltl2aut.automaton.Flavor#providesColor(java.lang.Object)
+	 */
+	@Override
+	public boolean providesColor(final Object c) {
+		if (c != null && c instanceof Task) { return true; }
+		if (c == Automaton.OTHERWISE) { return true; }
+		return false;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Acceptable";
+	}
+
+	/**
+	 * @see ltl2aut.automaton.Flavor#union(java.lang.Object[], java.lang.Object[])
+	 */
+	@Override
+	public Task[] union(final Object[] c1, final Object[] c2) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

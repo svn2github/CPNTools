@@ -13,7 +13,13 @@ import org.clapper.util.classutil.NotClassFilter;
 import org.clapper.util.classutil.SubclassClassFilter;
 import org.cpntools.simulator.extensions.Extension;
 
+/**
+ * @author michael
+ */
 public class DiscoveryTest {
+	/**
+	 * @param args
+	 */
 	public static void main(final String... args) {
 		final ClassFinder finder = new ClassFinder();
 		finder.addClassPath();
