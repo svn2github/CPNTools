@@ -10,6 +10,7 @@ import org.cpntools.simulator.extensions.graphics.Line;
  */
 public abstract class XChart extends Chart {
 
+	protected static final int END = 15;
 	protected final static int TEXT_SPACE = 42;
 	protected final Line xaxis;
 

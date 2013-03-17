@@ -1,5 +1,6 @@
 package org.cpntools.simulator.extensions.declare;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class DeclareExtension extends AbstractExtension {
 	 */
 	public DeclareExtension() {
 		addOption(DATA_AWARE, SMART);
-		addSubscription(new Command(400, 2), // Syntax check page
+		addLazySubscription(new Command(400, 2), // Syntax check page
 		        new Command(500, 3), // Generate instances
 		        new Command(500, 4), // Update instances
 		        new Command(500, 11), // Start run
@@ -74,6 +75,11 @@ public class DeclareExtension extends AbstractExtension {
 	 */
 	@Override
 	public Packet handle(final Packet p) {
+		try {
+			makeLazySubscriptions();
+		} catch (final IOException e) {
+			// Ignore
+		}
 		p.reset();
 		final int command = p.getInteger();
 		final int extension = p.getInteger();

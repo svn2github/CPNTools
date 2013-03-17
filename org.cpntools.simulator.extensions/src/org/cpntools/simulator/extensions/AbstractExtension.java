@@ -1,5 +1,6 @@
 package org.cpntools.simulator.extensions;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  * @author michael
  */
 public abstract class AbstractExtension extends Observable implements Extension {
+	private final List<Command> lazysubscriptions = new ArrayList<Command>();
 	private final List<Option<?>> options = new ArrayList<Option<?>>();
 	private final List<Command> subscriptions = new ArrayList<Command>();
 	private final List<Option<?>> u_options = Collections.unmodifiableList(options);
@@ -132,6 +134,16 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		}
 	}
 
+	protected void addLazySubscription(final Command c) {
+		lazysubscriptions.add(c);
+	}
+
+	protected void addLazySubscription(final Command... cs) {
+		for (final Command c : cs) {
+			addLazySubscription(c);
+		}
+	}
+
 	@SuppressWarnings("hiding")
 	protected void addOption(final Option<?>... options) {
 		for (final Option<?> option : options) {
@@ -184,6 +196,12 @@ public abstract class AbstractExtension extends Observable implements Extension 
 
 	protected String getString(final Option<String> option) {
 		return getOption(option);
+	}
+
+	protected void makeLazySubscriptions() throws IOException {
+		for (final Command c : lazysubscriptions) {
+			channel.subscribe(c, this);
+		}
 	}
 
 	protected void setChannel(final Channel c) {

@@ -7,21 +7,12 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
 /**
  * @author michael
  */
-public interface Extension {
+public interface Extension extends SubscriptionHandler {
 
 	/**
 	 * Identifier for use for testing or early stages of development of extensions.
 	 */
 	public static final int TESTING = 9999;
-
-	/**
-	 * REturn the identifier for the extension. Must be globally unique and should hence be requested from Michael
-	 * Westergaard. For testing purposes TESTING (static field) can be used, but this will conflict and should be
-	 * avoided for anything but short-term usage.
-	 * 
-	 * @return
-	 */
-	int getIdentifier();
 
 	/**
 	 * NAme of this extension. Should not be more than 50 characters.
@@ -61,27 +52,12 @@ public interface Extension {
 	Packet handle(Packet p);
 
 	/**
-	 * Handle a subscription. The response given by the CPN simulator is given as well.
-	 * 
-	 * @param p
-	 * @param response
-	 * @return
-	 */
-	Packet handle(Packet p, Packet response);
-
-	/**
 	 * If result is non-null, this code will be injected into the simulator; this can be useful for generating sub code
 	 * for calling the extension.
 	 * 
 	 * @return
 	 */
 	String inject();
-
-	/**
-	 * @param request
-	 * @return
-	 */
-	Packet prefilter(Packet request);
 
 	/**
 	 * Set the value of the option.

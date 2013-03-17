@@ -27,4 +27,11 @@ public interface Channel {
 	 * @throws IOException
 	 */
 	Packet send(Packet p) throws IOException;
+
+	/**
+	 * @param command
+	 * @param h
+	 * @throws IOException
+	 */
+	void subscribe(Command command, SubscriptionHandler h) throws IOException;
 }

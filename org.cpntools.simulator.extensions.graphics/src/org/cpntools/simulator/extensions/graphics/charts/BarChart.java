@@ -17,8 +17,6 @@ import org.cpntools.simulator.extensions.graphics.Text;
  */
 public class BarChart extends XYChart implements BarChartable {
 
-	private final static int END = 15;
-
 	private final static int SPACING = 10;
 	private final Color barColor;
 	private final List<Bar> bars = new ArrayList<Bar>();
@@ -98,7 +96,7 @@ public class BarChart extends XYChart implements BarChartable {
 		try {
 			c.suspend(true);
 			int i = 0;
-			final int w = (width - BarChart.END) / bars.size();
+			final int w = (width - XChart.END) / bars.size();
 			for (final Bar b : bars) {
 				Rectangle r = graphics.get(b);
 				if (r == null) {

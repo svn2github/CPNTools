@@ -21,6 +21,7 @@ import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.Command;
 import org.cpntools.simulator.extensions.Extension;
 import org.cpntools.simulator.extensions.Option;
+import org.cpntools.simulator.extensions.SubscriptionHandler;
 
 import dk.klafbang.tools.Pair;
 
@@ -162,25 +163,31 @@ public class Handler implements Channel {
 	 * @param extensions
 	 * @return
 	 */
-	public static Map<Integer, Map<Integer, List<Extension>>> constructSubscriptions(
+	public static Map<Integer, Map<Integer, List<SubscriptionHandler>>> constructSubscriptions(
 	        final Collection<Extension> extensions) {
-		final Map<Integer, Map<Integer, List<Extension>>> subscriptions = new HashMap<Integer, Map<Integer, List<Extension>>>();
+		final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions = new HashMap<Integer, Map<Integer, List<SubscriptionHandler>>>();
 		for (final Extension e : extensions) { // We do this here as we are sure of no conflicts
 			for (final Command c : e.getSubscriptions()) {
-				Map<Integer, List<Extension>> command = subscriptions.get(c.getCommand());
-				if (command == null) {
-					command = new HashMap<Integer, List<Extension>>();
-					subscriptions.put(c.getCommand(), command);
-				}
-				List<Extension> subcommand = command.get(c.getSubcommand());
-				if (subcommand == null) {
-					subcommand = new ArrayList<Extension>();
-					command.put(c.getSubcommand(), subcommand);
-				}
-				subcommand.add(e);
+				addSingleSubscription(subscriptions, c, e);
 			}
 		}
 		return subscriptions;
+	}
+
+	private static void addSingleSubscription(
+	        final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions, final Command c,
+	        final SubscriptionHandler e) {
+		Map<Integer, List<SubscriptionHandler>> command = subscriptions.get(c.getCommand());
+		if (command == null) {
+			command = new HashMap<Integer, List<SubscriptionHandler>>();
+			subscriptions.put(c.getCommand(), command);
+		}
+		List<SubscriptionHandler> subcommand = command.get(c.getSubcommand());
+		if (subcommand == null) {
+			subcommand = new ArrayList<SubscriptionHandler>();
+			command.put(c.getSubcommand(), subcommand);
+		}
+		subcommand.add(e);
 	}
 
 	private final Map<Integer, Extension> extensions;
@@ -189,7 +196,7 @@ public class Handler implements Channel {
 	private final Map<Pair<Integer, String>, Option<?>> options;
 	private final Map<Integer, Map<Integer, Packet>> prefilterPackages = new HashMap<Integer, Map<Integer, Packet>>();
 	private final Map<Integer, Map<Integer, Boolean>> prefilters;
-	private final Map<Integer, Map<Integer, List<Extension>>> subscriptions;
+	private final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions;
 
 	final DataInputStream in;
 
@@ -297,7 +304,7 @@ public class Handler implements Channel {
 		request.reset();
 		final int command = request.getInteger();
 		final int subcommand = request.getInteger();
-		final Map<Integer, List<Extension>> subscribers = subscriptions.get(command);
+		final Map<Integer, List<SubscriptionHandler>> subscribers = subscriptions.get(command);
 		if (subscribers == null) {
 			if (response == null) {
 				request.setOpcode(13);
@@ -305,19 +312,19 @@ public class Handler implements Channel {
 			}
 			return response;
 		}
-		final List<Extension> subs = new ArrayList<Extension>();
-		final List<Extension> allSubscribers = subscribers.get(Command.ANY);
+		final List<SubscriptionHandler> subs = new ArrayList<SubscriptionHandler>();
+		final List<SubscriptionHandler> allSubscribers = subscribers.get(Command.ANY);
 		if (allSubscribers != null) {
 			subs.addAll(allSubscribers);
 		}
-		final List<Extension> subcommandSubscribers = subscribers.get(subcommand);
+		final List<SubscriptionHandler> subcommandSubscribers = subscribers.get(subcommand);
 		if (subcommandSubscribers != null) {
 			subs.addAll(subcommandSubscribers);
 		}
 		if (response == null) {
 			final Map<Integer, Packet> prefilterPackage = new HashMap<Integer, Packet>();
 			prefilterPackages.put(serial, prefilterPackage);
-			for (final Extension e : subs) {
+			for (final SubscriptionHandler e : subs) {
 				final Packet newRequest = e.prefilter(request);
 				if (newRequest != null) {
 					request = newRequest;
@@ -327,7 +334,7 @@ public class Handler implements Channel {
 		} else {
 			Collections.reverse(subs);
 			final Map<Integer, Packet> prefilterPackage = prefilterPackages.remove(serial);
-			for (final Extension e : subs) {
+			for (final SubscriptionHandler e : subs) {
 				final Packet newResponse = e.handle(
 				        prefilterPackage == null ? request : prefilterPackage.get(e.getIdentifier()), response);
 				if (newResponse != null) {
@@ -411,6 +418,27 @@ public class Handler implements Channel {
 			return result;
 		} finally {
 			release();
+		}
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Channel#subscribe(org.cpntools.simulator.extensions.Command,
+	 *      org.cpntools.simulator.extensions.SubscriptionHandler)
+	 */
+	@Override
+	public synchronized void subscribe(final Command command, final SubscriptionHandler h) throws IOException {
+		final Map<Integer, List<SubscriptionHandler>> subs = subscriptions.get(command.getCommand());
+		boolean subscribe = false;
+		if (subs == null) {
+			subscribe = true;
+		} else {
+			if (!subs.containsKey(command.getSubcommand()) && !subs.containsKey(Command.ANY)) {
+				subscribe = true;
+			}
+		}
+		addSingleSubscription(subscriptions, command, h);
+		if (subscribe) {
+			send(createSubscriptionMessage(command.getCommand(), command.getSubcommand(), command.isPrefilter()));
 		}
 	}
 
@@ -612,9 +640,9 @@ public class Handler implements Channel {
 		return result;
 	}
 
-	protected void makeSubscriptions(final Map<Integer, Map<Integer, List<Extension>>> subscriptions2,
+	protected void makeSubscriptions(final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions2,
 	        final Map<Integer, Map<Integer, Boolean>> prefilters2) throws IOException {
-		for (final Entry<Integer, Map<Integer, List<Extension>>> entry : subscriptions2.entrySet()) {
+		for (final Entry<Integer, Map<Integer, List<SubscriptionHandler>>> entry : subscriptions2.entrySet()) {
 			if (entry.getValue().containsKey(Command.ANY)) {
 				send(createSubscriptionMessage(entry.getKey(), Command.ANY,
 				        prefilters2.get(entry.getKey()).get(Command.ANY)));

@@ -10,7 +10,7 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  */
 public class Text extends Node<Text> {
 
-	private final String text;
+	private String text;
 
 	/**
 	 * @param x
@@ -66,6 +66,10 @@ public class Text extends Node<Text> {
 	@Override
 	protected int getY() {
 		return -(int) bounds.getY();
+	}
+
+	void setText(final String text) {
+		this.text = text;
 	}
 
 }

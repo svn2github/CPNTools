@@ -19,10 +19,10 @@ public class MSCDemo extends DemoPanel {
 	 */
 	private static final long serialVersionUID = 1L;
 	String canvas = null;
-	int pos;
-	int step = 0;
 	String highlighted = null;
 	String p1, p2, p3;
+	int pos;
+	int step = 0;
 
 	/**
 	 * 

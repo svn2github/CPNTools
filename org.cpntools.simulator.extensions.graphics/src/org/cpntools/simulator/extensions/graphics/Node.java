@@ -163,7 +163,8 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	 * @return
 	 * @throws Exception
 	 */
-	public T subscribe() throws Exception {
+	@SuppressWarnings("unused")
+	private T subscribe() throws Exception {
 		return subscribe(false);
 	}
 
@@ -173,13 +174,18 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public T subscribe(@SuppressWarnings("hiding") final boolean trace) throws Exception {
+	private T subscribe(@SuppressWarnings("hiding") final boolean trace) throws Exception {
 		this.trace = trace;
 		observed = true;
 		if (owner != null) {
 			owner.subscribe(this);
 		}
 		return (T) this;
+	}
+
+	void forceNotify() {
+		setChanged();
+		notifyObservers();
 	}
 
 }

@@ -2,25 +2,33 @@ package org.cpntools.simulator.extensions.graphics;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.Channel;
+import org.cpntools.simulator.extensions.Command;
+import org.cpntools.simulator.extensions.SubscriptionHandler;
 
 /**
  * @author michael
  */
-public class Canvas extends Composite<Canvas> implements Observer {
+public class Canvas extends Composite<Canvas> implements Observer, SubscriptionHandler {
 	private final List<Element<?>> added = new ArrayList<Element<?>>();
 
 	private final Channel c;
 	private final Set<String> deleted = new HashSet<String>();
 	private final Set<String> moved = new HashSet<String>();
 	private final Set<String> styled = new HashSet<String>();
+	private boolean subscribed;
+
+	private final Map<String, Node<?>> subscriptions = new HashMap<String, Node<?>>();
+
 	private boolean suspended = false;
 
 	/**
@@ -73,14 +81,16 @@ public class Canvas extends Composite<Canvas> implements Observer {
 			if (element instanceof Node) {
 				final Node<?> n = (Node<?>) element;
 				element.setId(add((Node<?>) element, true));
+				super.add(element);
 				if (n.getForeground() != Color.WHITE || n.getBackground() != Color.BLACK || n.getWidth() != 1) {
 					style(n);
 				}
 				if (n.isSubscribed()) {
 					subscribe(n);
 				}
+			} else {
+				super.add(element);
 			}
-			super.add(element);
 			if (element instanceof Line) {
 				moved(element);
 			}
@@ -119,10 +129,59 @@ public class Canvas extends Composite<Canvas> implements Observer {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.SubscriptionHandler#getIdentifier()
+	 */
+	@Override
+	public int getIdentifier() {
+		return 10006;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.SubscriptionHandler#handle(org.cpntools.accesscpn.engine.protocol.Packet,
+	 *      org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p, final Packet response) {
+		p.reset();
+		if (p.getInteger() == 10000 && p.getInteger() == 401) { // Command = 10000, subcmd = 401
+			final String id = p.getString();
+			final Node<?> n = subscriptions.get(id);
+			if (n != null) {
+				final int x = p.getInteger();
+				final int y = p.getInteger();
+				if (n instanceof Rectangle || n instanceof Ellipsis) {
+					final int w = p.getInteger();
+					final int h = p.getInteger();
+					n.bounds.setBounds(x - w / 2, -(y + h / 2), w, h);
+				} else {
+					n.bounds.setLocation(x, -y);
+				}
+				if (n instanceof Text) {
+					final String text = p.getString();
+					final Text t = (Text) n;
+					t.setText(text);
+				}
+				n.forceNotify();
+			}
+		}
+		System.out.println("Done");
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.SubscriptionHandler#prefilter(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet prefilter(final Packet request) {
+		return null;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.graphics.Composite#remove(org.cpntools.simulator.extensions.graphics.Element)
 	 */
 	@Override
 	public <U extends Element<?>> U remove(final U element) throws Exception {
+		subscriptions.remove(element.getId());
 		if (elements.containsKey(element.getId()) || added.contains(element)) {
 			if (suspended) {
 				deleted.add(element.getId());
@@ -240,11 +299,17 @@ public class Canvas extends Composite<Canvas> implements Observer {
 
 	@Override
 	void subscribe(final Node<?> node) throws Exception {
+		if (!subscribed) {
+			subscribed = true;
+			c.subscribe(new Command(10000, 401), this);
+		}
+		if (!elements.containsKey(node.getId())) { return; }
 		Packet p = new Packet(3, 7);
 		p.addString(node.getId());
 		p.addBoolean(node.isTracing());
 		p = c.send(p);
 		p.reset();
 		if (p.getInteger() != 1) { throw new Exception("Could not subscribe to updates from element " + node.getId()); }
+		subscriptions.put(node.getId(), node);
 	}
 }

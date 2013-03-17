@@ -56,7 +56,6 @@ public class MainFrame extends JFrame {
 	 */
 	public MainFrame() throws HeadlessException, UnknownHostException {
 		super("CPN Tools Simulator Extension Server");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BorderLayout());
 
 		final JMenuBar menu = new JMenuBar();
@@ -77,6 +76,23 @@ public class MainFrame extends JFrame {
 
 		final JPanel buttons = new JPanel();
 		buttons.setLayout(new FlowLayout(FlowLayout.CENTER));
+// final JButton startButton = new JButton("Start");
+// startButton.setMnemonic(KeyEvent.VK_S);
+// startButton.setEnabled(false);
+// buttons.add(startButton);
+// final JButton stopButton = new JButton("Stop");
+// stopButton.setMnemonic(KeyEvent.VK_O);
+// stopButton.setEnabled(false);
+// buttons.add(stopButton);
+		final JButton hideButton = new JButton("Hide");
+		hideButton.setMnemonic(KeyEvent.VK_H);
+		hideButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				MainFrame.this.setVisible(false);
+			}
+		});
+		buttons.add(hideButton);
 		final JButton quitButton = new JButton("Quit");
 		quitButton.setMnemonic(KeyEvent.VK_Q);
 		quitButton.setDefaultCapable(true);
@@ -88,18 +104,6 @@ public class MainFrame extends JFrame {
 			}
 		});
 		buttons.add(quitButton);
-		final JButton startButton = new JButton("Start");
-		startButton.setMnemonic(KeyEvent.VK_S);
-		startButton.setEnabled(false);
-		buttons.add(startButton);
-		final JButton stopButton = new JButton("Stop");
-		stopButton.setMnemonic(KeyEvent.VK_O);
-		stopButton.setEnabled(false);
-		buttons.add(stopButton);
-		final JButton hideButton = new JButton("Hide");
-		hideButton.setMnemonic(KeyEvent.VK_H);
-		hideButton.setEnabled(false);
-		buttons.add(hideButton);
 		add(buttons, BorderLayout.SOUTH);
 
 		final JPanel main = new JPanel();
