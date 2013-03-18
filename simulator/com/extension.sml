@@ -152,12 +152,12 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
                   handle exn => (Socket.close sock; raise exn))
              else ()
           end
-          handle _ =>
-          let
+          handle _ => ()
+(*          let
               val _ = OS.Process.sleep (Time.fromSeconds 1)
           in
               attempt (n - 1)
-          end
+    end*)
 
         fun connect () =
             if (!socket = NONE)
