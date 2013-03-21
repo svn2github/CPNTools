@@ -27,6 +27,7 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.AbstractExtension;
 import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.Command;
+import org.cpntools.simulator.extensions.NamedRPCHandler;
 import org.cpntools.simulator.extensions.Option;
 import org.cpntools.simulator.extensions.scraper.Page;
 import org.cpntools.simulator.extensions.scraper.Scraper;
@@ -36,6 +37,36 @@ import org.cpntools.simulator.extensions.scraper.Transition;
  * @author michael
  */
 public abstract class HelloWorld extends AbstractExtension implements Observer {
+	/**
+	 * @author michael
+	 */
+	public final class HelloWorldRPCHandler implements NamedRPCHandler {
+		/**
+		 * @param a
+		 * @param b
+		 * @return
+		 */
+		public Integer add(final Integer a, final Integer b) {
+			return a + b;
+		}
+
+		/**
+		 * @param name
+		 * @return
+		 */
+		public String hello(final String name) {
+			return "Hello, " + name;
+		}
+
+		/**
+		 * @see org.cpntools.simulator.extensions.NamedRPCHandler#structureName()
+		 */
+		@Override
+		public String structureName() {
+			return "Hello";
+		}
+	}
+
 	/**
 	 * 
 	 */
@@ -49,6 +80,14 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 	private JTextField stringOption;
 
 	private JTabbedPane tabs;
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#getRPCHandler()
+	 */
+	@Override
+	public Object getRPCHandler() {
+		return new HelloWorldRPCHandler();
+	}
 
 	/**
 	 * 

@@ -9,5 +9,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/org.cpntools.simulator.extensions.ranges"/>
 	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.cpntools.simulator.extensions.graphics"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.cpntools.simulator.extensions.debugging"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

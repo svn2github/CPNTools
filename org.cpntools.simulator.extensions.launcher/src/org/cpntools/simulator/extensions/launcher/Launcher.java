@@ -35,7 +35,18 @@ public class Launcher extends DiscoveryServer {
 	public static void main(final String[] args) throws HeadlessException, IOException, InterruptedException,
 	        ParseException, ClassNotFoundException, IllegalArgumentException, SecurityException,
 	        InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-		final File plugins = new File("plugins");
+		File current = null;
+		try {
+			current = new File(Launcher.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			while (current.isFile()) {
+				current = current.getParentFile();
+			}
+		} catch (final Exception _) {// Ignore
+		}
+		File plugins = new File(current, "plugins");
+		if (!plugins.isDirectory()) {
+			plugins = new File("plugins");
+		}
 		if (plugins.isDirectory()) {
 			for (final File f : plugins.listFiles()) {
 				Discovery.addFile(f);

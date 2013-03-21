@@ -3,6 +3,7 @@ package org.cpntools.simulator.extensions.server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -16,10 +17,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
+import org.cpntools.accesscpn.engine.protocol.handler.GramHandler;
 import org.cpntools.accesscpn.engine.utils.BlockingQueue;
 import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.Command;
 import org.cpntools.simulator.extensions.Extension;
+import org.cpntools.simulator.extensions.NamedRPCHandler;
 import org.cpntools.simulator.extensions.Option;
 import org.cpntools.simulator.extensions.SubscriptionHandler;
 
@@ -228,11 +231,107 @@ public class Handler implements Channel {
 		prefilters = Handler.constructPrefilters(extensionTypes.values());
 		new FeederThread("Feeder " + name).start();
 
+		registerRPC(extensionTypes.values());
 		doInjection(extensionTypes.values());
 		makeSubscriptions(subscriptions, prefilters);
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
 		registerExtensions(extensionTypes.values());
 		new DispatcherThread("Dispatcher " + name).start();
+	}
+
+	private int structureindex = 0;
+
+	private void registerRPC(final Collection<Extension> exts) throws ErrorInjectingException {
+		for (final Extension e : exts) {
+			final Object o = e.getRPCHandler();
+			if (o != null) {
+				String prefix = "";
+				if (o instanceof NamedRPCHandler) {
+					final NamedRPCHandler n = (NamedRPCHandler) o;
+					prefix = n.structureName() + ".";
+					g.addNamedHandler(n.structureName(), o);
+				} else {
+					g.addLocalHandler(o);
+				}
+				final int index = structureindex++;
+				final StringBuilder s = new StringBuilder("local\nstructure CPN'RPCStructure'");
+				s.append(index);
+				s.append(" = struct\n");
+				s.append("local open ExtExecute in\n");
+				for (final Method m : o.getClass().getMethods()) {
+					if (m.getDeclaringClass() != Object.class) {
+						try {
+							final StringBuilder sb = new StringBuilder("fun ");
+							sb.append(m.getName());
+							sb.append('(');
+							int param = 0;
+							final Class<?>[] parameterTypes = m.getParameterTypes();
+							for (int i = 0; i < parameterTypes.length; i++) {
+								if (param > 0) {
+									sb.append(", ");
+								}
+								sb.append("CPN'param");
+								sb.append(param++);
+							}
+							sb.append(") = ExtExecute.execute");
+							if (m.getReturnType() == Void.class | m.getReturnType() == Void.TYPE) {
+								// Do nothing
+							} else if (m.getReturnType() == Boolean.class || m.getReturnType() == Boolean.TYPE) {
+								sb.append("Bool");
+							} else if (m.getReturnType() == Integer.class || m.getReturnType() == Integer.TYPE) {
+								sb.append("Int");
+							} else if (m.getReturnType() == String.class) {
+								sb.append("String");
+							} else {
+								throw new Exception("Unknown return type (" + m.getReturnType() + ") for method "
+								        + m.getName());
+							}
+							sb.append(" \"");
+							sb.append(prefix);
+							sb.append(m.getName());
+							sb.append("\" [");
+							param = 0;
+							for (final Class<?> clazz : m.getParameterTypes()) {
+								if (param > 0) {
+									sb.append(", ");
+								}
+								if (clazz == Boolean.class || clazz == Boolean.TYPE) {
+									sb.append("vBOOL (");
+								} else if (clazz == Integer.class || clazz == Integer.TYPE) {
+									sb.append("vINT (");
+								} else if (clazz == String.class) {
+									sb.append("vSTRING (");
+								} else {
+									throw new Exception("Unknown parameter type (" + clazz + ") for parameter "
+									        + (param + 1) + " of method " + m.getName());
+								}
+								sb.append("CPN'param");
+								sb.append(param++);
+								sb.append(')');
+							}
+							sb.append("]\n");
+							s.append(sb);
+						} catch (final Exception _) {
+							// Probably because wrong parameter types
+						}
+					}
+				}
+				s.append("end\nend\nin\n");
+				if (o instanceof NamedRPCHandler) {
+					final NamedRPCHandler n = (NamedRPCHandler) o;
+					s.append("structure ");
+					s.append(n.structureName());
+					s.append(" = CPN'RPCStructure'");
+					s.append(index);
+				} else {
+					s.append("open CPN'RPCStructure'");
+					s.append(index);
+				}
+				s.append("\nend");
+				System.out.println(s);
+				inject(e, s.toString());
+			}
+		}
 	}
 
 	/**
@@ -350,13 +449,28 @@ public class Handler implements Channel {
 		return response;
 	}
 
+	private final GramHandler g = new GramHandler();
+
 	/**
 	 * @param p
 	 * @return
 	 */
 	public Packet handleGFC(final Packet p) {
-		// TODO Auto-generated method stub
-		return null;
+		System.out.println("Got GFC request" + p);
+		p.getCommand(); // 2
+		try {
+			final Object result = g.handle(p.getParameters());
+			if (p.getReturnType() != null && !p.getReturnType().equals(Void.class) && result != null
+			        && p.getReturnType().isAssignableFrom(result.getClass())) { return new Packet(5,
+			        Collections.singletonList(result)); }
+		} catch (final Exception e) {
+			// Ignore if we do not return normally
+		}
+		if (String.class.equals(p.getReturnType())) { return new Packet(5,
+		        Collections.singletonList("Error in execution")); }
+		if (Integer.class.equals(p.getReturnType())) { return new Packet(5, Collections.singletonList(-1)); }
+		if (Boolean.class.equals(p.getReturnType())) { return new Packet(5, Collections.singletonList(false)); }
+		return new Packet(5, Collections.emptyList());
 	}
 
 	/**
@@ -565,13 +679,18 @@ public class Handler implements Channel {
 	        throws ErrorInjectingException {
 		for (final Extension e : extensions) {
 			final String s = e.inject();
-			if (s != null && !"".equals(s)) {
-				try {
-					final Packet p = send(createInjectPacket(s));
-					if (p.getInteger() != 1) { throw new ErrorInjectingException(e, s, p.getString()); }
-				} catch (final IOException ex) {
-					throw new ErrorInjectingException(e, s, ex);
-				}
+			inject(e, s);
+		}
+	}
+
+	private void inject(final Extension e, final String s) throws ErrorInjectingException {
+		if (s != null && !"".equals(s)) {
+			try {
+				final Packet p = send(createInjectPacket(s));
+				System.out.println(p);
+				if (p.getInteger() != 1) { throw new ErrorInjectingException(e, s, p.getString()); }
+			} catch (final IOException ex) {
+				throw new ErrorInjectingException(e, s, ex);
 			}
 		}
 	}

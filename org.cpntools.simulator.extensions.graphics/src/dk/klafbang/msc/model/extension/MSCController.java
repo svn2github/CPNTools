@@ -18,7 +18,7 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, *
  *  USA.                                                                   *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-package dk.klafbang.msc.model;
+package dk.klafbang.msc.model.extension;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -27,6 +27,11 @@ import java.util.Map;
 import org.cpntools.simulator.extensions.Channel;
 
 import dk.klafbang.msc.MSCPanel;
+import dk.klafbang.msc.model.CrossingEvent;
+import dk.klafbang.msc.model.InternalEvent;
+import dk.klafbang.msc.model.MSC;
+import dk.klafbang.msc.model.Process;
+import dk.klafbang.msc.model.SimpleEvent;
 import dk.klafbang.tools.Pair;
 
 /**

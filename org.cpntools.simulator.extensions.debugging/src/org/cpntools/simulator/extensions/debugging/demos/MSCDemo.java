@@ -12,7 +12,7 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import dk.klafbang.msc.model.MSCController;
+import dk.klafbang.msc.model.extension.MSCController;
 
 /**
  * @author michael
