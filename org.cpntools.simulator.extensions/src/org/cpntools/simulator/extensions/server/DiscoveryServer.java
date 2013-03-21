@@ -159,7 +159,7 @@ public class DiscoveryServer {
 					}
 				});
 				main.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-				if (preferences.getBoolean(DiscoveryServer.MINIMIZED, false)) {
+				if (preferences.getBoolean(DiscoveryServer.MINIMIZED, true)) {
 					tray.add(trayIcon);
 				} else {
 					main.setVisible(true);
