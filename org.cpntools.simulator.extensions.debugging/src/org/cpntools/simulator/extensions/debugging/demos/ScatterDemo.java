@@ -79,8 +79,10 @@ public class ScatterDemo extends DemoPanel {
 		add(field);
 
 		JPanel checkField = new JPanel(new BorderLayout());
-		checkField.add(new JLabel("Show line"));
+		JLabel label = new JLabel("Show line");
+		checkField.add(label);
 		checkField.add(lineChecker, BorderLayout.WEST);
+		label.setLabelFor(lineChecker);
 		lineChecker.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
@@ -91,8 +93,10 @@ public class ScatterDemo extends DemoPanel {
 		});
 		add(checkField);
 		checkField = new JPanel(new BorderLayout());
-		checkField.add(new JLabel("Show sorted line"));
+		label = new JLabel("Show sorted line");
+		checkField.add(label);
 		checkField.add(sortedLineChecker, BorderLayout.WEST);
+		label.setLabelFor(sortedLineChecker);
 		sortedLineChecker.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
@@ -103,8 +107,10 @@ public class ScatterDemo extends DemoPanel {
 		});
 		add(checkField);
 		checkField = new JPanel(new BorderLayout());
-		checkField.add(new JLabel("Show trend"));
+		label = new JLabel("Show trend");
+		checkField.add(label);
 		checkField.add(trendChecker, BorderLayout.WEST);
+		label.setLabelFor(trendChecker);
 		trendChecker.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {

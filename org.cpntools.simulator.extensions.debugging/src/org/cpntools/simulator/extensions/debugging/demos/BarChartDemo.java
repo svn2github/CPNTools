@@ -20,7 +20,7 @@ import org.cpntools.simulator.extensions.graphics.charts.BarChart;
 /**
  * @author michael
  */
-public class ChartDemo extends DemoPanel {
+public class BarChartDemo extends DemoPanel {
 
 	/**
 	 * 
@@ -34,7 +34,7 @@ public class ChartDemo extends DemoPanel {
 	/**
 	 * 
 	 */
-	public ChartDemo() {
+	public BarChartDemo() {
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		final JComboBox barsDropdown = new JComboBox();
 		final JComboBox fieldName = new JComboBox();

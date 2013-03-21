@@ -46,6 +46,7 @@ public class ScatterPlot extends XYChart {
 	 * @param p
 	 */
 	public void addPoint(final Point2D p) {
+		if (p.getX() < 0 || p.getY() < 0) { throw new IllegalArgumentException("X and Y values must be non-negative."); }
 		maxX = Math.max(maxX, p.getX());
 		maxY = Math.max(maxY, p.getY());
 		points.add(p);
@@ -119,14 +120,15 @@ public class ScatterPlot extends XYChart {
 	}
 
 	private void repaint() {
+		boolean suspend = false;
 		try {
-			c.suspend(true);
+			suspend = c.suspend(true);
 			final List<Point> linepoints = new ArrayList<Point>();
 			double sp = 0, sx = 0, sy = 0, ss = 0;
 			for (final Point2D p : points) {
-				final double xx = p.getX() * (width - END) / maxX;
+				final double xx = p.getX() * (width - XChart.END) / maxX;
 				final int x = (int) Math.round(xx);
-				final double yy = p.getY() * (height - 2 * TEXT_SPACE) / maxY;
+				final double yy = p.getY() * (height - 2 * XChart.TEXT_SPACE) / maxY;
 				final int y = (int) Math.round(yy);
 				sp += xx * yy;
 				sx += xx;
@@ -134,11 +136,12 @@ public class ScatterPlot extends XYChart {
 				ss += xx * xx;
 				Ellipsis r = graphics.get(p);
 				if (r == null) {
-					r = new Ellipsis(0, 0, POINT_SIZE, POINT_SIZE);
+					r = new Ellipsis(0, 0, ScatterPlot.POINT_SIZE, ScatterPlot.POINT_SIZE);
 					graphics.put(p, r);
 					c.add(r);
 				}
-				final Point position = new Point(x - POINT_SIZE / 2, TEXT_SPACE + y - POINT_SIZE / 2);
+				final Point position = new Point(x - ScatterPlot.POINT_SIZE / 2, XChart.TEXT_SPACE + y
+				        - ScatterPlot.POINT_SIZE / 2);
 				linepoints.add(position);
 				r.setPosition(position);
 			}
@@ -178,18 +181,21 @@ public class ScatterPlot extends XYChart {
 				final double b = (sp - sx * sy / points.size()) / (ss - sx * sx / points.size());
 				final double a = (sy - b * sx) / points.size();
 				if (b == 0) {
-					if (a >= 0 && a < height - TEXT_SPACE) {
-						trend = new Line(new Point(0, TEXT_SPACE + (int) a), new Point(width, TEXT_SPACE + (int) a));
+					if (a >= 0 && a < height - XChart.TEXT_SPACE) {
+						trend = new Line(new Point(0, XChart.TEXT_SPACE + (int) a), new Point(width, XChart.TEXT_SPACE
+						        + (int) a));
 					}
 				} else if (b > 0) {
-					trend = new Line(new Point((int) Math.round(Math.max(0, -a / b)), TEXT_SPACE
+					trend = new Line(new Point((int) Math.round(Math.max(0, -a / b)), XChart.TEXT_SPACE
 					        + (int) Math.round(Math.max(a, 0))), new Point((int) Math.round(Math.min(width, (height
-					        - TEXT_SPACE - a)
-					        / b)), TEXT_SPACE + (int) Math.round(Math.min(height - TEXT_SPACE, a + b * width))));
+					        - XChart.TEXT_SPACE - a)
+					        / b)), XChart.TEXT_SPACE
+					        + (int) Math.round(Math.min(height - XChart.TEXT_SPACE, a + b * width))));
 				} else {
-					trend = new Line(new Point((int) Math.round(Math.max(0, -a / b)), TEXT_SPACE
-					        + (int) Math.round(Math.min(a, height - TEXT_SPACE))), new Point((int) Math.round(Math.min(
-					        width, -a / b)), TEXT_SPACE + (int) Math.round(Math.max(0, a + b * width))));
+					trend = new Line(new Point((int) Math.round(Math.max(0, (height - XChart.TEXT_SPACE - a) / b)),
+					        XChart.TEXT_SPACE + (int) Math.round(Math.min(a, height - XChart.TEXT_SPACE))), new Point(
+					        (int) Math.round(Math.min(width, -a / b)), XChart.TEXT_SPACE
+					                + (int) Math.round(Math.max(0, a + b * width))));
 				}
 
 				if (trend != null) {
@@ -206,8 +212,12 @@ public class ScatterPlot extends XYChart {
 				}
 				c.add(equation);
 			}
-			c.suspend(false);
 		} catch (final Exception e) { // Ignore
+		} finally {
+			try {
+				c.suspend(suspend);
+			} catch (final Exception e) { // Ignore
+			}
 		}
 	}
 }

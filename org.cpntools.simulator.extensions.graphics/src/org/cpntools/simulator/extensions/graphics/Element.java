@@ -41,7 +41,9 @@ public abstract class Element<T extends Element<T>> extends Observable {
 	 * @return
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unchecked")
 	public T move(final Point delta) throws Exception {
+		if (delta == null || delta.getX() == 0 && delta.getY() == 0) { return (T) this; }
 		return setPosition(new Point((int) (bounds.getX() + delta.getX()), (int) (bounds.getY() + delta.getY())));
 	}
 
@@ -58,11 +60,19 @@ public abstract class Element<T extends Element<T>> extends Observable {
 	}
 
 	protected int getX() {
-		return (int) bounds.getCenterX();
+		if (owner == null) {
+			return (int) bounds.getCenterX();
+		} else {
+			return (int) bounds.getCenterX() + owner.getX();
+		}
 	}
 
 	protected int getY() {
-		return -(int) bounds.getCenterY();
+		if (owner == null) {
+			return -(int) bounds.getCenterY();
+		} else {
+			return -(int) bounds.getCenterY() + owner.getY();
+		}
 	}
 
 	protected void updatePosition() throws Exception {

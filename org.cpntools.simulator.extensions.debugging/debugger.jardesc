@@ -5,14 +5,12 @@
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
     <manifest generateManifest="true" manifestLocation="/org.cpntools.simulator.extensions.launcher/manifest.mf" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
-        <sealing sealJar="true">
+        <sealing sealJar="false">
             <packagesToSeal/>
             <packagesToUnSeal/>
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <file path="/org.cpntools.simulator.extensions.debugging/.classpath"/>
-        <file path="/org.cpntools.simulator.extensions.debugging/.project"/>
         <javaElement handleIdentifier="=org.cpntools.simulator.extensions.debugging/src"/>
     </selectedElements>
 </jardesc>

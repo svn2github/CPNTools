@@ -39,6 +39,7 @@ public class BarChart extends XYChart implements BarChartable {
 	public BarChart(final Channel c, final String title, final int width, final int height, final Color barColor)
 	        throws Exception {
 		super(c, title, width, height);
+		if (width <= 0 || height <= 0) { throw new IllegalArgumentException("Width and height must be positive."); }
 		this.barColor = barColor;
 	}
 
@@ -49,6 +50,7 @@ public class BarChart extends XYChart implements BarChartable {
 	 */
 	public Bar addBar(final String name, final int value) {
 		final Bar b = new Bar(name, value);
+		checkBar(b);
 		b.setParent(this);
 		max = Math.max(max, value);
 		bars.add(b);
@@ -61,6 +63,7 @@ public class BarChart extends XYChart implements BarChartable {
 	 */
 	@Override
 	public void changed(final Bar b) {
+		checkBar(b);
 		recomputeMax();
 		repaint();
 	}
@@ -72,17 +75,21 @@ public class BarChart extends XYChart implements BarChartable {
 	public void delete(final Bar b) {
 		try {
 			bars.remove(b);
-			c.suspend(true);
+			final boolean suspend = c.suspend(true);
 			final Rectangle g = graphics.remove(b);
 			c.remove(g);
 			final Text l = labels.remove(b);
 			c.remove(l);
 			recomputeMax();
 			repaint();
-			c.suspend(false);
+			c.suspend(suspend);
 		} catch (final Exception _) {
 			// Ignore
 		}
+	}
+
+	private void checkBar(final Bar b) {
+		if (b.getValue() < 0) { throw new IllegalArgumentException("Values must be >= 0"); }
 	}
 
 	private void recomputeMax() {
@@ -93,8 +100,9 @@ public class BarChart extends XYChart implements BarChartable {
 	}
 
 	private void repaint() {
+		boolean suspend = false;
 		try {
-			c.suspend(true);
+			suspend = c.suspend(true);
 			int i = 0;
 			final int w = (width - XChart.END) / bars.size();
 			for (final Bar b : bars) {
@@ -139,9 +147,13 @@ public class BarChart extends XYChart implements BarChartable {
 				l.setPosition(new Point(i, XChart.TEXT_SPACE));
 				i += w;
 			}
-			c.suspend(false);
 		} catch (final Exception _) {
 			// Ingore
+		} finally {
+			try {
+				c.suspend(suspend);
+			} catch (final Exception e) { // IGnore
+			}
 		}
 	}
 }

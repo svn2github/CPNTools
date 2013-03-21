@@ -60,12 +60,20 @@ public class Text extends Node<Text> {
 
 	@Override
 	protected int getX() {
-		return (int) bounds.getX();
+		if (owner == null) {
+			return (int) bounds.getX();
+		} else {
+			return (int) bounds.getX() + owner.getX();
+		}
 	}
 
 	@Override
 	protected int getY() {
-		return -(int) bounds.getY();
+		if (owner == null) {
+			return -(int) bounds.getY();
+		} else {
+			return -(int) bounds.getY() + owner.getY();
+		}
 	}
 
 	void setText(final String text) {

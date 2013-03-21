@@ -3,12 +3,10 @@ package org.cpntools.simulator.extensions.graphics;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Set;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.Channel;
@@ -22,9 +20,9 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 	private final List<Element<?>> added = new ArrayList<Element<?>>();
 
 	private final Channel c;
-	private final Set<String> deleted = new HashSet<String>();
-	private final Set<String> moved = new HashSet<String>();
-	private final Set<String> styled = new HashSet<String>();
+	private final List<Element<?>> deleted = new ArrayList<Element<?>>();
+	private final List<Element<?>> moved = new ArrayList<Element<?>>();
+	private final List<Element<?>> styled = new ArrayList<Element<?>>();
 	private boolean subscribed;
 
 	private final Map<String, Node<?>> subscriptions = new HashMap<String, Node<?>>();
@@ -68,34 +66,6 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 		p.reset();
 		if (p.getInteger() != 1) { throw new Exception("Could not create canvas"); }
 		setId(p.getString());
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.graphics.Composite#add(org.cpntools.simulator.extensions.graphics.Element)
-	 */
-	@Override
-	public <U extends Element<?>> U add(final U element) throws Exception {
-		if (suspended) {
-			added.add(element);
-		} else {
-			if (element instanceof Node) {
-				final Node<?> n = (Node<?>) element;
-				element.setId(add((Node<?>) element, true));
-				super.add(element);
-				if (n.getForeground() != Color.WHITE || n.getBackground() != Color.BLACK || n.getWidth() != 1) {
-					style(n);
-				}
-				if (n.isSubscribed()) {
-					subscribe(n);
-				}
-			} else {
-				super.add(element);
-			}
-			if (element instanceof Line) {
-				moved(element);
-			}
-		}
-		return element;
 	}
 
 	/**
@@ -182,44 +152,55 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 	@Override
 	public <U extends Element<?>> U remove(final U element) throws Exception {
 		subscriptions.remove(element.getId());
-		if (elements.containsKey(element.getId()) || added.contains(element)) {
-			if (suspended) {
-				deleted.add(element.getId());
-			} else {
-				super.remove(element);
-				if (element instanceof Node) {
-					remove(element.getId());
+		if (suspended) {
+			deleted.add(element);
+		} else {
+			if (element instanceof Node) {
+				remove(element.getId());
+			} else if (element instanceof Composite) {
+				@SuppressWarnings("hiding")
+				final Composite<?> c = (Composite<?>) element;
+				for (final Element<?> e : c.elements.values()) {
+					remove(e);
 				}
 			}
+			super.remove(element);
 		}
 		return element;
 	}
 
 	/**
 	 * @param suspended
+	 * @return
 	 * @throws Exception
 	 */
-	public void suspend(@SuppressWarnings("hiding") final boolean suspended) throws Exception {
-		if (suspended == this.suspended) { return; }
+	public boolean suspend(@SuppressWarnings("hiding") final boolean suspended) throws Exception {
+		if (suspended == this.suspended) { return suspended; }
 		this.suspended = suspended;
 		if (!suspended) {
 			for (final Element<?> elm : added) {
-				add(elm);
+				addToRoot(elm);
+			}
+			for (final Element<?> elm : added) {
+				if (elm instanceof Composite) {
+					((Composite<?>) elm).hoist();
+				}
 			}
 			added.clear();
-			for (final String id : moved) {
-				moved(elements.get(id));
+			for (final Element<?> id : moved) {
+				moved(id);
 			}
 			moved.clear();
-			for (final String id : styled) {
-				style(elements.get(id));
+			for (final Element<?> id : styled) {
+				style(id);
 			}
 			styled.clear();
-			for (final String id : deleted) {
-				remove(elements.get(id));
+			for (final Element<?> id : deleted) {
+				remove(id);
 			}
 			deleted.clear();
 		}
+		return !suspended; // We return the parameter to make this thread-safe
 	}
 
 	/**
@@ -230,7 +211,7 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 		// TODO Auto-generated method stub
 	}
 
-	private String add(final Node<?> element, final boolean b) throws Exception {
+	private String addToRoot(final Node<?> element, final boolean b) throws Exception {
 		final Packet p = c.send(element.getCreatePackage(getId()));
 		p.reset();
 		if (p.getInteger() != 1) { throw new Exception("Error adding element"); }
@@ -274,11 +255,35 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 		if (p.getInteger() != 1) { throw new Exception("Could not style element " + id); }
 	}
 
+	/**
+	 * @see org.cpntools.simulator.extensions.graphics.Composite#add(org.cpntools.simulator.extensions.graphics.Element)
+	 */
+	@Override
+	<U extends Element<?>> U addToRoot(final U element) throws Exception {
+		if (suspended) {
+			added.add(element);
+		} else {
+			if (element instanceof Node) {
+				final Node<?> n = (Node<?>) element;
+				element.setId(addToRoot((Node<?>) element, true));
+				if (n.getForeground() != Color.WHITE || n.getBackground() != Color.BLACK || n.getWidth() != 1) {
+					style(n);
+				}
+				if (n.isSubscribed()) {
+					subscribe(n);
+				}
+			} else {
+				super.addToRoot(element);
+			}
+		}
+		return element;
+	}
+
 	@Override
 	void moved(final Element<?> element) throws Exception {
-		if (element instanceof Node && elements.containsKey(element.getId())) {
+		if (element instanceof Node) {
 			if (suspended) {
-				moved.add(element.getId());
+				moved.add(element);
 			} else {
 				moved(element.getId(), (Node<?>) element);
 			}
@@ -286,15 +291,21 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 	}
 
 	@Override
-	void style(final Node<?> element) throws Exception {
-		if (elements.containsKey(element.getId()) || added.contains(element)) {
-			if (suspended) {
-				styled.add(element.getId());
-			} else {
-				style(element.getId(), element.getForeground(), element.getBackground(), element.getLineWidth());
+	void style(final Element<?> element) throws Exception {
+		if (suspended) {
+			styled.add(element);
+		} else {
+			if (element instanceof Node) {
+				final Node<?> n = (Node<?>) element;
+				style(n.getId(), n.getForeground(), n.getBackground(), n.getLineWidth());
+			} else if (element instanceof Composite) {
+				@SuppressWarnings("hiding")
+				final Composite<?> c = (Composite<?>) element;
+				for (final Element<?> e : c.elements.values()) {
+					style(e);
+				}
 			}
 		}
-
 	}
 
 	@Override
@@ -303,7 +314,6 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 			subscribed = true;
 			c.subscribe(new Command(10000, 401), this);
 		}
-		if (!elements.containsKey(node.getId())) { return; }
 		Packet p = new Packet(3, 7);
 		p.addString(node.getId());
 		p.addBoolean(node.isTracing());

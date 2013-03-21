@@ -36,6 +36,7 @@ public class Pong extends DemoPanel {
 		private Text playerScore;
 
 		int player = 0, computer = 0;
+
 		/**
 		 * @param c
 		 * @param ball
@@ -72,17 +73,17 @@ public class Pong extends DemoPanel {
 					final int ballY = (int) ball.getBounds().getCenterY();
 					canvas.suspend(true);
 					if (ballY < padY) {
-						computerPad.move(new Point(0, -COMPUTER_MOVE));
+						computerPad.move(new Point(0, -PlayerThread.COMPUTER_MOVE));
 					}
 					if (ballY > padY) {
-						computerPad.move(new Point(0, COMPUTER_MOVE));
+						computerPad.move(new Point(0, PlayerThread.COMPUTER_MOVE));
 					}
 					padY = (int) playerPad.getBounds().getCenterY();
 					if (ballY < padY) {
-						playerPad.move(new Point(0, -COMPUTER_MOVE));
+						playerPad.move(new Point(0, -PlayerThread.COMPUTER_MOVE));
 					}
 					if (ballY > padY) {
-						playerPad.move(new Point(0, COMPUTER_MOVE));
+						playerPad.move(new Point(0, PlayerThread.COMPUTER_MOVE));
 					}
 					for (final Rectangle bound : bounds) {
 						angle = bounce(bound, ball, angle, false);
@@ -90,11 +91,11 @@ public class Pong extends DemoPanel {
 					angle = bounce(computerPad, ball, angle, true);
 					angle = bounce(playerPad, ball, angle, true);
 					final double radian = angle * Math.PI / 180;
-					final double dx = Math.cos(radian) * BALL_MOVE;
-					final double dy = Math.sin(radian) * BALL_MOVE;
+					final double dx = Math.cos(radian) * PlayerThread.BALL_MOVE;
+					final double dy = Math.sin(radian) * PlayerThread.BALL_MOVE;
 					ball.move(new Point((int) Math.round(dx), (int) Math.round(dy)));
 					canvas.suspend(false);
-					sleep(100);
+					Thread.sleep(100);
 				} catch (final Exception _) {
 					// Ignore
 				}

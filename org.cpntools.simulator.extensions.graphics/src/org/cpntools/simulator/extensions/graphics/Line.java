@@ -39,21 +39,34 @@ public class Line extends Node<Line> {
 		final Packet p = super.getCreatePackage(canvasid);
 		p.addInteger(4);
 		p.addInteger(points.size());
+		int dx = 0, dy = 0;
+		if (owner != null) {
+			dx = getX();
+			dy = getY();
+		}
 		for (final Point point : points) {
-			p.addInteger((int) point.getX());
-			p.addInteger(-(int) point.getY());
+			p.addInteger(dx + (int) point.getX());
+			p.addInteger(dy + -(int) point.getY());
 		}
 		return p;
 	}
 
 	@Override
 	protected int getX() {
-		return (int) bounds.getX();
+		if (owner == null) {
+			return (int) bounds.getX();
+		} else {
+			return (int) bounds.getX() + owner.getX();
+		}
 	}
 
 	@Override
 	protected int getY() {
-		return -(int) bounds.getY();
+		if (owner == null) {
+			return -(int) bounds.getY();
+		} else {
+			return -(int) bounds.getY() + owner.getY();
+		}
 	}
 
 }
