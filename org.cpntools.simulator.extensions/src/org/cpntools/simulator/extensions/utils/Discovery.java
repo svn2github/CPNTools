@@ -32,7 +32,7 @@ public class Discovery {
 	 * @param f
 	 */
 	public static void addFile(final File f) {
-		jars.add(f);
+		Discovery.jars.add(f);
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class Discovery {
 	 * @return
 	 */
 	public static <T> Pair<Collection<ClassInfo>, Class<T>> findExtensions(final Class<T> clazz) {
-		return findExtensions(clazz, true);
+		return Discovery.findExtensions(clazz, true);
 	}
 
 	/**
@@ -51,10 +51,10 @@ public class Discovery {
 	public static <T> Pair<Collection<ClassInfo>, Class<T>> findExtensions(final Class<T> clazz,
 	        final boolean pluginsOnly) {
 		final ClassFinder finder = new ClassFinder();
-		if (!pluginsOnly) {
+		if (!pluginsOnly || Discovery.jars.isEmpty()) {
 			finder.addClassPath();
 		}
-		finder.add(jars);
+		finder.add(Discovery.jars);
 
 		final ClassFilter filter = new AndClassFilter(new NotClassFilter(new InterfaceOnlyClassFilter()),
 		        new SubclassClassFilter(clazz), new NotClassFilter(new AbstractClassFilter()));
@@ -70,12 +70,12 @@ public class Discovery {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> Collection<T> instantiate(final Pair<Collection<ClassInfo>, Class<T>> extensionsClasses) {
-		if (loader == null) {
-			loader = ClassLoader.getSystemClassLoader();
-			if (!jars.isEmpty()) {
-				final URL[] urls = new URL[jars.size()];
+		if (Discovery.loader == null) {
+			Discovery.loader = ClassLoader.getSystemClassLoader();
+			if (!Discovery.jars.isEmpty()) {
+				final URL[] urls = new URL[Discovery.jars.size()];
 				int i = 0;
-				for (final File f : jars) {
+				for (final File f : Discovery.jars) {
 					try {
 						urls[i] = f.toURI().toURL();
 					} catch (final MalformedURLException e) {
@@ -83,14 +83,14 @@ public class Discovery {
 					}
 					i++;
 				}
-				loader = new URLClassLoader(urls, loader);
+				Discovery.loader = new URLClassLoader(urls, Discovery.loader);
 			}
 		}
 
 		final List<T> result = new ArrayList<T>();
 		for (final ClassInfo ci : extensionsClasses.getFirst()) {
 			try {
-				final Class<?> clazz = Class.forName(ci.getClassName(), true, loader);
+				final Class<?> clazz = Class.forName(ci.getClassName(), true, Discovery.loader);
 				if (!clazz.equals(Scraper.class)) {
 					final Object instance = clazz.newInstance();
 					if (extensionsClasses.getSecond().isInstance(instance)) {

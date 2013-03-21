@@ -168,7 +168,7 @@ public class Handler implements Channel {
 		final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions = new HashMap<Integer, Map<Integer, List<SubscriptionHandler>>>();
 		for (final Extension e : extensions) { // We do this here as we are sure of no conflicts
 			for (final Command c : e.getSubscriptions()) {
-				addSingleSubscription(subscriptions, c, e);
+				Handler.addSingleSubscription(subscriptions, c, e);
 			}
 		}
 		return subscriptions;
@@ -436,7 +436,7 @@ public class Handler implements Channel {
 				subscribe = true;
 			}
 		}
-		addSingleSubscription(subscriptions, command, h);
+		Handler.addSingleSubscription(subscriptions, command, h);
 		if (subscribe) {
 			send(createSubscriptionMessage(command.getCommand(), command.getSubcommand(), command.isPrefilter()));
 		}

@@ -127,7 +127,7 @@ public class DiscoveryServer {
 					@Override
 					public void actionPerformed(final ActionEvent e) {
 						main.setVisible(true);
-						preferences.putBoolean(MINIMIZED, false);
+						preferences.putBoolean(DiscoveryServer.MINIMIZED, false);
 						tray.remove(trayIcon);
 					}
 				});
@@ -136,7 +136,7 @@ public class DiscoveryServer {
 					public void mouseClicked(final MouseEvent e) {
 						if (e.getClickCount() >= 2) {
 							main.setVisible(true);
-							preferences.putBoolean(MINIMIZED, false);
+							preferences.putBoolean(DiscoveryServer.MINIMIZED, false);
 							tray.remove(trayIcon);
 						}
 					}
@@ -152,14 +152,14 @@ public class DiscoveryServer {
 					public void componentHidden(final ComponentEvent e) {
 						try {
 							tray.add(trayIcon);
-							preferences.putBoolean(MINIMIZED, true);
+							preferences.putBoolean(DiscoveryServer.MINIMIZED, true);
 						} catch (final AWTException _) {
 							System.exit(0);
 						}
 					}
 				});
 				main.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-				if (preferences.getBoolean(MINIMIZED, false)) {
+				if (preferences.getBoolean(DiscoveryServer.MINIMIZED, false)) {
 					tray.add(trayIcon);
 				} else {
 					main.setVisible(true);
