@@ -163,8 +163,7 @@ event))*)
                     in
                          case (opcode, event)
                            of 
-                              (13, ExtSimRequest) => raise Finished
-                              ExtSimRequest
+                              (13, ExtSimRequest) => raise Finished ExtSimRequest
                             | (9, _) =>
                            let
                                val msg = read_message extin
@@ -182,9 +181,12 @@ event))*)
                            in
                                send_result Ops.cbRes extout result
                            end
-                            | (7, ExtSimResult) =>
-                                        raise Finished ExtSimResult
+                            | (7, ExtSimResult) => raise Finished ExtSimResult
                             | (7, Any) => raise Finished ExtSimResult
+                            | (5, GfcResult) => raise Finished GfcResult
+                            | (5, Any) => raise Finished GfcResult
+                            | (6, GfcResult) => raise ReqFail "Call failed in GRAM"
+                            | (6, Any) => raise ReqFail "Call failed in GRAM"
                             | _ =>
                                     Err.log ("ERROR: Received unexpected extension result with opcode "
                                     ^ (Int.toString opcode) ^ 

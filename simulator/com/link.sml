@@ -179,6 +179,23 @@ structure CpnMLSys = struct
 
     structure Glue = Glue(structure Cmd = CmdProcess);
 
+    local
+        structure FakeCmd = struct
+            open CmdProcess
+            structure Str = Extension.Stream
+
+            fun getGfcStreams _ =
+            let
+                val (ins, outs) = Extension.getStreams()
+                val _ = Str.putInteger outs MajorOpcodes.gfcReq
+            in
+                (outs, ins)
+            end
+        end
+    in
+        structure ExtGlue = Glue(structure Cmd = FakeCmd);
+    end
+
 end; (* structure CpnMLSys *)
 
 import "java-execute";

@@ -198,7 +198,7 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
               of NONE => []
                | (SOME (str)) => [str]
 
-        fun getStreams () = (Option.valOf (!input), Option.valOf (!output))
+        fun getStreams () = (connect(); (Option.valOf (!input), Option.valOf (!output)))
 
         fun getSubscription cmd =
             List.find (fn (c, v) => c = cmd) (!subscriptions)
@@ -226,7 +226,10 @@ functor Extension(structure Stream: STREAM structure Err : GRAMERROR) : EXTENSIO
           | addSubscriptions (cmd::subcmd::rest) (prefilter::pfrest) =
             (addSubscription cmd subcmd prefilter; addSubscriptions rest pfrest)
 
-        fun dispatchLocally (b, 2::count::i, s) =
+        fun dispatchLocally ([], [1], [code]) =
+            ((Compiler.Interact.useStream (TextIO.openString code); ([true], [1], []))
+            handle exn => ([false], [1], [exnName exn]))
+          | dispatchLocally (b, 2::count::i, s) =
             if List.length i = 2 * count
             then (addSubscriptions i b; ([], [1], []))
             else ([], [~1], [])

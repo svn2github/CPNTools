@@ -57,11 +57,11 @@
 (* OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN  *)
 (*IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                         *)
 (************************************************************************)
-structure JavaExecute : JAVA_EXECUTE = struct
+functor RemoteExecute (structure Glue : GLUE) : JAVA_EXECUTE = struct
   datatype value = vINT of int | vSTRING of string | vBOOL of bool
                  | vLIST of (value list)
 
-  open CpnMLSys.Glue
+  open Glue
 
   fun valueToDataValue a [] = a
     | valueToDataValue a ((vINT v)::rest) = valueToDataValue ((IN (gdvInt v))::a) rest
@@ -83,4 +83,8 @@ structure JavaExecute : JAVA_EXECUTE = struct
   fun executeString name values = getString (execute' gdsString name values)
   fun executeInt name values = getInt (execute' gdsInt name values)
   fun executeBool name values = getBool (execute' gdsBool name values)
-end
+end;
+
+structure JavaExecute = RemoteExecute(structure Glue = CpnMLSys.Glue);
+structure ExtExecute = RemoteExecute(structure Glue = CpnMLSys.ExtGlue);
+
