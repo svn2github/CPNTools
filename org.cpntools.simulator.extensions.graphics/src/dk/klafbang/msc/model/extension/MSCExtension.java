@@ -275,7 +275,6 @@ public class MSCExtension extends AbstractExtension {
 	 */
 	@Override
 	public Object getRPCHandler() {
-		System.out.println("getRPC is actually called");
 		return new MSCDispatcher(channel);
 	}
 

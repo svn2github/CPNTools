@@ -328,7 +328,7 @@ public class Handler implements Channel {
 					s.append(index);
 				}
 				s.append("\nend");
-				System.out.println(s);
+// System.out.println(s);
 				inject(e, s.toString());
 			}
 		}
@@ -456,7 +456,6 @@ public class Handler implements Channel {
 	 * @return
 	 */
 	public Packet handleGFC(final Packet p) {
-		System.out.println("Got GFC request" + p);
 		p.getCommand(); // 2
 		try {
 			final Object result = g.handle(p.getParameters());
@@ -687,7 +686,7 @@ public class Handler implements Channel {
 		if (s != null && !"".equals(s)) {
 			try {
 				final Packet p = send(createInjectPacket(s));
-				System.out.println(p);
+// System.out.println(p);
 				if (p.getInteger() != 1) { throw new ErrorInjectingException(e, s, p.getString()); }
 			} catch (final IOException ex) {
 				throw new ErrorInjectingException(e, s, ex);

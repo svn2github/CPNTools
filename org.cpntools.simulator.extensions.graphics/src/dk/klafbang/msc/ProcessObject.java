@@ -70,6 +70,7 @@ public class ProcessObject extends Group {
 		bottom.setPosition(new Point(-10, -5 - y));
 		remove(line);
 		line = new Line(new Point(0, -21), new Point(0, 6 - y));
+		line.setForeground(model.getForeground());
 		add(line);
 	}
 }
