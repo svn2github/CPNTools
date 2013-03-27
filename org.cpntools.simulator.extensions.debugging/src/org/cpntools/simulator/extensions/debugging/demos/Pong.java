@@ -9,7 +9,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 
 import org.cpntools.simulator.extensions.graphics.Canvas;
-import org.cpntools.simulator.extensions.graphics.Ellipsis;
+import org.cpntools.simulator.extensions.graphics.Ellipse;
 import org.cpntools.simulator.extensions.graphics.Rectangle;
 import org.cpntools.simulator.extensions.graphics.Text;
 
@@ -26,7 +26,7 @@ public class Pong extends DemoPanel {
 		private final static int BALL_MOVE = 10;
 		private final static int COMPUTER_MOVE = 4;
 		private int angle = 45;
-		private final Ellipsis ball;
+		private final Ellipse ball;
 		private final Rectangle[] bounds;
 		private final Canvas canvas;
 		private final Rectangle computerPad;
@@ -44,7 +44,7 @@ public class Pong extends DemoPanel {
 		 * @param playerPad
 		 * @param bounds
 		 */
-		public PlayerThread(final Canvas c, final Ellipsis ball, final Rectangle computerPad,
+		public PlayerThread(final Canvas c, final Ellipse ball, final Rectangle computerPad,
 		        final Rectangle playerPad, final Rectangle... bounds) {
 			super("PongPlayer");
 			canvas = c;
@@ -103,7 +103,7 @@ public class Pong extends DemoPanel {
 		}
 
 		@SuppressWarnings("hiding")
-		private int bounce(final Rectangle r, final Ellipsis ball, final int angle, final boolean pad) throws Exception {
+		private int bounce(final Rectangle r, final Ellipse ball, final int angle, final boolean pad) throws Exception {
 			final java.awt.Rectangle bounds = r.getBounds();
 			final java.awt.Rectangle ballBounds = ball.getBounds();
 			if (ballBounds.getCenterY() < bounds.getMaxY() && ballBounds.getCenterY() > bounds.getMinY()) {
@@ -161,7 +161,7 @@ public class Pong extends DemoPanel {
 					        Color.BLACK);
 					final Rectangle r4 = c.add(new Rectangle(new java.awt.Rectangle(0, 20, 20, 440))).setBackground(
 					        Color.BLACK);
-					final Ellipsis ball = c.add(new Ellipsis(new Point(350, 200), new Dimension(15, 15)));
+					final Ellipse ball = c.add(new Ellipse(new Point(350, 200), new Dimension(15, 15)));
 					final Rectangle computerPad = c.add(new Rectangle(new java.awt.Rectangle(530, 180, 40, 100)));
 					final Rectangle playerPad = c.add(new Rectangle(new java.awt.Rectangle(30, 280, 40, 100)));
 					c.suspend(false);

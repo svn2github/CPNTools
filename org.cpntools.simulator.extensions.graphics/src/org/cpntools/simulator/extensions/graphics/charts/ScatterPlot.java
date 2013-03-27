@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.cpntools.simulator.extensions.Channel;
-import org.cpntools.simulator.extensions.graphics.Ellipsis;
+import org.cpntools.simulator.extensions.graphics.Ellipse;
 import org.cpntools.simulator.extensions.graphics.Line;
 import org.cpntools.simulator.extensions.graphics.Text;
 
@@ -21,7 +21,7 @@ import org.cpntools.simulator.extensions.graphics.Text;
 public class ScatterPlot extends XYChart {
 	private static final int POINT_SIZE = 4;
 	private Text equation = null;
-	private final Map<Point2D, Ellipsis> graphics = new HashMap<Point2D, Ellipsis>();
+	private final Map<Point2D, Ellipse> graphics = new HashMap<Point2D, Ellipse>();
 	private Line line = null;
 	private double maxX = 0, maxY = 0;
 	private final List<Point2D> points = new ArrayList<Point2D>();
@@ -134,9 +134,9 @@ public class ScatterPlot extends XYChart {
 				sx += xx;
 				sy += yy;
 				ss += xx * xx;
-				Ellipsis r = graphics.get(p);
+				Ellipse r = graphics.get(p);
 				if (r == null) {
-					r = new Ellipsis(0, 0, ScatterPlot.POINT_SIZE, ScatterPlot.POINT_SIZE);
+					r = new Ellipse(0, 0, ScatterPlot.POINT_SIZE, ScatterPlot.POINT_SIZE);
 					graphics.put(p, r);
 					c.add(r);
 				}

@@ -119,7 +119,7 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 			if (n != null) {
 				final int x = p.getInteger();
 				final int y = p.getInteger();
-				if (n instanceof Rectangle || n instanceof Ellipsis) {
+				if (n instanceof Rectangle || n instanceof Ellipse) {
 					final int w = p.getInteger();
 					final int h = p.getInteger();
 					n.bounds.setBounds(x - w / 2, -(y + h / 2), w, h);
