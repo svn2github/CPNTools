@@ -19,7 +19,8 @@ import org.clapper.util.classutil.ClassInfo;
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.AbstractExtension;
 import org.cpntools.simulator.extensions.Channel;
-import org.cpntools.simulator.extensions.Option;
+import org.cpntools.simulator.extensions.Instrument;
+import org.cpntools.simulator.extensions.Invocation;
 import org.cpntools.simulator.extensions.utils.Discovery;
 
 import dk.klafbang.tools.Pair;
@@ -41,7 +42,7 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 	 * 
 	 */
 	public DebuggingExtension() {
-		addOption(Option.create("Visible", "visible", Boolean.class));
+		addInstrument(new Instrument("Development", "debug", "Debug", "Start protocol debugger"));
 		try {
 			dialog = new JDialog((Frame) null, "Debug/CPN", false);
 			dialog.setSize(new Dimension(600, 700));
@@ -122,10 +123,10 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 	@Override
 	public void update(final Observable arg0, final Object arg1) {
 		if (arg0 == this) {
-			if (arg1 instanceof Option) {
-				final Option<?> option = (Option<?>) arg1;
-				if ("visible".equals(option.getKey())) {
-					dialog.setVisible((Boolean) getOption(option));
+			if (arg1 instanceof Invocation) {
+				final Invocation i = (Invocation) arg1;
+				if ("debug".equals(i.getInstrument().getKey())) {
+					dialog.setVisible(true);
 				}
 			}
 		}

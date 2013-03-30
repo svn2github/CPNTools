@@ -1,6 +1,5 @@
 package org.cpntools.simulator.extensions;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,6 +8,7 @@ import java.util.Map;
 import java.util.Observable;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
+import org.cpntools.simulator.extensions.scraper.Element;
 
 /**
  * @author michael
@@ -17,8 +17,10 @@ public abstract class AbstractExtension extends Observable implements Extension 
 	private final List<Command> lazysubscriptions = new ArrayList<Command>();
 	private final List<Option<?>> options = new ArrayList<Option<?>>();
 	private final List<Command> subscriptions = new ArrayList<Command>();
+	private final List<Instrument> instruments = new ArrayList<Instrument>();
 	private final List<Option<?>> u_options = Collections.unmodifiableList(options);
 	private final List<Command> u_subscriptions = Collections.unmodifiableList(subscriptions);
+	private final List<Instrument> u_instruments = Collections.unmodifiableList(instruments);
 	protected Map<Option<Boolean>, Boolean> booleanOptions = new HashMap<Option<Boolean>, Boolean>();
 	protected Channel channel;
 	protected Map<Option<Integer>, Integer> integerOptions = new HashMap<Option<Integer>, Integer>();
@@ -58,6 +60,14 @@ public abstract class AbstractExtension extends Observable implements Extension 
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p) {
+		return null;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.Extension#inject()
 	 */
 	@Override
@@ -82,6 +92,16 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		setOptionInternal(option, value);
 		setChanged();
 		notifyObservers(option);
+	}
+
+	/**
+	 * @param i
+	 * @param e
+	 */
+	@Override
+	public void invokeInstrument(final Instrument i, final Element e) {
+		setChanged();
+		notifyObservers(new Invocation(i, e));
 	}
 
 	/**
@@ -160,13 +180,15 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		options.add(option);
 	}
 
-	protected void addSubscription(final Command c) {
-		subscriptions.add(c);
-	}
-
 	protected void addSubscription(final Command... cs) {
 		for (final Command c : cs) {
-			addSubscription(c);
+			subscriptions.add(c);
+		}
+	}
+
+	protected void addInstrument(final Instrument... is) {
+		for (final Instrument i : is) {
+			instruments.add(i);
 		}
 	}
 
@@ -198,14 +220,31 @@ public abstract class AbstractExtension extends Observable implements Extension 
 		return getOption(option);
 	}
 
-	protected void makeLazySubscriptions() throws IOException {
-		for (final Command c : lazysubscriptions) {
-			channel.subscribe(c, this);
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#getInstruments()
+	 */
+	@Override
+	public List<Instrument> getInstruments() {
+		return u_instruments;
+	}
+
+	protected boolean lazyDone = false;
+
+	protected void makeLazySubscriptions() {
+		if (lazyDone) { return; }
+		lazyDone = true;
+		try {
+			for (final Command c : lazysubscriptions) {
+				channel.subscribe(c, this);
+			}
+		} catch (final Exception _) {
+			// If called before channel is set or before subscriptions is created buy channel
+			subscriptions.addAll(lazysubscriptions);
 		}
+		lazysubscriptions.clear();
 	}
 
 	protected void setChannel(final Channel c) {
 		channel = c;
 	}
-
 }

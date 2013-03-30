@@ -3,12 +3,12 @@ package org.cpntools.simulator.extensions;
 import java.util.List;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
+import org.cpntools.simulator.extensions.scraper.Element;
 
 /**
  * @author michael
  */
 public interface Extension extends SubscriptionHandler {
-
 	/**
 	 * Identifier for use for testing or early stages of development of extensions.
 	 */
@@ -43,6 +43,13 @@ public interface Extension extends SubscriptionHandler {
 	List<Command> getSubscriptions();
 
 	/**
+	 * Allow this handler to expose instruments in the CPN Tools GUI.
+	 * 
+	 * @return
+	 */
+	List<Instrument> getInstruments();
+
+	/**
 	 * Handle a packet. Only packets matching the identifier will ever be passed. handle is only called on objects
 	 * created by start and hence had a Handler.
 	 * 
@@ -74,5 +81,13 @@ public interface Extension extends SubscriptionHandler {
 	 * @return
 	 */
 	Extension start(Channel c);
+
+	/**
+	 * Invoke the instrument on the given element.
+	 * 
+	 * @param i
+	 * @param e
+	 */
+	void invokeInstrument(Instrument i, Element e);
 
 }

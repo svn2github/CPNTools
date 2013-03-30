@@ -239,8 +239,8 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 		if (p.getInteger() != 1) { throw new Exception("Could not remove element " + id); }
 	}
 
-	private void style(final String id, final Color foreground, final Color background, final int width)
-	        throws Exception {
+	private void style(final String id, final Color foreground, final Color background, final int width,
+	        final int curvature, final int lineStyle, final boolean filled) throws Exception {
 		Packet p = new Packet(3, 4);
 		p.addString(id);
 		p.addInteger(foreground.getRed());
@@ -250,6 +250,9 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 		p.addInteger(background.getGreen());
 		p.addInteger(background.getBlue());
 		p.addInteger(width);
+		p.addInteger(curvature);
+		p.addInteger(lineStyle);
+		p.addBoolean(filled);
 		p = c.send(p);
 		p.reset();
 		if (p.getInteger() != 1) { throw new Exception("Could not style element " + id); }
@@ -297,7 +300,12 @@ public class Canvas extends Composite<Canvas> implements Observer, SubscriptionH
 		} else {
 			if (element instanceof Node) {
 				final Node<?> n = (Node<?>) element;
-				style(n.getId(), n.getForeground(), n.getBackground(), n.getLineWidth());
+				int linestyle = 0;
+				if (n instanceof Line) {
+					linestyle = ((Line) n).getLineStyle();
+				}
+				style(n.getId(), n.getForeground(), n.getBackground(), n.getLineWidth(), n.getCurvature(), linestyle,
+				        n.isFilled());
 			} else if (element instanceof Composite) {
 				@SuppressWarnings("hiding")
 				final Composite<?> c = (Composite<?>) element;

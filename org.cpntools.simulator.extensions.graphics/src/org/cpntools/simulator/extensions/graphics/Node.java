@@ -14,6 +14,8 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	private boolean observed;
 	private boolean trace;
 	private int width;
+	private int curvature;
+	protected boolean filled;
 
 	/**
 	 * @param bounds
@@ -23,6 +25,8 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 		fg = Color.BLACK;
 		bg = Color.WHITE;
 		width = 1;
+		curvature = 0;
+		filled = true;
 	}
 
 	/**
@@ -136,14 +140,17 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 
 	/**
 	 * @param width
+	 * @return
 	 * @throws Exception
 	 */
-	public void setLineWidth(final int width) throws Exception {
-		if (this.width == width) { return; }
+	@SuppressWarnings("unchecked")
+	public T setLineWidth(final int width) throws Exception {
+		if (this.width == width) { return (T) this; }
 		this.width = width;
 		if (owner != null) {
 			owner.style(this);
 		}
+		return (T) this;
 	}
 
 	/**
@@ -186,6 +193,50 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	void forceNotify() {
 		setChanged();
 		notifyObservers();
+	}
+
+	/**
+	 * @return
+	 */
+	public int getCurvature() {
+		return curvature;
+	}
+
+	/**
+	 * @param curvature
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public T setCurvature(final int curvature) throws Exception {
+		if (this.curvature == curvature) { return (T) this; }
+		this.curvature = curvature;
+		if (owner != null) {
+			owner.style(this);
+		}
+		return (T) this;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isFilled() {
+		return filled;
+	}
+
+	/**
+	 * @param filled
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public T setFilled(final boolean filled) throws Exception {
+		if (this.filled == filled) { return (T) this; }
+		this.filled = filled;
+		if (owner != null) {
+			owner.style(this);
+		}
+		return (T) this;
 	}
 
 }

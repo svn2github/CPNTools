@@ -46,6 +46,7 @@ public class Ellipse extends Node<Ellipse> {
 		p.addInteger(getY());
 		p.addInteger(getWidth());
 		p.addInteger(getHeight());
+		p.addBoolean(isFilled());
 		return p;
 	}
 }

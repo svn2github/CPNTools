@@ -8,11 +8,12 @@ public class HasName extends Element {
 	private String name;
 
 	/**
+	 * @param dictionary
 	 * @param id
 	 * @param name
 	 */
-	public HasName(final String id, final String name) {
-		super(id);
+	public HasName(final ElementDictionary dictionary, final String id, final String name) {
+		super(dictionary, id);
 		setName(name);
 	}
 

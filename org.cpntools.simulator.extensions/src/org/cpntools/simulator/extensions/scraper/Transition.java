@@ -1,5 +1,10 @@
 package org.cpntools.simulator.extensions.scraper;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author michael
  */
@@ -15,6 +20,7 @@ public class Transition extends Node {
 	private String time;
 
 	/**
+	 * @param dictionary
 	 * @param id
 	 * @param name
 	 * @param page
@@ -25,15 +31,64 @@ public class Transition extends Node {
 	 * @param channel
 	 * @param controllable
 	 */
-	public Transition(final String id, final String name, final Page page, final String guard, final String priority,
-	        final String time, final String code, final String channel, final boolean controllable) {
-		super(id, name, page);
+	public Transition(final ElementDictionary dictionary, final String id, final String name, final Page page,
+	        final String guard, final String priority, final String time, final String code, final String channel,
+	        final boolean controllable) {
+		super(dictionary, id, name, page);
 		setChannel(channel);
 		setControllable(controllable);
 		setGuard(guard);
 		setPriority(priority);
 		setTime(time);
 		setCode(code);
+	}
+
+	private final Map<String, Arc> oldArcs = new HashMap<String, Arc>();
+
+	/**
+	 * 
+	 */
+	public void prepareNewArcs() {
+		oldArcs.clear();
+		changedPlaces.clear();
+		oldArcs.putAll(inArcs);
+		oldArcs.putAll(outArcs); // Not test as they are in both in and out! sneaky!
+		oldArcs.putAll(resetArcs);
+		oldArcs.putAll(inhibitorArcs);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.scraper.Node#addArc(org.cpntools.simulator.extensions.scraper.Arc)
+	 */
+	@Override
+	public boolean addArc(final Arc a) {
+		final Arc oldArc = oldArcs.remove(a.getId());
+		if (oldArc == null || !oldArc.equals(a)) {
+			if (oldArc != null) {
+				final Place place = oldArc.getPlace();
+				removeArc(oldArc);
+				place.removeArc(oldArc);
+				changedPlaces.add(place);
+			}
+			super.addArc(a);
+			changedPlaces.add(a.getPlace());
+			return true;
+		}
+		return false;
+	}
+
+	final Set<Place> changedPlaces = new HashSet<Place>();
+
+	/**
+	 * @return
+	 */
+	public Set<Place> finishNewArcs() {
+		for (final Arc a : oldArcs.values()) {
+			removeArc(a);
+			changedPlaces.add(a.getPlace());
+		}
+		oldArcs.clear();
+		return changedPlaces;
 	}
 
 	/**

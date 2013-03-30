@@ -47,6 +47,7 @@ public class ProcessObject extends Group {
 		final Rectangle header = new Rectangle(new java.awt.Rectangle(-50, -21, 100, 42));
 		header.setForeground(model.getForeground());
 		header.setBackground(model.getBackground());
+		header.setCurvature(10);
 		add(header);
 		final Text name = new Text(new Point(-42, -6), model.getName());
 		name.setForeground(model.getForeground());

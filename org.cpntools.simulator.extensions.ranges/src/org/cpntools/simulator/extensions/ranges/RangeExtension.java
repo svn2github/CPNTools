@@ -56,14 +56,6 @@ public class RangeExtension extends AbstractExtension {
 	}
 
 	/**
-	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
-	 */
-	@Override
-	public Packet handle(final Packet p) {
-		return null;
-	}
-
-	/**
 	 * @see org.cpntools.simulator.extensions.AbstractExtension#prefilter(org.cpntools.accesscpn.engine.protocol.Packet)
 	 */
 	@Override

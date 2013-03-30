@@ -7,10 +7,12 @@ public abstract class Element {
 	private String id;
 
 	/**
+	 * @param dictionary
 	 * @param id
 	 */
-	public Element(final String id) {
+	public Element(final ElementDictionary dictionary, final String id) {
 		setId(id);
+		dictionary.put(id, this);
 	}
 
 	/**

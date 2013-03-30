@@ -71,7 +71,7 @@ public class DiscoveryServer {
 		progressMonitor.setNote("Instantiating extensions...");
 		progressMonitor.setProgress(++progress);
 		final Collection<Extension> extensions = Discovery.instantiate(extensionsClasses);
-		extensions.add(Scraper.INSTANCE);
+		extensions.remove(new Scraper());
 
 		progressMonitor.setNote("Starting server thread...");
 		progressMonitor.setProgress(++progress);

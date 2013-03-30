@@ -74,14 +74,6 @@ public abstract class RangeExtensionOld extends AbstractExtension {
 	}
 
 	/**
-	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
-	 */
-	@Override
-	public Packet handle(final Packet p) {
-		return null;
-	}
-
-	/**
 	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
 	 *      org.cpntools.accesscpn.engine.protocol.Packet)
 	 */
@@ -306,31 +298,33 @@ public abstract class RangeExtensionOld extends AbstractExtension {
 				final String aid = packet.getString();
 				final String placeId = packet.getString();
 				final String inscription = packet.getString();
-				t.addArc(new Arc(aid, inscription, Arc.Type.INPUT, null, t, new Place(placeId, null, null)));
+				t.addArc(new Arc(aid, inscription, Arc.Type.INPUT, null, t, new Place(placeId, null, null, null, null)));
 			}
 			for (int j = packet.getInteger(); j > 0; j--) { // output
 				final String aid = packet.getString();
 				final String placeId = packet.getString();
 				final String inscription = packet.getString();
-				t.addArc(new Arc(aid, inscription, Arc.Type.OUTPUT, null, t, new Place(placeId, null, null)));
+				t.addArc(new Arc(aid, inscription, Arc.Type.OUTPUT, null, t, new Place(placeId, null, null, null, null)));
 			}
 			for (int j = packet.getInteger(); j > 0; j--) { // inoutput
 				final String aid = packet.getString();
 				final String placeId = packet.getString();
 				final String inscription = packet.getString();
-				t.addArc(new Arc(aid, inscription, Arc.Type.BOTHDIR, null, t, new Place(placeId, null, null)));
+				t.addArc(new Arc(aid, inscription, Arc.Type.BOTHDIR, null, t,
+				        new Place(placeId, null, null, null, null)));
 			}
 			for (int j = packet.getInteger(); j > 0; j--) { // inhibitor
 				final String aid = packet.getString();
 				final String placeId = packet.getString();
 				final String inscription = packet.getString();
-				t.addArc(new Arc(aid, inscription, Arc.Type.INHIBITOR, null, t, new Place(placeId, null, null)));
+				t.addArc(new Arc(aid, inscription, Arc.Type.INHIBITOR, null, t, new Place(placeId, null, null, null,
+				        null)));
 			}
 			for (int j = packet.getInteger(); j > 0; j--) { // reset
 				final String aid = packet.getString();
 				final String placeId = packet.getString();
 				final String inscription = packet.getString();
-				t.addArc(new Arc(aid, inscription, Arc.Type.RESET, null, t, new Place(placeId, null, null)));
+				t.addArc(new Arc(aid, inscription, Arc.Type.RESET, null, t, new Place(placeId, null, null, null, null)));
 			}
 		}
 		ts = filter(ts);

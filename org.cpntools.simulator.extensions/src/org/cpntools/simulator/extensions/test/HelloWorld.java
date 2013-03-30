@@ -118,14 +118,6 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 	}
 
 	/**
-	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
-	 */
-	@Override
-	public Packet handle(final Packet p) {
-		return null;
-	}
-
-	/**
 	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
 	 *      org.cpntools.accesscpn.engine.protocol.Packet)
 	 */
@@ -231,6 +223,8 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 				}
 					break;
 				case REMOVED:
+					break;
+				case ARC_CHANGED:
 					break;
 				}
 			}

@@ -13,6 +13,7 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  */
 public class Line extends Node<Line> {
 	private final List<Point> points = new ArrayList<Point>();
+	private int lineStyle;
 
 	/**
 	 * @param points
@@ -22,6 +23,8 @@ public class Line extends Node<Line> {
 		for (final Point p : points) {
 			this.points.add(new Point((int) p.getX() - getX(), (int) p.getY() + getY()));
 		}
+		filled = false;
+		lineStyle = 0;
 	}
 
 	/**
@@ -48,6 +51,9 @@ public class Line extends Node<Line> {
 			p.addInteger(dx + (int) point.getX());
 			p.addInteger(dy + -(int) point.getY());
 		}
+		p.addInteger(getCurvature());
+		p.addInteger(getLineStyle());
+		p.addBoolean(isFilled());
 		return p;
 	}
 
@@ -67,6 +73,27 @@ public class Line extends Node<Line> {
 		} else {
 			return -(int) bounds.getY() + owner.getY();
 		}
+	}
+
+	/**
+	 * @return
+	 */
+	public int getLineStyle() {
+		return lineStyle;
+	}
+
+	/**
+	 * @param lineStyle
+	 * @return
+	 * @throws Exception
+	 */
+	public Line setLineStyle(final int lineStyle) throws Exception {
+		if (this.lineStyle == lineStyle) { return this; }
+		this.lineStyle = lineStyle;
+		if (owner != null) {
+			owner.style(this);
+		}
+		return this;
 	}
 
 }

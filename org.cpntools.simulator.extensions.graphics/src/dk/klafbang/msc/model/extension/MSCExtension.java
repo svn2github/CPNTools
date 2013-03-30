@@ -3,7 +3,6 @@ package dk.klafbang.msc.model.extension;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.AbstractExtension;
 import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.NamedRPCHandler;
@@ -284,14 +283,6 @@ public class MSCExtension extends AbstractExtension {
 	@Override
 	public String getName() {
 		return "MSC";
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
-	 */
-	@Override
-	public Packet handle(final Packet p) {
-		return null;
 	}
 
 }

@@ -22,9 +22,13 @@ import org.cpntools.accesscpn.engine.utils.BlockingQueue;
 import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.Command;
 import org.cpntools.simulator.extensions.Extension;
+import org.cpntools.simulator.extensions.Instrument;
 import org.cpntools.simulator.extensions.NamedRPCHandler;
 import org.cpntools.simulator.extensions.Option;
 import org.cpntools.simulator.extensions.SubscriptionHandler;
+import org.cpntools.simulator.extensions.scraper.DummyElement;
+import org.cpntools.simulator.extensions.scraper.Element;
+import org.cpntools.simulator.extensions.scraper.Scraper;
 
 import dk.klafbang.tools.Pair;
 
@@ -48,6 +52,7 @@ public class Handler implements Channel {
 						try {
 							p = handleCommand(p);
 							sendLock.lock();
+// System.out.println("SEnda " + p);
 							p.send(out);
 						} catch (final Exception e) {
 							p = new Packet(7, -1);
@@ -60,6 +65,7 @@ public class Handler implements Channel {
 					case 5: // GFC
 						p = handleGFC(p);
 						sendLock.lock();
+// System.out.println("SEndb " + p);
 						p.send(out);
 						sendLock.unlock();
 						break;
@@ -69,6 +75,7 @@ public class Handler implements Channel {
 							p = new Packet(7, 0);
 						}
 						sendLock.lock();
+// System.out.println("SEndc " + p);
 						p.send(out);
 						sendLock.unlock();
 						break;
@@ -197,6 +204,7 @@ public class Handler implements Channel {
 	private final Map<Class<? extends Extension>, Extension> extensionTypes = new HashMap<Class<? extends Extension>, Extension>();
 	private final Lock lock;
 	private final Map<Pair<Integer, String>, Option<?>> options;
+	private final Map<Pair<Integer, String>, Instrument> instruments;
 	private final Map<Integer, Map<Integer, Packet>> prefilterPackages = new HashMap<Integer, Map<Integer, Packet>>();
 	private final Map<Integer, Map<Integer, Boolean>> prefilters;
 	private final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions;
@@ -235,6 +243,7 @@ public class Handler implements Channel {
 		doInjection(extensionTypes.values());
 		makeSubscriptions(subscriptions, prefilters);
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
+		instruments = new HashMap<Pair<Integer, String>, Instrument>();
 		registerExtensions(extensionTypes.values());
 		new DispatcherThread("Dispatcher " + name).start();
 	}
@@ -338,6 +347,7 @@ public class Handler implements Channel {
 	 * @param extensions
 	 */
 	public void constructTypeMap(@SuppressWarnings("hiding") final List<Extension> extensions) {
+		extensionTypes.put(Scraper.class, new Scraper().start(this));
 		for (final Extension e : extensions) {
 			final Extension instance = e.start(this);
 			extensionTypes.put(instance.getClass(), instance);
@@ -509,6 +519,7 @@ public class Handler implements Channel {
 			}
 			sendLock.lock();
 			try {
+// System.out.println("SEndd " + p);
 				p.send(out);
 			} finally {
 				sendLock.unlock();
@@ -579,6 +590,16 @@ public class Handler implements Channel {
 			p.addInteger(option.getTypeId());
 			p.addString(option.getName());
 			p.addString(option.getKey());
+		}
+
+		p.addInteger(e.getInstruments().size());
+		for (final Instrument i : e.getInstruments()) {
+			instruments.put(Pair.createPair(e.getIdentifier(), i.getKey()), i);
+			p.addInteger(i.getTargets());
+			p.addString(i.getName());
+			p.addString(i.getToolTip());
+			p.addString(i.getKey());
+			p.addString(i.getToolBox());
 		}
 		return p;
 	}
@@ -742,6 +763,25 @@ public class Handler implements Channel {
 			}
 			return new Packet(7, 1);
 		}
+		case 202:
+			final int extension = p.getInteger();
+			final Extension e = extensions.get(extension);
+			if (e != null) {
+				final Instrument i = instruments.get(Pair.createPair(extension, p.getString()));
+				if (i != null) {
+					final Scraper scraper = getExtension(Scraper.class);
+					Element element = null;
+					final String id = p.getString();
+					if (scraper != null) {
+						element = scraper.get(id);
+					}
+					if (element == null) {
+						element = new DummyElement(id);
+					}
+					e.invokeInstrument(i, element);
+				}
+			}
+			return new Packet(7, 1);
 		}
 		if (result == null) {
 			result = new Packet(7, -1);

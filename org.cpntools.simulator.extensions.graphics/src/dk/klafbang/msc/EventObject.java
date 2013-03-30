@@ -60,7 +60,7 @@ public abstract class EventObject extends Group {
 
 	private final Text label;
 
-	private final Line line;
+	protected final Line line;
 
 	/**
 	 * @param e
@@ -78,7 +78,9 @@ public abstract class EventObject extends Group {
 		add(label);
 	}
 
-	protected abstract Point[] arrowTip(Point... points);
+	protected Point[] arrowTip(final Point... points) {
+		return points;
+	}
 
 	protected Point getLabelPosition(final Point... points) {
 		return getMidpoint(points);

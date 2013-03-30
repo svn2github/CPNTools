@@ -43,15 +43,6 @@ public class SimpleEventObject extends EventObject {
 	 */
 	public SimpleEventObject(final SimpleEvent e, final ProcessObject from, final ProcessObject to) throws Exception {
 		super(e, from, new Point(0, 0), new Point((int) (to.getPosition().getX() - from.getPosition().getX()), 0));
-	}
-
-	@Override
-	protected Point[] arrowTip(final Point... points) {
-		final Point[] result = EventObject.copy(4, points);
-		result[points.length + 0] = EventObject.createPoint(-12, 5, points, true);
-		result[points.length + 1] = EventObject.createPoint(-8, 0, points, true);
-		result[points.length + 2] = EventObject.createPoint(-12, -5, points, true);
-		result[points.length + 3] = EventObject.createPoint(0, 0, points);
-		return result;
+		line.setLineStyle(2);
 	}
 }

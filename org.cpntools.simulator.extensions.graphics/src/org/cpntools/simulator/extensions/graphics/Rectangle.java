@@ -46,6 +46,8 @@ public class Rectangle extends Node<Rectangle> {
 		p.addInteger(getY());
 		p.addInteger(getWidth());
 		p.addInteger(getHeight());
+		p.addInteger(getCurvature());
+		p.addBoolean(isFilled());
 		return p;
 	}
 

@@ -16,7 +16,6 @@ import org.clapper.util.classutil.ClassInfo;
 import org.clapper.util.classutil.InterfaceOnlyClassFilter;
 import org.clapper.util.classutil.NotClassFilter;
 import org.clapper.util.classutil.SubclassClassFilter;
-import org.cpntools.simulator.extensions.scraper.Scraper;
 
 import dk.klafbang.tools.Pair;
 
@@ -91,11 +90,9 @@ public class Discovery {
 		for (final ClassInfo ci : extensionsClasses.getFirst()) {
 			try {
 				final Class<?> clazz = Class.forName(ci.getClassName(), true, Discovery.loader);
-				if (!clazz.equals(Scraper.class)) {
-					final Object instance = clazz.newInstance();
-					if (extensionsClasses.getSecond().isInstance(instance)) {
-						result.add((T) instance);
-					}
+				final Object instance = clazz.newInstance();
+				if (extensionsClasses.getSecond().isInstance(instance)) {
+					result.add((T) instance);
 				}
 			} catch (final Exception _) {
 				_.printStackTrace();
