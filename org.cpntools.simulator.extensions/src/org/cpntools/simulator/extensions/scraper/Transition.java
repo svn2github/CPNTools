@@ -16,8 +16,12 @@ public class Transition extends Node {
 
 	private boolean controllable;
 	private String guard;
+	private final Map<String, Arc> oldArcs = new HashMap<String, Arc>();
 	private String priority;
+
 	private String time;
+
+	final Set<Place> changedPlaces = new HashSet<Place>();
 
 	/**
 	 * @param dictionary
@@ -43,20 +47,6 @@ public class Transition extends Node {
 		setCode(code);
 	}
 
-	private final Map<String, Arc> oldArcs = new HashMap<String, Arc>();
-
-	/**
-	 * 
-	 */
-	public void prepareNewArcs() {
-		oldArcs.clear();
-		changedPlaces.clear();
-		oldArcs.putAll(inArcs);
-		oldArcs.putAll(outArcs); // Not test as they are in both in and out! sneaky!
-		oldArcs.putAll(resetArcs);
-		oldArcs.putAll(inhibitorArcs);
-	}
-
 	/**
 	 * @see org.cpntools.simulator.extensions.scraper.Node#addArc(org.cpntools.simulator.extensions.scraper.Arc)
 	 */
@@ -75,21 +65,6 @@ public class Transition extends Node {
 			return true;
 		}
 		return false;
-	}
-
-	final Set<Place> changedPlaces = new HashSet<Place>();
-
-	/**
-	 * @return
-	 */
-	public Set<Place> finishNewArcs() {
-		for (final Arc a : oldArcs.values()) {
-			removeArc(a);
-			a.getPlace().removeArc(a);
-			changedPlaces.add(a.getPlace());
-		}
-		oldArcs.clear();
-		return changedPlaces;
 	}
 
 	/**
@@ -126,6 +101,19 @@ public class Transition extends Node {
 			if (other.time != null) { return false; }
 		} else if (!time.equals(other.time)) { return false; }
 		return true;
+	}
+
+	/**
+	 * @return
+	 */
+	public Set<Place> finishNewArcs() {
+		for (final Arc a : oldArcs.values()) {
+			removeArc(a);
+			a.getPlace().removeArc(a);
+			changedPlaces.add(a.getPlace());
+		}
+		oldArcs.clear();
+		return changedPlaces;
 	}
 
 	/**
@@ -184,6 +172,18 @@ public class Transition extends Node {
 	 */
 	public boolean isControllable() {
 		return controllable;
+	}
+
+	/**
+	 * 
+	 */
+	public void prepareNewArcs() {
+		oldArcs.clear();
+		changedPlaces.clear();
+		oldArcs.putAll(inArcs);
+		oldArcs.putAll(outArcs); // Not test as they are in both in and out! sneaky!
+		oldArcs.putAll(resetArcs);
+		oldArcs.putAll(inhibitorArcs);
 	}
 
 	/**

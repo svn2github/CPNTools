@@ -12,6 +12,13 @@ import java.util.Set;
 public class Node extends HasName implements Iterable<Arc>, Cloneable {
 	private final Page page;
 
+	protected Map<String, Arc> inArcs = new HashMap<String, Arc>();
+
+	protected Map<String, Arc> inhibitorArcs = new HashMap<String, Arc>();
+	protected Map<String, Arc> outArcs = new HashMap<String, Arc>();
+	protected Map<String, Arc> resetArcs = new HashMap<String, Arc>();
+	protected Map<String, Arc> testArcs = new HashMap<String, Arc>();
+
 	/**
 	 * @param dictionary
 	 * @param id
@@ -21,23 +28,6 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 	public Node(final ElementDictionary dictionary, final String id, final String name, final Page page) {
 		super(dictionary, id, name);
 		this.page = page;
-	}
-
-	protected Map<String, Arc> inArcs = new HashMap<String, Arc>();
-	protected Map<String, Arc> outArcs = new HashMap<String, Arc>();
-	protected Map<String, Arc> testArcs = new HashMap<String, Arc>();
-	protected Map<String, Arc> resetArcs = new HashMap<String, Arc>();
-	protected Map<String, Arc> inhibitorArcs = new HashMap<String, Arc>();
-
-	/**
-	 * @param oldArc
-	 */
-	public void removeArc(final Arc oldArc) {
-		inArcs.remove(oldArc.getId());
-		outArcs.remove(oldArc.getId());
-		testArcs.remove(oldArc.getId());
-		resetArcs.remove(oldArc.getId());
-		inhibitorArcs.remove(oldArc.getId());
 	}
 
 	/**
@@ -102,6 +92,20 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 	}
 
 	/**
+	 * @return
+	 */
+	public Iterable<Arc> in() {
+		return inArcs.values();
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Arc> inhibitor() {
+		return inhibitorArcs.values();
+	}
+
+	/**
 	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
@@ -117,22 +121,19 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 	/**
 	 * @return
 	 */
-	public Iterable<Arc> in() {
-		return inArcs.values();
-	}
-
-	/**
-	 * @return
-	 */
 	public Iterable<Arc> out() {
 		return outArcs.values();
 	}
 
 	/**
-	 * @return
+	 * @param oldArc
 	 */
-	public Iterable<Arc> test() {
-		return testArcs.values();
+	public void removeArc(final Arc oldArc) {
+		inArcs.remove(oldArc.getId());
+		outArcs.remove(oldArc.getId());
+		testArcs.remove(oldArc.getId());
+		resetArcs.remove(oldArc.getId());
+		inhibitorArcs.remove(oldArc.getId());
 	}
 
 	/**
@@ -145,7 +146,7 @@ public class Node extends HasName implements Iterable<Arc>, Cloneable {
 	/**
 	 * @return
 	 */
-	public Iterable<Arc> inhibitor() {
-		return inhibitorArcs.values();
+	public Iterable<Arc> test() {
+		return testArcs.values();
 	}
 }

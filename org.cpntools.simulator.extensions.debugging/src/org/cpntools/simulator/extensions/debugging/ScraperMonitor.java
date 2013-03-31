@@ -43,17 +43,6 @@ import org.cpntools.simulator.extensions.scraper.Transition;
  */
 public class ScraperMonitor extends DebuggingPanel implements Observer {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private final JTabbedPane tabs;
-	final JTextArea log;
-	private final Map<String, PagePanel> pages = new HashMap<String, ScraperMonitor.PagePanel>();
-	final Timer timer;
-	TimerTask milestoner;
-	protected boolean auto;
-
 	private final class Milestoner extends TimerTask {
 		public Milestoner() {
 		}
@@ -65,16 +54,51 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 	}
 
 	private static class PagePanel extends JPanel {
+		private final class NodeViewer {
+			private final Node n;
+
+			public NodeViewer(final Node n) {
+				this.n = n;
+
+			}
+
+			public Node getNode() {
+				return n;
+			}
+
+			@Override
+			public String toString() {
+				return n.getName() + " [" + n.getId() + "]";
+			}
+		}
+
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
+		private final DefaultListModel in;
 		private final int index;
+		private final DefaultListModel inhibitor;
+		private final DefaultListModel out;
 		private final Page page;
+
 		private final DefaultListModel placeModel;
+
+		private final DefaultListModel reset;
+
+		private final DefaultListModel test;
+
 		private final DefaultListModel transitionModel;
-		Node selected = null;
+
+		final JTextArea info;
+
+		final JList places;
+
 		boolean propagate = true;
+
+		Node selected = null;
+		final JList transitions;
+		Map<String, NodeViewer> views = new HashMap<String, ScraperMonitor.PagePanel.NodeViewer>();
 
 		public PagePanel(final int index, final Page page) {
 			this.index = index;
@@ -137,83 +161,6 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 			        arcs));
 		}
 
-		void showNode(final Node n) {
-			selected = n;
-			info.setText("");
-			if (n instanceof Place) {
-				final Place place = (Place) n;
-				info.append("Type: " + place.getType());
-				info.append("\nInitmark: " + place.getInitMark());
-			} else if (n instanceof Transition) {
-				final Transition transition = (Transition) n;
-				info.append("Time: " + transition.getTime());
-				info.append("\nGuard: " + transition.getGuard());
-				info.append("\nPriority: " + transition.getPriority());
-				info.append("\nChannel: " + transition.getChannel());
-				info.append("\nCode: " + transition.getCode());
-			} else {
-				info.append("Unknown node");
-			}
-		}
-
-		void showArcs(final Node place) {
-			showArcs(place, place.in(), in);
-			showArcs(place, place.out(), out);
-			showArcs(place, place.test(), test);
-			showArcs(place, place.reset(), reset);
-			showArcs(place, place.inhibitor(), inhibitor);
-		}
-
-		private void showArcs(final Node node, final Iterable<Arc> arcs, final DefaultListModel list) {
-			list.clear();
-			for (final Arc a : arcs) {
-				final Node other = other(a, node);
-				list.addElement(other.getName() + " [" + other.getId() + "]: " + a.getInscription() + " [" + a.getId()
-				        + "]");
-			}
-		}
-
-		private Node other(final Arc a, final Node node) {
-			final Node n = a.getPlace();
-			if (n == node) { return a.getTransition(); }
-			return n;
-		}
-
-		private JPanel border(final String string, final JComponent component) {
-			final JPanel result = new JPanel(new BorderLayout());
-			result.setBorder(BorderFactory.createTitledBorder(string));
-			result.add(component);
-			return result;
-		}
-
-		private final class NodeViewer {
-			private final Node n;
-
-			public NodeViewer(final Node n) {
-				this.n = n;
-
-			}
-
-			public Node getNode() {
-				return n;
-			}
-
-			@Override
-			public String toString() {
-				return n.getName() + " [" + n.getId() + "]";
-			}
-		}
-
-		Map<String, NodeViewer> views = new HashMap<String, ScraperMonitor.PagePanel.NodeViewer>();
-		final JList places;
-		final JList transitions;
-		final JTextArea info;
-		private final DefaultListModel inhibitor;
-		private final DefaultListModel reset;
-		private final DefaultListModel test;
-		private final DefaultListModel out;
-		private final DefaultListModel in;
-
 		public void addPlace(final Place p) {
 			final NodeViewer view = new NodeViewer(p);
 			views.put(p.getId(), view);
@@ -226,26 +173,9 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 			transitionModel.addElement(view);
 		}
 
-		public void removePlace(final Place p) {
-			placeModel.removeElement(views.remove(p.getId()));
-			if (p == selected) {
-				clear();
-			}
-		}
-
-		private void clear() {
-			info.setText("");
-			in.clear();
-			out.clear();
-			test.clear();
-			reset.clear();
-			inhibitor.clear();
-		}
-
-		public void removeTransition(final Transition elm) {
-			transitionModel.removeElement(views.remove(elm.getId()));
+		public void changedArcs(final Node elm) {
 			if (elm == selected) {
-				clear();
+				showArcs(elm);
 			}
 		}
 
@@ -272,12 +202,91 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 			return page;
 		}
 
-		public void changedArcs(final Node elm) {
+		public void removePlace(final Place p) {
+			placeModel.removeElement(views.remove(p.getId()));
+			if (p == selected) {
+				clear();
+			}
+		}
+
+		public void removeTransition(final Transition elm) {
+			transitionModel.removeElement(views.remove(elm.getId()));
 			if (elm == selected) {
-				showArcs(elm);
+				clear();
+			}
+		}
+
+		private JPanel border(final String string, final JComponent component) {
+			final JPanel result = new JPanel(new BorderLayout());
+			result.setBorder(BorderFactory.createTitledBorder(string));
+			result.add(component);
+			return result;
+		}
+
+		private void clear() {
+			info.setText("");
+			in.clear();
+			out.clear();
+			test.clear();
+			reset.clear();
+			inhibitor.clear();
+		}
+
+		private Node other(final Arc a, final Node node) {
+			final Node n = a.getPlace();
+			if (n == node) { return a.getTransition(); }
+			return n;
+		}
+
+		private void showArcs(final Node node, final Iterable<Arc> arcs, final DefaultListModel list) {
+			list.clear();
+			for (final Arc a : arcs) {
+				final Node other = other(a, node);
+				list.addElement(other.getName() + " [" + other.getId() + "]: " + a.getInscription() + " [" + a.getId()
+				        + "]");
+			}
+		}
+
+		void showArcs(final Node place) {
+			showArcs(place, place.in(), in);
+			showArcs(place, place.out(), out);
+			showArcs(place, place.test(), test);
+			showArcs(place, place.reset(), reset);
+			showArcs(place, place.inhibitor(), inhibitor);
+		}
+
+		void showNode(final Node n) {
+			selected = n;
+			info.setText("");
+			if (n instanceof Place) {
+				final Place place = (Place) n;
+				info.append("Type: " + place.getType());
+				info.append("\nInitmark: " + place.getInitMark());
+			} else if (n instanceof Transition) {
+				final Transition transition = (Transition) n;
+				info.append("Time: " + transition.getTime());
+				info.append("\nGuard: " + transition.getGuard());
+				info.append("\nPriority: " + transition.getPriority());
+				info.append("\nChannel: " + transition.getChannel());
+				info.append("\nCode: " + transition.getCode());
+			} else {
+				info.append("Unknown node");
 			}
 		}
 	}
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private final Map<String, PagePanel> pages = new HashMap<String, ScraperMonitor.PagePanel>();
+	private final JTabbedPane tabs;
+	protected boolean auto;
+	final JTextArea log;
+
+	TimerTask milestoner;
+
+	final Timer timer;
 
 	/**
 	 * 
@@ -394,6 +403,41 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 
 	}
 
+	private void added(final Arc elm) {
+		log("UNEXPECTED: added(Arc)");
+	}
+
+	private void added(final Element elm) {
+		log("Adding " + e(elm));
+		if (elm instanceof Page) {
+			added((Page) elm);
+		} else if (elm instanceof Node) {
+			added((Node) elm);
+		} else if (elm instanceof Arc) {
+			added((Arc) elm);
+		} else {
+			log("UNEXPECTED: added(Element) with " + elm);
+		}
+	}
+
+	private void added(final Node elm) {
+		final PagePanel p = pages.get(elm.getPage().getId());
+		if (elm instanceof Place) {
+			p.addPlace((Place) elm);
+		} else if (elm instanceof Transition) {
+			p.addTransition((Transition) elm);
+		} else {
+			log("UNEXPECTED: added(Node) with " + elm);
+		}
+	}
+
+	private synchronized void added(final Page elm) {
+		final int index = tabs.getTabCount();
+		final PagePanel p = new PagePanel(index, elm);
+		tabs.addTab(elm.getName(), p);
+		pages.put(elm.getId(), p);
+	}
+
 	private void arcChanged(final Element elm) {
 		log("Changed arcs " + e(elm));
 		if (elm instanceof Node) {
@@ -402,22 +446,6 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 			p.changedArcs(n);
 		} else {
 			log("UNEXPECTED: arcChanged(Node) with " + elm);
-		}
-	}
-
-	private void changed(final Page elm) {
-		final PagePanel p = pages.get(elm.getId());
-		tabs.setTitleAt(p.getIndex(), elm.getName());
-	}
-
-	private void changed(final Node elm) {
-		final PagePanel p = pages.get(elm.getPage().getId());
-		if (elm instanceof Place) {
-			p.changedPlace((Place) elm);
-		} else if (elm instanceof Transition) {
-			p.changedTransition((Transition) elm);
-		} else {
-			log("UNEXPECTED: changed(Node) with " + elm);
 		}
 	}
 
@@ -438,19 +466,26 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 		}
 	}
 
-	private void removed(final Page elm) {
-		// FIXME Handle removal of pages
-	}
-
-	private void removed(final Node elm) {
+	private void changed(final Node elm) {
 		final PagePanel p = pages.get(elm.getPage().getId());
 		if (elm instanceof Place) {
-			p.removePlace((Place) elm);
+			p.changedPlace((Place) elm);
 		} else if (elm instanceof Transition) {
-			p.removeTransition((Transition) elm);
+			p.changedTransition((Transition) elm);
 		} else {
-			log("UNEXPECTED: removed(Node) with " + elm);
+			log("UNEXPECTED: changed(Node) with " + elm);
 		}
+	}
+
+	private void changed(final Page elm) {
+		final PagePanel p = pages.get(elm.getId());
+		tabs.setTitleAt(p.getIndex(), elm.getName());
+	}
+
+	private String e(final Element elm) {
+		if (elm instanceof HasName) { return elm.getClass().getSimpleName() + " [" + ((HasName) elm).getName() + "; "
+		        + elm.getId() + "]"; }
+		return elm.getClass().getSimpleName() + " [" + elm.getId() + "]";
 	}
 
 	private void removed(final Arc elm) {
@@ -470,49 +505,23 @@ public class ScraperMonitor extends DebuggingPanel implements Observer {
 		}
 	}
 
-	private synchronized void added(final Page elm) {
-		final int index = tabs.getTabCount();
-		final PagePanel p = new PagePanel(index, elm);
-		tabs.addTab(elm.getName(), p);
-		pages.put(elm.getId(), p);
-	}
-
-	private void added(final Node elm) {
+	private void removed(final Node elm) {
 		final PagePanel p = pages.get(elm.getPage().getId());
 		if (elm instanceof Place) {
-			p.addPlace((Place) elm);
+			p.removePlace((Place) elm);
 		} else if (elm instanceof Transition) {
-			p.addTransition((Transition) elm);
+			p.removeTransition((Transition) elm);
 		} else {
-			log("UNEXPECTED: added(Node) with " + elm);
+			log("UNEXPECTED: removed(Node) with " + elm);
 		}
 	}
 
-	private void added(final Arc elm) {
-		log("UNEXPECTED: added(Arc)");
+	private void removed(final Page elm) {
+		// FIXME Handle removal of pages
 	}
 
 	void log(final String msg) {
 		log.append(msg + '\n');
 		log.setCaretPosition(log.getText().length());
-	}
-
-	private String e(final Element elm) {
-		if (elm instanceof HasName) { return elm.getClass().getSimpleName() + " [" + ((HasName) elm).getName() + "; "
-		        + elm.getId() + "]"; }
-		return elm.getClass().getSimpleName() + " [" + elm.getId() + "]";
-	}
-
-	private void added(final Element elm) {
-		log("Adding " + e(elm));
-		if (elm instanceof Page) {
-			added((Page) elm);
-		} else if (elm instanceof Node) {
-			added((Node) elm);
-		} else if (elm instanceof Arc) {
-			added((Arc) elm);
-		} else {
-			log("UNEXPECTED: added(Element) with " + elm);
-		}
 	}
 }

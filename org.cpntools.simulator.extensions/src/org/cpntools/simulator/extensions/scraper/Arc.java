@@ -5,34 +5,6 @@ package org.cpntools.simulator.extensions.scraper;
  */
 public class Arc extends Element {
 	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + (inscription == null ? 0 : inscription.hashCode());
-		result = prime * result + (type == null ? 0 : type.hashCode());
-		return result;
-	}
-
-	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) { return true; }
-		if (!super.equals(obj)) { return false; }
-		if (!(obj instanceof Arc)) { return false; }
-		final Arc other = (Arc) obj;
-		if (inscription == null) {
-			if (other.inscription != null) { return false; }
-		} else if (!inscription.equals(other.inscription)) { return false; }
-		if (type != other.type) { return false; }
-		return true;
-	}
-
-	/**
 	 * @author michael
 	 */
 	public enum Type {
@@ -55,11 +27,11 @@ public class Arc extends Element {
 	}
 
 	private String inscription;
+
 	private final Place p;
+
 	private final Page page;
-
 	private final Transition t;
-
 	private final Type type;
 
 	/**
@@ -88,6 +60,22 @@ public class Arc extends Element {
 		final boolean result = t.addArc(this);
 		p.addArc(this);
 		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) { return true; }
+		if (!super.equals(obj)) { return false; }
+		if (!(obj instanceof Arc)) { return false; }
+		final Arc other = (Arc) obj;
+		if (inscription == null) {
+			if (other.inscription != null) { return false; }
+		} else if (!inscription.equals(other.inscription)) { return false; }
+		if (type != other.type) { return false; }
+		return true;
 	}
 
 	/**
@@ -123,6 +111,18 @@ public class Arc extends Element {
 	 */
 	public Type getType() {
 		return type;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + (inscription == null ? 0 : inscription.hashCode());
+		result = prime * result + (type == null ? 0 : type.hashCode());
+		return result;
 	}
 
 	/**

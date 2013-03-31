@@ -7,8 +7,8 @@ import org.cpntools.simulator.extensions.scraper.Element;
  */
 public class Invocation {
 
-	private final Instrument instrument;
 	private final Element element;
+	private final Instrument instrument;
 
 	/**
 	 * @param i

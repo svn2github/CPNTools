@@ -202,11 +202,15 @@ public class Handler implements Channel {
 
 	private final Map<Integer, Extension> extensions;
 	private final Map<Class<? extends Extension>, Extension> extensionTypes = new HashMap<Class<? extends Extension>, Extension>();
+	private final GramHandler g = new GramHandler();
+	private final Map<Pair<Integer, String>, Instrument> instruments;
 	private final Lock lock;
 	private final Map<Pair<Integer, String>, Option<?>> options;
-	private final Map<Pair<Integer, String>, Instrument> instruments;
 	private final Map<Integer, Map<Integer, Packet>> prefilterPackages = new HashMap<Integer, Map<Integer, Packet>>();
 	private final Map<Integer, Map<Integer, Boolean>> prefilters;
+
+	private int structureindex = 0;
+
 	private final Map<Integer, Map<Integer, List<SubscriptionHandler>>> subscriptions;
 
 	final DataInputStream in;
@@ -246,101 +250,6 @@ public class Handler implements Channel {
 		instruments = new HashMap<Pair<Integer, String>, Instrument>();
 		registerExtensions(extensionTypes.values());
 		new DispatcherThread("Dispatcher " + name).start();
-	}
-
-	private int structureindex = 0;
-
-	private void registerRPC(final Collection<Extension> exts) throws ErrorInjectingException {
-		for (final Extension e : exts) {
-			final Object o = e.getRPCHandler();
-			if (o != null) {
-				String prefix = "";
-				if (o instanceof NamedRPCHandler) {
-					final NamedRPCHandler n = (NamedRPCHandler) o;
-					prefix = n.structureName() + ".";
-					g.addNamedHandler(n.structureName(), o);
-				} else {
-					g.addLocalHandler(o);
-				}
-				final int index = structureindex++;
-				final StringBuilder s = new StringBuilder("local\nstructure CPN'RPCStructure'");
-				s.append(index);
-				s.append(" = struct\n");
-				s.append("local open ExtExecute in\n");
-				for (final Method m : o.getClass().getMethods()) {
-					if (m.getDeclaringClass() != Object.class) {
-						try {
-							final StringBuilder sb = new StringBuilder("fun ");
-							sb.append(m.getName());
-							sb.append('(');
-							int param = 0;
-							final Class<?>[] parameterTypes = m.getParameterTypes();
-							for (int i = 0; i < parameterTypes.length; i++) {
-								if (param > 0) {
-									sb.append(", ");
-								}
-								sb.append("CPN'param");
-								sb.append(param++);
-							}
-							sb.append(") = ExtExecute.execute");
-							if (m.getReturnType() == Void.class | m.getReturnType() == Void.TYPE) {
-								// Do nothing
-							} else if (m.getReturnType() == Boolean.class || m.getReturnType() == Boolean.TYPE) {
-								sb.append("Bool");
-							} else if (m.getReturnType() == Integer.class || m.getReturnType() == Integer.TYPE) {
-								sb.append("Int");
-							} else if (m.getReturnType() == String.class) {
-								sb.append("String");
-							} else {
-								throw new Exception("Unknown return type (" + m.getReturnType() + ") for method "
-								        + m.getName());
-							}
-							sb.append(" \"");
-							sb.append(prefix);
-							sb.append(m.getName());
-							sb.append("\" [");
-							param = 0;
-							for (final Class<?> clazz : m.getParameterTypes()) {
-								if (param > 0) {
-									sb.append(", ");
-								}
-								if (clazz == Boolean.class || clazz == Boolean.TYPE) {
-									sb.append("vBOOL (");
-								} else if (clazz == Integer.class || clazz == Integer.TYPE) {
-									sb.append("vINT (");
-								} else if (clazz == String.class) {
-									sb.append("vSTRING (");
-								} else {
-									throw new Exception("Unknown parameter type (" + clazz + ") for parameter "
-									        + (param + 1) + " of method " + m.getName());
-								}
-								sb.append("CPN'param");
-								sb.append(param++);
-								sb.append(')');
-							}
-							sb.append("]\n");
-							s.append(sb);
-						} catch (final Exception _) {
-							// Probably because wrong parameter types
-						}
-					}
-				}
-				s.append("end\nend\nin\n");
-				if (o instanceof NamedRPCHandler) {
-					final NamedRPCHandler n = (NamedRPCHandler) o;
-					s.append("structure ");
-					s.append(n.structureName());
-					s.append(" = CPN'RPCStructure'");
-					s.append(index);
-				} else {
-					s.append("open CPN'RPCStructure'");
-					s.append(index);
-				}
-				s.append("\nend");
-// System.out.println(s);
-				inject(e, s.toString());
-			}
-		}
 	}
 
 	/**
@@ -458,8 +367,6 @@ public class Handler implements Channel {
 // if (response == originalResponse) { return null; }
 		return response;
 	}
-
-	private final GramHandler g = new GramHandler();
 
 	/**
 	 * @param p
@@ -687,22 +594,6 @@ public class Handler implements Channel {
 		return p.getInteger();
 	}
 
-	private Map<Pair<Integer, String>, Option<?>> registerExtensions(
-	        @SuppressWarnings("hiding") final Collection<Extension> extensions) throws IOException {
-		for (final Extension e : extensions) {
-			send(createOptions(e));
-		}
-		return options;
-	}
-
-	protected void doInjection(@SuppressWarnings("hiding") final Collection<Extension> extensions)
-	        throws ErrorInjectingException {
-		for (final Extension e : extensions) {
-			final String s = e.inject();
-			inject(e, s);
-		}
-	}
-
 	private void inject(final Extension e, final String s) throws ErrorInjectingException {
 		if (s != null && !"".equals(s)) {
 			try {
@@ -712,6 +603,115 @@ public class Handler implements Channel {
 			} catch (final IOException ex) {
 				throw new ErrorInjectingException(e, s, ex);
 			}
+		}
+	}
+
+	private Map<Pair<Integer, String>, Option<?>> registerExtensions(
+	        @SuppressWarnings("hiding") final Collection<Extension> extensions) throws IOException {
+		for (final Extension e : extensions) {
+			send(createOptions(e));
+		}
+		return options;
+	}
+
+	private void registerRPC(final Collection<Extension> exts) throws ErrorInjectingException {
+		for (final Extension e : exts) {
+			final Object o = e.getRPCHandler();
+			if (o != null) {
+				String prefix = "";
+				if (o instanceof NamedRPCHandler) {
+					final NamedRPCHandler n = (NamedRPCHandler) o;
+					prefix = n.structureName() + ".";
+					g.addNamedHandler(n.structureName(), o);
+				} else {
+					g.addLocalHandler(o);
+				}
+				final int index = structureindex++;
+				final StringBuilder s = new StringBuilder("local\nstructure CPN'RPCStructure'");
+				s.append(index);
+				s.append(" = struct\n");
+				s.append("local open ExtExecute in\n");
+				for (final Method m : o.getClass().getMethods()) {
+					if (m.getDeclaringClass() != Object.class) {
+						try {
+							final StringBuilder sb = new StringBuilder("fun ");
+							sb.append(m.getName());
+							sb.append('(');
+							int param = 0;
+							final Class<?>[] parameterTypes = m.getParameterTypes();
+							for (int i = 0; i < parameterTypes.length; i++) {
+								if (param > 0) {
+									sb.append(", ");
+								}
+								sb.append("CPN'param");
+								sb.append(param++);
+							}
+							sb.append(") = ExtExecute.execute");
+							if (m.getReturnType() == Void.class | m.getReturnType() == Void.TYPE) {
+								// Do nothing
+							} else if (m.getReturnType() == Boolean.class || m.getReturnType() == Boolean.TYPE) {
+								sb.append("Bool");
+							} else if (m.getReturnType() == Integer.class || m.getReturnType() == Integer.TYPE) {
+								sb.append("Int");
+							} else if (m.getReturnType() == String.class) {
+								sb.append("String");
+							} else {
+								throw new Exception("Unknown return type (" + m.getReturnType() + ") for method "
+								        + m.getName());
+							}
+							sb.append(" \"");
+							sb.append(prefix);
+							sb.append(m.getName());
+							sb.append("\" [");
+							param = 0;
+							for (final Class<?> clazz : m.getParameterTypes()) {
+								if (param > 0) {
+									sb.append(", ");
+								}
+								if (clazz == Boolean.class || clazz == Boolean.TYPE) {
+									sb.append("vBOOL (");
+								} else if (clazz == Integer.class || clazz == Integer.TYPE) {
+									sb.append("vINT (");
+								} else if (clazz == String.class) {
+									sb.append("vSTRING (");
+								} else {
+									throw new Exception("Unknown parameter type (" + clazz + ") for parameter "
+									        + (param + 1) + " of method " + m.getName());
+								}
+								sb.append("CPN'param");
+								sb.append(param++);
+								sb.append(')');
+							}
+							sb.append("]\n");
+							s.append(sb);
+						} catch (final Exception _) {
+							// Probably because wrong parameter types
+						}
+					}
+				}
+				s.append("end\nend\nin\n");
+				if (o instanceof NamedRPCHandler) {
+					final NamedRPCHandler n = (NamedRPCHandler) o;
+					s.append("structure ");
+					s.append(n.structureName());
+					s.append(" = CPN'RPCStructure'");
+					s.append(index);
+				} else {
+					s.append("open CPN'RPCStructure'");
+					s.append(index);
+				}
+				s.append("\nend");
+// System.out.println(s);
+				inject(e, s.toString());
+			}
+		}
+	}
+
+	protected void doInjection(@SuppressWarnings("hiding") final Collection<Extension> extensions)
+	        throws ErrorInjectingException {
+		for (final Extension e : extensions) {
+			final String s = e.inject();
+			inject(e, s);
 		}
 	}
 

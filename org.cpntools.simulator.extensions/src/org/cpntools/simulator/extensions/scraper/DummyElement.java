@@ -11,13 +11,13 @@ public class DummyElement extends Element {
 	public DummyElement(final String id) {
 		super(new ElementDictionary() {
 			@Override
-			public void put(@SuppressWarnings("hiding") final String id, final Element element) {
-				// Dummy implementation
+			public Element get(@SuppressWarnings("hiding") final String id) {
+				return null;
 			}
 
 			@Override
-			public Element get(@SuppressWarnings("hiding") final String id) {
-				return null;
+			public void put(@SuppressWarnings("hiding") final String id, final Element element) {
+				// Dummy implementation
 			}
 		}, id);
 	}

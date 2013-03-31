@@ -5,16 +5,23 @@ package org.cpntools.simulator.extensions.scraper;
  */
 public class Place extends Node {
 
+	private String initMark;
+
+	private String type;
+
 	/**
-	 * @see java.lang.Object#hashCode()
+	 * @param dictionary
+	 * @param id
+	 * @param name
+	 * @param page
+	 * @param type
+	 * @param initMark
 	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + (initMark == null ? 0 : initMark.hashCode());
-		result = prime * result + (type == null ? 0 : type.hashCode());
-		return result;
+	public Place(final ElementDictionary dictionary, final String id, final String name, final Page page,
+	        final String type, final String initMark) {
+		super(dictionary, id, name, page);
+		this.type = type;
+		this.initMark = initMark;
 	}
 
 	/**
@@ -35,22 +42,11 @@ public class Place extends Node {
 		return true;
 	}
 
-	private String type;
-	private String initMark;
-
 	/**
-	 * @param dictionary
-	 * @param id
-	 * @param name
-	 * @param page
-	 * @param type
-	 * @param initMark
+	 * @return
 	 */
-	public Place(final ElementDictionary dictionary, final String id, final String name, final Page page,
-	        final String type, final String initMark) {
-		super(dictionary, id, name, page);
-		this.type = type;
-		this.initMark = initMark;
+	public String getInitMark() {
+		return initMark;
 	}
 
 	/**
@@ -61,20 +57,15 @@ public class Place extends Node {
 	}
 
 	/**
-	 * @param type
-	 * @return
+	 * @see java.lang.Object#hashCode()
 	 */
-	public boolean setType(final String type) {
-		if (type.equals(this.type)) { return false; }
-		this.type = type;
-		return true;
-	}
-
-	/**
-	 * @return
-	 */
-	public String getInitMark() {
-		return initMark;
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + (initMark == null ? 0 : initMark.hashCode());
+		result = prime * result + (type == null ? 0 : type.hashCode());
+		return result;
 	}
 
 	/**
@@ -84,6 +75,16 @@ public class Place extends Node {
 	public boolean setInitMark(final String initMark) {
 		if (initMark.equals(this.initMark)) { return false; }
 		this.initMark = initMark;
+		return true;
+	}
+
+	/**
+	 * @param type
+	 * @return
+	 */
+	public boolean setType(final String type) {
+		if (type.equals(this.type)) { return false; }
+		this.type = type;
 		return true;
 	}
 

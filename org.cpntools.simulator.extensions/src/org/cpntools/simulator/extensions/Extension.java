@@ -15,6 +15,13 @@ public interface Extension extends SubscriptionHandler {
 	public static final int TESTING = 9999;
 
 	/**
+	 * Allow this handler to expose instruments in the CPN Tools GUI.
+	 * 
+	 * @return
+	 */
+	List<Instrument> getInstruments();
+
+	/**
 	 * NAme of this extension. Should not be more than 50 characters.
 	 * 
 	 * @return
@@ -43,13 +50,6 @@ public interface Extension extends SubscriptionHandler {
 	List<Command> getSubscriptions();
 
 	/**
-	 * Allow this handler to expose instruments in the CPN Tools GUI.
-	 * 
-	 * @return
-	 */
-	List<Instrument> getInstruments();
-
-	/**
 	 * Handle a packet. Only packets matching the identifier will ever be passed. handle is only called on objects
 	 * created by start and hence had a Handler.
 	 * 
@@ -67,6 +67,14 @@ public interface Extension extends SubscriptionHandler {
 	String inject();
 
 	/**
+	 * Invoke the instrument on the given element.
+	 * 
+	 * @param i
+	 * @param e
+	 */
+	void invokeInstrument(Instrument i, Element e);
+
+	/**
 	 * Set the value of the option.
 	 * 
 	 * @param option
@@ -81,13 +89,5 @@ public interface Extension extends SubscriptionHandler {
 	 * @return
 	 */
 	Extension start(Channel c);
-
-	/**
-	 * Invoke the instrument on the given element.
-	 * 
-	 * @param i
-	 * @param e
-	 */
-	void invokeInstrument(Instrument i, Element e);
 
 }

@@ -4,12 +4,12 @@ package org.cpntools.simulator.extensions.tools.labels;
  * @author michael
  */
 public class Label {
-	private final LabelManager manager;
 	private String id;
-	private String text;
-	private final String ownerId;
+	private final LabelManager manager;
 	private final Object namespace;
+	private final String ownerId;
 	private Position position;
+	private String text;
 
 	/**
 	 * @param manager
@@ -42,8 +42,47 @@ public class Label {
 	/**
 	 * @return
 	 */
+	public String getId() {
+		return id;
+	}
+
+	/**
+	 * @return
+	 */
+	public Object getNamespace() {
+		return namespace;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getOwnerId() {
+		return ownerId;
+	}
+
+	/**
+	 * @return
+	 */
+	public Position getPosition() {
+		return position;
+	}
+
+	/**
+	 * @return
+	 */
 	public String getText() {
 		return text;
+	}
+
+	/**
+	 * @param position
+	 */
+	public void setPosition(final Position position) {
+		this.position = position;
+		try {
+			manager.replace(this);
+		} catch (final Exception _) { // Ignore
+		}
 	}
 
 	/**
@@ -57,46 +96,7 @@ public class Label {
 		}
 	}
 
-	/**
-	 * @return
-	 */
-	public String getOwnerId() {
-		return ownerId;
-	}
-
-	/**
-	 * @return
-	 */
-	public Object getNamespace() {
-		return namespace;
-	}
-
-	/**
-	 * @return
-	 */
-	public String getId() {
-		return id;
-	}
-
 	void setId(final String id) {
 		this.id = id;
-	}
-
-	/**
-	 * @return
-	 */
-	public Position getPosition() {
-		return position;
-	}
-
-	/**
-	 * @param position
-	 */
-	public void setPosition(final Position position) {
-		this.position = position;
-		try {
-			manager.replace(this);
-		} catch (final Exception _) { // Ignore
-		}
 	}
 }

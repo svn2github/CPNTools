@@ -44,8 +44,8 @@ public class Pong extends DemoPanel {
 		 * @param playerPad
 		 * @param bounds
 		 */
-		public PlayerThread(final Canvas c, final Ellipse ball, final Rectangle computerPad,
-		        final Rectangle playerPad, final Rectangle... bounds) {
+		public PlayerThread(final Canvas c, final Ellipse ball, final Rectangle computerPad, final Rectangle playerPad,
+		        final Rectangle... bounds) {
 			super("PongPlayer");
 			canvas = c;
 			this.ball = ball;

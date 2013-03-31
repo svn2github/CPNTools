@@ -11,8 +11,8 @@ import java.util.Set;
  * @author michael
  */
 public class Page extends HasName {
-	private final Map<String, Transition> transitions = new HashMap<String, Transition>();
 	private final Map<String, Place> places = new HashMap<String, Place>();
+	private final Map<String, Transition> transitions = new HashMap<String, Transition>();
 
 	/**
 	 * @param dictionary
@@ -24,13 +24,6 @@ public class Page extends HasName {
 	}
 
 	/**
-	 * @param t
-	 */
-	public void add(final Transition t) {
-		transitions.put(t.getId(), t);
-	}
-
-	/**
 	 * @param pp
 	 */
 	public void add(final Place pp) {
@@ -38,11 +31,10 @@ public class Page extends HasName {
 	}
 
 	/**
-	 * @param id
-	 * @return
+	 * @param t
 	 */
-	public Transition getTransition(final String id) {
-		return transitions.get(id);
+	public void add(final Transition t) {
+		transitions.put(t.getId(), t);
 	}
 
 	/**
@@ -54,11 +46,18 @@ public class Page extends HasName {
 	}
 
 	/**
-	 * @param ids
+	 * @param id
 	 * @return
 	 */
-	public Map<String, Transition> retainTransitions(final Collection<String> ids) {
-		return retain(ids, transitions);
+	public Transition getTransition(final String id) {
+		return transitions.get(id);
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Place> places() {
+		return places.values();
 	}
 
 	/**
@@ -67,6 +66,21 @@ public class Page extends HasName {
 	 */
 	public Map<String, Place> retainPlaces(final Collection<String> ids) {
 		return retain(ids, places);
+	}
+
+	/**
+	 * @param ids
+	 * @return
+	 */
+	public Map<String, Transition> retainTransitions(final Collection<String> ids) {
+		return retain(ids, transitions);
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Transition> transitions() {
+		return transitions.values();
 	}
 
 	private <E extends Element> Map<String, E> retain(final Collection<String> ids, final Map<String, E> nodes) {
@@ -78,19 +92,5 @@ public class Page extends HasName {
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * @return
-	 */
-	public Iterable<Transition> transitions() {
-		return transitions.values();
-	}
-
-	/**
-	 * @return
-	 */
-	public Iterable<Place> places() {
-		return places.values();
 	}
 }

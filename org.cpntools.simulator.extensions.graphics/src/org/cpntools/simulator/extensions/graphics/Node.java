@@ -10,11 +10,11 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  * @param <T>
  */
 public abstract class Node<T extends Node<T>> extends Element<T> {
+	private int curvature;
 	private Color fg, bg;
 	private boolean observed;
 	private boolean trace;
 	private int width;
-	private int curvature;
 	protected boolean filled;
 
 	/**
@@ -56,6 +56,13 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	/**
 	 * @return
 	 */
+	public int getCurvature() {
+		return curvature;
+	}
+
+	/**
+	 * @return
+	 */
 	public Color getForeground() {
 		return fg;
 	}
@@ -79,6 +86,13 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	 */
 	public int getWidth() {
 		return (int) bounds.getWidth();
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isFilled() {
+		return filled;
 	}
 
 	/**
@@ -120,6 +134,36 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 		if (bounds.equals(newBounds)) { return (T) this; }
 		bounds.setBounds(newBounds);
 		updatePosition();
+		return (T) this;
+	}
+
+	/**
+	 * @param curvature
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public T setCurvature(final int curvature) throws Exception {
+		if (this.curvature == curvature) { return (T) this; }
+		this.curvature = curvature;
+		if (owner != null) {
+			owner.style(this);
+		}
+		return (T) this;
+	}
+
+	/**
+	 * @param filled
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public T setFilled(final boolean filled) throws Exception {
+		if (this.filled == filled) { return (T) this; }
+		this.filled = filled;
+		if (owner != null) {
+			owner.style(this);
+		}
 		return (T) this;
 	}
 
@@ -193,50 +237,6 @@ public abstract class Node<T extends Node<T>> extends Element<T> {
 	void forceNotify() {
 		setChanged();
 		notifyObservers();
-	}
-
-	/**
-	 * @return
-	 */
-	public int getCurvature() {
-		return curvature;
-	}
-
-	/**
-	 * @param curvature
-	 * @return
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unchecked")
-	public T setCurvature(final int curvature) throws Exception {
-		if (this.curvature == curvature) { return (T) this; }
-		this.curvature = curvature;
-		if (owner != null) {
-			owner.style(this);
-		}
-		return (T) this;
-	}
-
-	/**
-	 * @return
-	 */
-	public boolean isFilled() {
-		return filled;
-	}
-
-	/**
-	 * @param filled
-	 * @return
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unchecked")
-	public T setFilled(final boolean filled) throws Exception {
-		if (this.filled == filled) { return (T) this; }
-		this.filled = filled;
-		if (owner != null) {
-			owner.style(this);
-		}
-		return (T) this;
 	}
 
 }

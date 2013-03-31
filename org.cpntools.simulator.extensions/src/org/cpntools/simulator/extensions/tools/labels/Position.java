@@ -11,23 +11,7 @@ public enum Position {
 	/**
 	 * 
 	 */
-	NORTH(3),
-	/**
-	 * 
-	 */
-	SOUTH(5),
-	/**
-	 * 
-	 */
 	EAST(2),
-	/**
-	 * 
-	 */
-	WEST(4),
-	/**
-	 * 
-	 */
-	NW(7),
 	/**
 	 * 
 	 */
@@ -35,11 +19,27 @@ public enum Position {
 	/**
 	 * 
 	 */
+	NORTH(3),
+	/**
+	 * 
+	 */
+	NW(7),
+	/**
+	 * 
+	 */
+	SE(9),
+	/**
+	 * 
+	 */
+	SOUTH(5),
+	/**
+	 * 
+	 */
 	SW(8),
 	/**
 	 * 
 	 */
-	SE(9);
+	WEST(4);
 
 	private final int id;
 

@@ -12,8 +12,8 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
  * @author michael
  */
 public class Line extends Node<Line> {
-	private final List<Point> points = new ArrayList<Point>();
 	private int lineStyle;
+	private final List<Point> points = new ArrayList<Point>();
 
 	/**
 	 * @param points
@@ -57,24 +57,6 @@ public class Line extends Node<Line> {
 		return p;
 	}
 
-	@Override
-	protected int getX() {
-		if (owner == null) {
-			return (int) bounds.getX();
-		} else {
-			return (int) bounds.getX() + owner.getX();
-		}
-	}
-
-	@Override
-	protected int getY() {
-		if (owner == null) {
-			return -(int) bounds.getY();
-		} else {
-			return -(int) bounds.getY() + owner.getY();
-		}
-	}
-
 	/**
 	 * @return
 	 */
@@ -94,6 +76,24 @@ public class Line extends Node<Line> {
 			owner.style(this);
 		}
 		return this;
+	}
+
+	@Override
+	protected int getX() {
+		if (owner == null) {
+			return (int) bounds.getX();
+		} else {
+			return (int) bounds.getX() + owner.getX();
+		}
+	}
+
+	@Override
+	protected int getY() {
+		if (owner == null) {
+			return -(int) bounds.getY();
+		} else {
+			return -(int) bounds.getY() + owner.getY();
+		}
 	}
 
 }

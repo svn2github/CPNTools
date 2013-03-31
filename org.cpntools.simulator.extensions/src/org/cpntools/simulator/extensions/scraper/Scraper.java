@@ -35,24 +35,24 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	/**
 	 * @author michael
 	 */
-	public static class Changed extends Event {
-		/**
-		 * @param elm
-		 */
-		public Changed(final Element elm) {
-			super(EventType.CHANGED, elm);
-		}
-	}
-
-	/**
-	 * @author michael
-	 */
 	public static class ArcChanged extends Event {
 		/**
 		 * @param elm
 		 */
 		public ArcChanged(final Element elm) {
 			super(EventType.ARC_CHANGED, elm);
+		}
+	}
+
+	/**
+	 * @author michael
+	 */
+	public static class Changed extends Event {
+		/**
+		 * @param elm
+		 */
+		public Changed(final Element elm) {
+			super(EventType.CHANGED, elm);
 		}
 	}
 
@@ -90,14 +90,14 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 		/**
 		 * 
 		 */
-		ADDED, /**
+		ADDED, /** */
+		ARC_CHANGED, /**
 		 * 
 		 */
 		CHANGED, /**
 		 * 
 		 */
-		REMOVED, /** */
-		ARC_CHANGED;
+		REMOVED;
 	}
 
 	/**
@@ -116,6 +116,8 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	 * 
 	 */
 	public static final int ID = 10002;
+
+	private final Map<String, Element> elements = new HashMap<String, Element>();
 
 	private final Map<String, Page> pages = new HashMap<String, Page>();
 
@@ -145,6 +147,13 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	}
 
 	/**
+	 * @param p
+	 */
+	public void add(final Page p) {
+		pages.put(p.getId(), p);
+	}
+
+	/**
 	 * @see java.util.Observable#addObserver(java.util.Observer)
 	 */
 	@Override
@@ -154,10 +163,19 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	}
 
 	/**
-	 * @param p
+	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
-	public void add(final Page p) {
-		pages.put(p.getId(), p);
+	@Override
+	public boolean equals(final Object o) {
+		return o instanceof Scraper;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.scraper.ElementDictionary#get(java.lang.String)
+	 */
+	@Override
+	public Element get(final String id) {
+		return elements.get(id);
 	}
 
 	/**
@@ -195,10 +213,27 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	}
 
 	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return 7;
+	}
+
+	/**
 	 * @return
 	 */
 	public Iterable<Page> pages() {
 		return pages.values();
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.scraper.ElementDictionary#put(java.lang.String,
+	 *      org.cpntools.simulator.extensions.scraper.Element)
+	 */
+	@Override
+	public void put(final String id, final Element element) {
+		elements.put(id, element);
 	}
 
 	/**
@@ -209,6 +244,18 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 		final Scraper s = new Scraper(true);
 		s.setChannel(c);
 		return s;
+	}
+
+	private boolean doArcs(final Transition t, final Packet packet, final Type type) {
+		boolean localChanged = false;
+		for (int j = packet.getInteger(); j > 0; j--) { // input
+			final String id = packet.getString(); // id
+			final String placeId = packet.getString(); // placeid
+			final String expr = packet.getString(); // expr
+			final Place p = t.getPage().getPlace(placeId);
+			localChanged = new Arc(this, id, expr, type, t.getPage(), t, p).addToNodes() | localChanged;
+		}
+		return localChanged;
 	}
 
 	private void handleSyntaxCheck(final Packet packet) {
@@ -402,18 +449,6 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 		}
 	}
 
-	private boolean doArcs(final Transition t, final Packet packet, final Type type) {
-		boolean localChanged = false;
-		for (int j = packet.getInteger(); j > 0; j--) { // input
-			final String id = packet.getString(); // id
-			final String placeId = packet.getString(); // placeid
-			final String expr = packet.getString(); // expr
-			final Place p = t.getPage().getPlace(placeId);
-			localChanged = new Arc(this, id, expr, type, t.getPage(), t, p).addToNodes() | localChanged;
-		}
-		return localChanged;
-	}
-
 	private void notify(final Event e) {
 		setChanged();
 		notifyObservers(e);
@@ -433,40 +468,5 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 			break;
 		}
 
-	}
-
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		return 7;
-	}
-
-	/**
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(final Object o) {
-		return o instanceof Scraper;
-	}
-
-	private final Map<String, Element> elements = new HashMap<String, Element>();
-
-	/**
-	 * @see org.cpntools.simulator.extensions.scraper.ElementDictionary#put(java.lang.String,
-	 *      org.cpntools.simulator.extensions.scraper.Element)
-	 */
-	@Override
-	public void put(final String id, final Element element) {
-		elements.put(id, element);
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.scraper.ElementDictionary#get(java.lang.String)
-	 */
-	@Override
-	public Element get(final String id) {
-		return elements.get(id);
 	}
 }

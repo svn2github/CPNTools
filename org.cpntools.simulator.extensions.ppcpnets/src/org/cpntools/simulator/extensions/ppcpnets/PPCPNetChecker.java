@@ -233,31 +233,6 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		}
 	}
 
-	private void sharedAdded(final Place elm) {
-		// TODO Auto-generated method stub
-
-	}
-
-	private void localRemoved(final Place elm) {
-		// TODO Auto-generated method stub
-
-	}
-
-	private void localAdded(final Place elm) {
-		// TODO Auto-generated method stub
-
-	}
-
-	private void sharedRemoved(final Place elm) {
-		// TODO Auto-generated method stub
-
-	}
-
-	private void channelRemoved(final Place elm) {
-		// TODO Auto-generated method stub
-
-	}
-
 	private void arcChanged(final Transition elm) {
 		final Set<String> inProcess = new HashSet<String>();
 		final Set<String> outProcess = new HashSet<String>();
@@ -324,6 +299,11 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 
 	private void changed(final Transition elm) {
 		// TODO needed?
+	}
+
+	private void channelRemoved(final Place elm) {
+		// TODO Auto-generated method stub
+
 	}
 
 	private void consume(final Packet p) {
@@ -461,6 +441,16 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		return false;
 	}
 
+	private void localAdded(final Place elm) {
+		// TODO Auto-generated method stub
+
+	}
+
+	private void localRemoved(final Place elm) {
+		// TODO Auto-generated method stub
+
+	}
+
 	private void processTypeAdded(final String name) {
 		// TODO Auto-generated method stub
 
@@ -500,6 +490,16 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 			lm.delete(elm, this);
 		} catch (final Exception e) { // Ignore
 		}
+	}
+
+	private void sharedAdded(final Place elm) {
+		// TODO Auto-generated method stub
+
+	}
+
+	private void sharedRemoved(final Place elm) {
+		// TODO Auto-generated method stub
+
 	}
 
 	private void typeAdded(final Transition elm) {

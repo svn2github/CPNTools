@@ -6,13 +6,13 @@ package org.cpntools.simulator.extensions.scraper;
 public interface ElementDictionary {
 	/**
 	 * @param id
-	 * @param element
-	 */
-	void put(String id, Element element);
-
-	/**
-	 * @param id
 	 * @return
 	 */
 	Element get(String id);
+
+	/**
+	 * @param id
+	 * @param element
+	 */
+	void put(String id, Element element);
 }

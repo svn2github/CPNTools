@@ -11,9 +11,6 @@ import org.cpntools.simulator.extensions.NamedRPCHandler;
  * @author michael
  */
 public class MSCExtension extends AbstractExtension {
-	final Map<String, MSCController> mscs = new HashMap<String, MSCController>();
-	int serial = 0;
-
 	/**
 	 * @author michael
 	 */
@@ -26,25 +23,6 @@ public class MSCExtension extends AbstractExtension {
 		 */
 		public MSCDispatcher(final Channel channel) {
 			this.channel = channel;
-		}
-
-		/**
-		 * @param name
-		 *            of the MSC
-		 * @return
-		 * @throws Exception
-		 */
-		public synchronized String createMSC(final String name) throws Exception {
-			final String id = "msc" + serial++;
-			final MSCController c = new MSCController(channel, name);
-			mscs.put(id, c);
-			return id;
-		}
-
-		private MSCController c(final String id) throws Exception {
-			final MSCController c = mscs.get(id);
-			if (c == null) { throw new Exception("Unknown MSC"); }
-			return c;
 		}
 
 		/**
@@ -149,6 +127,19 @@ public class MSCExtension extends AbstractExtension {
 		}
 
 		/**
+		 * @param name
+		 *            of the MSC
+		 * @return
+		 * @throws Exception
+		 */
+		public synchronized String createMSC(final String name) throws Exception {
+			final String id = "msc" + serial++;
+			final MSCController c = new MSCController(channel, name);
+			mscs.put(id, c);
+			return id;
+		}
+
+		/**
 		 * Create a new style.
 		 * 
 		 * @param id
@@ -248,12 +239,22 @@ public class MSCExtension extends AbstractExtension {
 		public String structureName() {
 			return "MSC";
 		}
+
+		private MSCController c(final String id) throws Exception {
+			final MSCController c = mscs.get(id);
+			if (c == null) { throw new Exception("Unknown MSC"); }
+			return c;
+		}
 	}
 
 	/**
 	 * 
 	 */
 	public static final int ID = 10006;
+
+	final Map<String, MSCController> mscs = new HashMap<String, MSCController>();
+
+	int serial = 0;
 
 	/**
 	 * 
@@ -270,19 +271,19 @@ public class MSCExtension extends AbstractExtension {
 	}
 
 	/**
-	 * @see org.cpntools.simulator.extensions.AbstractExtension#getRPCHandler()
-	 */
-	@Override
-	public Object getRPCHandler() {
-		return new MSCDispatcher(channel);
-	}
-
-	/**
 	 * @see org.cpntools.simulator.extensions.Extension#getName()
 	 */
 	@Override
 	public String getName() {
 		return "MSC";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#getRPCHandler()
+	 */
+	@Override
+	public Object getRPCHandler() {
+		return new MSCDispatcher(channel);
 	}
 
 }

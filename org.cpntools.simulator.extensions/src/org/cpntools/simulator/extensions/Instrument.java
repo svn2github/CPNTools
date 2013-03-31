@@ -4,9 +4,33 @@ package org.cpntools.simulator.extensions;
  * @author michael
  */
 public class Instrument {
-	private final String name, toolTip, toolBox;
-	private final int targets;
-	private final String key;
+	/**
+	 * @author michael
+	 */
+	public static enum Target {
+		/** */
+		ARC(0x10), /** */
+		AUX_BOX(0x10000), /** */
+		AUX_ELLIPSE(0x20000), /** */
+		AUX_TEXT(0x40000), /** */
+		NET(0x1), /** */
+		PAGE(0x2), /** */
+		PLACE(0x4), /** */
+		TRANSITION(0x8);
+
+		private final int value;
+
+		private Target(final int value) {
+			this.value = value;
+		}
+
+		/**
+		 * @return
+		 */
+		public int getValue() {
+			return value;
+		}
+	}
 
 	/**
 	 * @author michael
@@ -18,6 +42,12 @@ public class Instrument {
 		        MONITORING = "monitoring", NET = "net", SIMULATION = "simulation", STATE_SPACE = "statespace",
 		        STYLE = "style", VIEW = "view", EXTENSIONS = "Extensions";
 	}
+
+	private final String key;
+
+	private final String name, toolTip, toolBox;
+
+	private final int targets;
 
 	/**
 	 * @param name
@@ -35,39 +65,12 @@ public class Instrument {
 	}
 
 	/**
-	 * @param name
-	 * @param targets
-	 */
-	public Instrument(final String name, final Target... targets) {
-		this(ToolBoxes.EXTENSIONS, name, targets);
-	}
-
-	/**
-	 * @param toolBox
-	 * @param name
-	 * @param targets
-	 */
-	public Instrument(final String toolBox, final String name, final Target... targets) {
-		this(toolBox, name.toLowerCase().replaceAll("[ \t\n\r]*", "_"), name, targets);
-	}
-
-	/**
 	 * @param toolBox
 	 * @param key
 	 * @param name
 	 */
 	public Instrument(final String toolBox, final String key, final String name) {
 		this(toolBox, key, name, Target.NET);
-	}
-
-	/**
-	 * @param toolBox
-	 * @param key
-	 * @param name
-	 * @param targets
-	 */
-	public Instrument(final String toolBox, final String key, final String name, final Target... targets) {
-		this(toolBox, key, name, name, targets);
 	}
 
 	/**
@@ -101,31 +104,37 @@ public class Instrument {
 	}
 
 	/**
-	 * @author michael
+	 * @param toolBox
+	 * @param key
+	 * @param name
+	 * @param targets
 	 */
-	public static enum Target {
-		/** */
-		NET(0x1), /** */
-		PAGE(0x2), /** */
-		PLACE(0x4), /** */
-		TRANSITION(0x8), /** */
-		ARC(0x10), /** */
-		AUX_BOX(0x10000), /** */
-		AUX_ELLIPSE(0x20000), /** */
-		AUX_TEXT(0x40000);
+	public Instrument(final String toolBox, final String key, final String name, final Target... targets) {
+		this(toolBox, key, name, name, targets);
+	}
 
-		private final int value;
+	/**
+	 * @param toolBox
+	 * @param name
+	 * @param targets
+	 */
+	public Instrument(final String toolBox, final String name, final Target... targets) {
+		this(toolBox, name.toLowerCase().replaceAll("[ \t\n\r]*", "_"), name, targets);
+	}
 
-		private Target(final int value) {
-			this.value = value;
-		}
+	/**
+	 * @param name
+	 * @param targets
+	 */
+	public Instrument(final String name, final Target... targets) {
+		this(ToolBoxes.EXTENSIONS, name, targets);
+	}
 
-		/**
-		 * @return
-		 */
-		public int getValue() {
-			return value;
-		}
+	/**
+	 * @return
+	 */
+	public String getKey() {
+		return key;
 	}
 
 	/**
@@ -138,8 +147,8 @@ public class Instrument {
 	/**
 	 * @return
 	 */
-	public String getToolTip() {
-		return toolTip;
+	public int getTargets() {
+		return targets;
 	}
 
 	/**
@@ -152,14 +161,7 @@ public class Instrument {
 	/**
 	 * @return
 	 */
-	public int getTargets() {
-		return targets;
-	}
-
-	/**
-	 * @return
-	 */
-	public String getKey() {
-		return key;
+	public String getToolTip() {
+		return toolTip;
 	}
 }

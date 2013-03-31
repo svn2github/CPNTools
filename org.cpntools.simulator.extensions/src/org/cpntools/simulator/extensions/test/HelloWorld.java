@@ -82,14 +82,6 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 	private JTabbedPane tabs;
 
 	/**
-	 * @see org.cpntools.simulator.extensions.AbstractExtension#getRPCHandler()
-	 */
-	@Override
-	public Object getRPCHandler() {
-		return new HelloWorldRPCHandler();
-	}
-
-	/**
 	 * 
 	 */
 	public HelloWorld() {
@@ -115,6 +107,14 @@ public abstract class HelloWorld extends AbstractExtension implements Observer {
 	@Override
 	public String getName() {
 		return "DCR Graph";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#getRPCHandler()
+	 */
+	@Override
+	public Object getRPCHandler() {
+		return new HelloWorldRPCHandler();
 	}
 
 	/**

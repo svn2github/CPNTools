@@ -15,86 +15,17 @@ import org.cpntools.simulator.extensions.scraper.Scraper;
  * @author michael
  */
 public class LabelManager implements Observer {
+	private final Channel c;
+
 	private final Map<String, Map<Object, Label>> labels = new HashMap<String, Map<Object, Label>>();
 
-	private final Channel c;
+	private boolean subscribed = false;
 
 	/**
 	 * @param c
 	 */
 	public LabelManager(final Channel c) {
 		this.c = c;
-	}
-
-	private boolean subscribed = false;
-
-	private void subscribe() {
-		if (subscribed) { return; }
-		subscribed = true;
-		final Scraper scraper = c.getExtension(Scraper.class);
-		if (scraper != null) {
-			scraper.addObserver(this);
-		}
-	}
-
-	/**
-	 * @param label
-	 * @throws Exception
-	 */
-	public void delete(final Label label) throws Exception {
-		delete(label.getOwnerId(), label.getNamespace());
-	}
-
-	/**
-	 * @param element
-	 * @param namespace
-	 * @throws Exception
-	 */
-	public void delete(final Element element, final Object namespace) throws Exception {
-		delete(element.getId(), namespace);
-	}
-
-	/**
-	 * @param ownerId
-	 * @param namespace
-	 * @throws Exception
-	 */
-	public synchronized void delete(final String ownerId, final Object namespace) throws Exception {
-		final Map<Object, Label> forElement = labels.get(ownerId);
-		if (forElement == null) { return; }
-		final Label oldLabel = forElement.remove(namespace);
-		if (oldLabel == null) { return; }
-		delete(oldLabel.getId());
-	}
-
-	private void delete(final String id) throws Exception {
-		Packet p = new Packet(3, 11);
-		p.addInteger(1);
-		p.addString(id);
-		p = c.send(p);
-		p.reset();
-		if (p.getInteger() != 1) { throw new Exception("Simulator returned unexpected value:" + p); }
-	}
-
-	/**
-	 * @param element
-	 * @param text
-	 * @return
-	 * @throws Exception
-	 */
-	public Label add(final Element element, final String text) throws Exception {
-		return add(element, text, Position.NW);
-	}
-
-	/**
-	 * @param element
-	 * @param text
-	 * @param position
-	 * @return
-	 * @throws Exception
-	 */
-	public Label add(final Element element, final String text, final Position position) throws Exception {
-		return add(element, text, text, position);
 	}
 
 	/**
@@ -141,6 +72,70 @@ public class LabelManager implements Observer {
 		}
 	}
 
+	/**
+	 * @param element
+	 * @param text
+	 * @return
+	 * @throws Exception
+	 */
+	public Label add(final Element element, final String text) throws Exception {
+		return add(element, text, Position.NW);
+	}
+
+	/**
+	 * @param element
+	 * @param text
+	 * @param position
+	 * @return
+	 * @throws Exception
+	 */
+	public Label add(final Element element, final String text, final Position position) throws Exception {
+		return add(element, text, text, position);
+	}
+
+	/**
+	 * @param element
+	 * @param namespace
+	 * @throws Exception
+	 */
+	public void delete(final Element element, final Object namespace) throws Exception {
+		delete(element.getId(), namespace);
+	}
+
+	/**
+	 * @param label
+	 * @throws Exception
+	 */
+	public void delete(final Label label) throws Exception {
+		delete(label.getOwnerId(), label.getNamespace());
+	}
+
+	/**
+	 * @param ownerId
+	 * @param namespace
+	 * @throws Exception
+	 */
+	public synchronized void delete(final String ownerId, final Object namespace) throws Exception {
+		final Map<Object, Label> forElement = labels.get(ownerId);
+		if (forElement == null) { return; }
+		final Label oldLabel = forElement.remove(namespace);
+		if (oldLabel == null) { return; }
+		delete(oldLabel.getId());
+	}
+
+	/**
+	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+	 */
+	@Override
+	public void update(final Observable arg0, final Object arg1) {
+		if (arg0 instanceof Scraper && arg1 instanceof Scraper.Removed) {
+			synchronized (this) {
+// labels.remove(r.getElm().getId());
+			}
+		}
+
+	}
+
 	private String createLabel(final String ownerId, final String text, final Position position) throws IOException,
 	        Exception {
 		Packet p = new Packet(3, 10);
@@ -156,21 +151,26 @@ public class LabelManager implements Observer {
 		return id;
 	}
 
+	private void delete(final String id) throws Exception {
+		Packet p = new Packet(3, 11);
+		p.addInteger(1);
+		p.addString(id);
+		p = c.send(p);
+		p.reset();
+		if (p.getInteger() != 1) { throw new Exception("Simulator returned unexpected value:" + p); }
+	}
+
+	private void subscribe() {
+		if (subscribed) { return; }
+		subscribed = true;
+		final Scraper scraper = c.getExtension(Scraper.class);
+		if (scraper != null) {
+			scraper.addObserver(this);
+		}
+	}
+
 	synchronized void replace(final Label label) throws Exception {
 		delete(label.getId());
 		label.setId(createLabel(label.getOwnerId(), label.getText(), label.getPosition()));
-	}
-
-	/**
-	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
-	 */
-	@Override
-	public void update(final Observable arg0, final Object arg1) {
-		if (arg0 instanceof Scraper && arg1 instanceof Scraper.Removed) {
-			synchronized (this) {
-// labels.remove(r.getElm().getId());
-			}
-		}
-
 	}
 }
