@@ -351,6 +351,11 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 			}
 		}
 
+		for (final Transition t : removedT.values()) { // Remove arcs connected to removed transitions
+			t.prepareNewArcs();
+			arcChangedP.addAll(t.finishNewArcs());
+		}
+
 		changed |= !removedT.isEmpty();
 		changed |= !addedT.isEmpty();
 		changed |= !changedT.isEmpty();

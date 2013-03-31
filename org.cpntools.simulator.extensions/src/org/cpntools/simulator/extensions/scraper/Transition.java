@@ -85,6 +85,7 @@ public class Transition extends Node {
 	public Set<Place> finishNewArcs() {
 		for (final Arc a : oldArcs.values()) {
 			removeArc(a);
+			a.getPlace().removeArc(a);
 			changedPlaces.add(a.getPlace());
 		}
 		oldArcs.clear();

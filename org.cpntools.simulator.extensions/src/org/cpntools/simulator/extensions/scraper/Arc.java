@@ -85,8 +85,9 @@ public class Arc extends Element {
 	 * @return
 	 */
 	public boolean addToNodes() {
+		final boolean result = t.addArc(this);
 		p.addArc(this);
-		return t.addArc(this);
+		return result;
 	}
 
 	/**

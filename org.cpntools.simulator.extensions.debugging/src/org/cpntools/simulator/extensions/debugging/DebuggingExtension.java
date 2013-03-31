@@ -42,7 +42,7 @@ public class DebuggingExtension extends AbstractExtension implements Observer {
 	 * 
 	 */
 	public DebuggingExtension() {
-		addInstrument(new Instrument("Development", "debug", "Debug", "Start protocol debugger"));
+		addInstrument(new Instrument("Development", "debug", "De-\nbug", "Start protocol debugger"));
 		try {
 			dialog = new JDialog((Frame) null, "Debug/CPN", false);
 			dialog.setSize(new Dimension(600, 700));

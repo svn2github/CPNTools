@@ -3,7 +3,7 @@ package org.cpntools.simulator.extensions.debugging;
 /**
  * @author michael
  */
-public class Tracer extends DebuggingPanel {
+public abstract class Tracer extends DebuggingPanel {
 
 	/**
 	 * 
