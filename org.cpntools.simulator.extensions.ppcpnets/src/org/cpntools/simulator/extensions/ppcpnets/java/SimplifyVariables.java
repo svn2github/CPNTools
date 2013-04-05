@@ -65,6 +65,14 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.DoWhile)
+	 */
+	@Override
+	public ASTNode visit(final DoWhile entry) {
+		throw new UnsupportedOperationException("Please do not use this pattern with structured programs");
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Equal)
 	 */
 	@Override
@@ -72,6 +80,14 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 		e.setE1(visit(e.getE1()));
 		e.setE2(visit(e.getE2()));
 		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.If)
+	 */
+	@Override
+	public ASTNode visit(final If entry) {
+		throw new UnsupportedOperationException("Please do not use this pattern with structured programs");
 	}
 
 	/**
@@ -149,6 +165,7 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 	 * @param e
 	 * @return
 	 */
+	@Override
 	public Expression visit(final True e) {
 		return e;
 	}

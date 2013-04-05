@@ -55,6 +55,10 @@ public abstract class Visitor<T, P, N, E> {
 			return visit((Send) entry);
 		} else if (entry instanceof Skip) {
 			return visit((Skip) entry);
+		} else if (entry instanceof If) {
+			return visit((If) entry);
+		} else if (entry instanceof DoWhile) {
+			return visit((DoWhile) entry);
 		} else {
 			assert false;
 		}
@@ -74,6 +78,14 @@ public abstract class Visitor<T, P, N, E> {
 	 * @return
 	 */
 	public N visit(final Declaration entry) {
+		return null;
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final DoWhile entry) {
 		return null;
 	}
 
@@ -98,6 +110,8 @@ public abstract class Visitor<T, P, N, E> {
 			return visit((Receive) e);
 		} else if (e instanceof VariableExpression) {
 			return visit((VariableExpression) e);
+		} else if (e instanceof True) {
+			return visit((True) e);
 		} else if (e instanceof Not) {
 			return visit((Not) e);
 		} else if (e instanceof Whatever) {
@@ -105,6 +119,14 @@ public abstract class Visitor<T, P, N, E> {
 		} else {
 			assert false;
 		}
+		return null;
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final If entry) {
 		return null;
 	}
 
@@ -162,6 +184,14 @@ public abstract class Visitor<T, P, N, E> {
 	 * @return
 	 */
 	public N visit(final Skip entry) {
+		return null;
+	}
+
+	/**
+	 * @param e
+	 * @return
+	 */
+	public E visit(final True e) {
 		return null;
 	}
 

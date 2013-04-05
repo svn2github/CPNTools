@@ -20,6 +20,8 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 
 	private LinkedList<ASTNode> entries;
 
+	private int indent = 2;
+
 	/**
 	 * @param out
 	 */
@@ -71,8 +73,85 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 * @param process
 	 */
 	public void makeConstructor(final Process process) {
-		// TODO Auto-generated method stub
+		out.print("\tpublic ");
+		out.print(process.getName());
+		out.print("(");
+		boolean globals = false, channels = false;
+		for (final Variable v : process.getParameters()) {
+			if (globals || channels) {
+				out.print(", ");
+			}
+			if (v instanceof Global) {
+				globals = true;
+				out.print(v.getType().getJavaName());
+				out.print(" global");
+			} else if (v instanceof SendChannel) {
+				channels = true;
+				out.print("ObjectOutputStream channel");
+			} else if (v instanceof ReceiveChannel) {
+				channels = true;
+				out.print("ObjectInputStream channel");
+			} else {
+				assert false;
+			}
+			out.print(v.getJavaName());
+		}
+		boolean locals = false;
+		for (final Variable v : process.getLocals()) {
+			if (globals || channels || locals) {
+				out.print(", ");
+			}
+			if (v instanceof Local) {
+				locals = true;
+				out.print(v.getType().getJavaName());
+				out.print(" local");
+			} else {
+				assert false;
+			}
+			out.print(v.getJavaName());
+		}
+		out.println(") {");
 
+		if (globals) {
+			out.println("\t\tglobals = new Globals();");
+		}
+		if (channels) {
+			out.println("\t\tchannels = new Channels();");
+		}
+
+		for (final Variable v : process.getParameters()) {
+			if (v instanceof Global) {
+				out.print("\t\tglobals.");
+			} else if (v instanceof Channel) {
+				out.print("\t\tchannels.");
+			} else {
+				assert false;
+			}
+			out.print(v.getJavaName());
+			out.print(" = ");
+			if (v instanceof Global) {
+				out.print("global");
+			} else if (v instanceof Channel) {
+				out.print("channel");
+			}
+			out.print(v.getJavaName());
+			out.println(";");
+		}
+
+		for (final Variable v : process.getLocals()) {
+			if (v instanceof Local) {
+				out.print("\t\tthis.");
+			} else {
+				assert false;
+			}
+			out.print(v.getJavaName());
+			out.print(" = local");
+			out.print(v.getJavaName());
+			out.println(";");
+		}
+
+		out.println("\t}");
+		out.println();
 	}
 
 	/**
@@ -143,7 +222,7 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final AssignmentExp entry) {
-		out.print("\t\t");
+		indent();
 		if (entry.getV() instanceof Local) {
 			out.print("this.");
 			out.print(entry.getV().getJavaName());
@@ -187,7 +266,8 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Conditional entry) {
-		out.print("\t\tif ");
+		indent();
+		out.print("if ");
 		visit(entry.getCondition());
 		out.print(" goto ");
 		out.print(entry.getJump().getLabel());
@@ -203,12 +283,29 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Declaration entry) {
-		out.print("\t\t");
+		indent();
 		out.print(entry.getV().getType().getJavaName());
 		out.print(" ");
 		out.print(entry.getV().getJavaName());
 		out.println(";");
 
+		return super.visit(entry);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.DoWhile)
+	 */
+	@Override
+	public Object visit(final DoWhile entry) {
+		indent();
+		out.println("do {");
+		start();
+		visit(entry.getInner());
+		end();
+		indent();
+		out.print("} while ");
+		visit(entry.getCondition());
+		out.println(";");
 		return super.visit(entry);
 	}
 
@@ -239,12 +336,37 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.If)
+	 */
+	@Override
+	public Object visit(final If entry) {
+		indent();
+		out.print("if ");
+		visit(entry.getCondition());
+		out.println(" {");
+		start();
+		visit(entry.getThenBranch());
+		end();
+		if (entry.getElseBranch() != null) {
+			indent();
+			out.println("} else {");
+			start();
+			visit(entry.getElseBranch());
+			end();
+		}
+		indent();
+		out.println("}");
+		return super.visit(entry);
+	}
+
+	/**
 	 * @return
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Jump)
 	 */
 	@Override
 	public Object visit(final Jump entry) {
-		out.print("\t\tgoto ");
+		indent();
+		out.print("goto ");
 		out.print(entry.getJump().getLabel());
 		out.println(";");
 		add(entry.getJump());
@@ -259,7 +381,7 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	@Override
 	public Object visit(final Label entry) {
 		done.add(entry);
-		out.print("\t\t");
+		indent();
 		out.print(entry.getLabel());
 		out.println(":");
 
@@ -282,7 +404,7 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Process process) {
-		out.println("public class " + process.getName() + " extends Thread {");
+		out.println("public class " + process.getName() + " implements Runnable {");
 		makeGlobalsDecl(process);
 		makeChannelDecl(process);
 		makeLocalDecl(process);
@@ -319,7 +441,8 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Send entry) {
-		out.print("\t\tchannels.");
+		indent();
+		out.print("channels.");
 		out.print(entry.getC().getJavaName());
 		out.print(".writeObject(");
 		visit(entry.getE());
@@ -334,6 +457,16 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Skip entry) {
+		return super.visit(entry);
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	@Override
+	public Object visit(final True entry) {
+		out.print("true");
 		return super.visit(entry);
 	}
 
@@ -367,6 +500,20 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	public Object visit(final Whatever e) {
 		out.print(e.getE());
 		return super.visit(e);
+	}
+
+	private void end() {
+		indent--;
+	}
+
+	private void indent() {
+		for (int i = 0; i < indent; i++) {
+			out.print('\t');
+		}
+	}
+
+	private void start() {
+		indent++;
 	}
 
 }

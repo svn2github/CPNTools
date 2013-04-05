@@ -42,6 +42,27 @@ public class SimplifyExpressions extends Visitor<Object, Object, Object, Object>
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.DoWhile)
+	 */
+	@Override
+	public Object visit(final DoWhile entry) {
+		entry.setCondition(entry.getCondition().simplify());
+		visit(entry.getInner());
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.If)
+	 */
+	@Override
+	public Object visit(final If entry) {
+		entry.setCondition(entry.getCondition().simplify());
+		visit(entry.getThenBranch());
+		visit(entry.getElseBranch());
+		return null;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Jump)
 	 */
 	@Override

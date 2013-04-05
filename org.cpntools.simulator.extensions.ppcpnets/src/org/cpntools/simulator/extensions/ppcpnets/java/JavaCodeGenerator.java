@@ -94,8 +94,8 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 		}
 	}
 
-	private AbstractSyntaxTree addControl(final AbstractSyntaxTree ast) {
-		return ast;
+	private void addControl(final AbstractSyntaxTree ast) {
+		new ControlFreak().visit(ast);
 	}
 
 	private AbstractSyntaxTree buildAST(final ControlFlowGraph cfg, final Map<String, Type> types,

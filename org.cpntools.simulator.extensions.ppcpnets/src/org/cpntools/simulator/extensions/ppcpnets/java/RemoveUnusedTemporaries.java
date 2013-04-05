@@ -58,11 +58,27 @@ public class RemoveUnusedTemporaries extends Visitor<Object, Object, ASTNode, Bo
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.DoWhile)
+	 */
+	@Override
+	public ASTNode visit(final DoWhile entry) {
+		throw new UnsupportedOperationException("Please do not use this pattern with structured programs");
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Equal)
 	 */
 	@Override
 	public Boolean visit(final Equal e) {
 		return visit(e.getE1()) || visit(e.getE2());
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.If)
+	 */
+	@Override
+	public ASTNode visit(final If entry) {
+		throw new UnsupportedOperationException("Please do not use this pattern with structured programs");
 	}
 
 	/**
@@ -135,6 +151,7 @@ public class RemoveUnusedTemporaries extends Visitor<Object, Object, ASTNode, Bo
 	 * @param e
 	 * @return
 	 */
+	@Override
 	public Boolean visit(final True e) {
 		return false;
 	}
