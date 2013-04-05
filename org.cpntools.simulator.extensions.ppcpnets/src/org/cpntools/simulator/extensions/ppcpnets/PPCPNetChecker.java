@@ -1,10 +1,12 @@
 package org.cpntools.simulator.extensions.ppcpnets;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
@@ -17,11 +19,19 @@ import org.cpntools.simulator.extensions.Option;
 import org.cpntools.simulator.extensions.scraper.Arc;
 import org.cpntools.simulator.extensions.scraper.Element;
 import org.cpntools.simulator.extensions.scraper.Node;
+import org.cpntools.simulator.extensions.scraper.Page;
 import org.cpntools.simulator.extensions.scraper.Place;
 import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.scraper.Scraper.Event;
 import org.cpntools.simulator.extensions.scraper.Transition;
+import org.cpntools.simulator.extensions.scraper.types.Bool;
+import org.cpntools.simulator.extensions.scraper.types.Int;
+import org.cpntools.simulator.extensions.scraper.types.Other;
+import org.cpntools.simulator.extensions.scraper.types.Type;
+import org.cpntools.simulator.extensions.scraper.types.Unit;
 import org.cpntools.simulator.extensions.tools.labels.LabelManager;
+
+import dk.klafbang.tools.Pair;
 
 /**
  * @author michael
@@ -32,13 +42,18 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	 */
 	public static final int ID = 10007;
 	private static final String PID = "pid";
+	private boolean added = false, discovering = false;
 	private final Map<String, Place> channelPlaces = new HashMap<String, Place>();
-	private final Option<Boolean> check;
 
+	@SuppressWarnings("unused")
+	private final Option<Boolean> check;
 	private final Option<Boolean> discover;
 	private LabelManager lm;
 	private final Map<String, Place> localOrInput = new HashMap<String, Place>();
 	private final Map<String, Place> localPlaces = new HashMap<String, Place>();
+
+	private final List<Page> pages = new ArrayList<Page>();
+
 	private final Map<String, String> processGroups = new HashMap<String, String>();
 
 	private final Map<String, Place> processPlaces = new HashMap<String, Place>();
@@ -49,6 +64,8 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 
 	private final Map<String, Place> sharedPlaces = new HashMap<String, Place>();
 
+	private final Map<String, Type> types = new HashMap<String, Type>();
+
 	private final Map<String, Set<String>> variables = new HashMap<String, Set<String>>();
 
 	/**
@@ -58,8 +75,63 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		discover = Option.create("Discover", "discover", Boolean.class);
 		check = Option.create("Check", "check", Boolean.class);
 		processTypes.add("UNIT");
-		addOption(discover, check);
+		addOption(discover);
 		addSubscription(new Command(300, 1));
+		addObserver(this);
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Place> channelPlaces() {
+		return channelPlaces.values();
+	}
+
+	/**
+	 * 
+	 */
+	public void disable() {
+		discovering = false;
+		final Scraper s = channel.getExtension(Scraper.class);
+		if (s != null) {
+			for (final Page p : s) {
+				for (final Place pp : p.places()) {
+					removeLabel(pp);
+				}
+				for (final Transition tt : p.transitions()) {
+					removeLabel(tt);
+				}
+				localOrInput.clear();
+				localPlaces.clear();
+				processGroups.clear();
+				processPlaces.clear();
+				sharedPlaces.clear();
+			}
+		}
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean enable() {
+		final boolean result = discovering;
+		discovering = true;
+		final Scraper s = channel.getExtension(Scraper.class);
+		if (!added) {
+			added = true;
+			if (lm == null) {
+				lm = new LabelManager(channel);
+			}
+			if (s != null) {
+				s.addObserver(this);
+			}
+		}
+		if (!result) {
+			if (s != null) {
+				s.notifyMe(this);
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -76,6 +148,21 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	@Override
 	public String getName() {
 		return "PP-CPN";
+	}
+
+	/**
+	 * @param type
+	 * @return
+	 */
+	public List<String> getProduct(final String type) {
+		return productTypes.get(type);
+	}
+
+	/**
+	 * @return
+	 */
+	public Map<String, Type> getTypes() {
+		return types;
 	}
 
 	/**
@@ -99,16 +186,129 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	}
 
 	/**
+	 * @param key
+	 * @return
+	 */
+	public boolean isProcessPlace(final String key) {
+		return processPlaces.containsKey(key);
+	}
+
+	/**
+	 * @param type
+	 * @param variable
+	 * @return
+	 */
+	public boolean isVariable(final String type, final String variable) {
+		if ("UNIT".equals(type)) {
+			if ("()".equals(variable)) { return true; }
+			if ("1`()".equals(variable)) { return true; }
+		}
+		if (!variables.containsKey(type)) { return false; }
+		return variables.get(type).contains(variable);
+	}
+
+	/**
+	 * @param tt
+	 * @return
+	 */
+	public Iterable<Place> localPlacesOf(final Iterable<Transition> tt) {
+		final List<Place> result = new ArrayList<Place>();
+		for (final Place p : placesOf(tt)) {
+			if (localPlaces.containsKey(p.getId())) {
+				result.add(p);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Set<Place>> partition() {
+		final Map<String, Set<Place>> partitions = new HashMap<String, Set<Place>>();
+		for (final Entry<String, Place> e : processPlaces.entrySet()) {
+			final Set<Place> partition = new HashSet<Place>();
+			partition.add(e.getValue());
+			partitions.put(e.getKey(), partition);
+		}
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			for (final String id : new ArrayList<String>(partitions.keySet())) {
+				final Set<Place> activePartition = partitions.get(id);
+				final Place activePlace = processPlaces.get(id);
+				for (final Place n : neighbors(activePlace)) {
+					final Set<Place> neighborPartition = partitions.get(n.getId());
+					if (neighborPartition != activePartition) {
+						changed = true;
+						activePartition.addAll(neighborPartition);
+						for (final Place neighbor : neighborPartition) {
+							partitions.put(neighbor.getId(), activePartition);
+						}
+					}
+				}
+			}
+		}
+		return new HashSet<Set<Place>>(partitions.values());
+	}
+
+	/**
+	 * @param tt
+	 * @return
+	 */
+	public Iterable<Place> placesOf(final Iterable<Transition> tt) {
+		final Map<String, Place> result = new HashMap<String, Place>();
+		for (final Transition t : tt) {
+			for (final Arc aa : t) {
+				result.put(aa.getPlace().getId(), aa.getPlace());
+			}
+		}
+		return result.values();
+	}
+
+	/**
+	 * @param t
+	 * @return
+	 */
+	public Pair<String, Place> prePlace(final Transition t) {
+		for (final Arc a : t.in()) {
+			if (processPlaces.containsKey(a.getPlace().getId())
+			        && a.getPlace().getType().equals(processGroups.get(t.getId()))) { return Pair.createPair(
+			        a.getInscription(), a.getPlace()); }
+		}
+		assert false;
+		return null;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.AbstractExtension#setChannel(org.cpntools.simulator.extensions.Channel)
 	 */
 	@Override
 	public void setChannel(final Channel c) {
 		super.setChannel(c);
-		final Scraper s = c.getExtension(Scraper.class);
-		if (s != null) {
-			s.addObserver(this);
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Place> sharedPlaces() {
+		return sharedPlaces.values();
+	}
+
+	/**
+	 * @param places
+	 * @return
+	 */
+	public Iterable<Transition> transitionsOf(final Iterable<Place> places) {
+		final Map<String, Transition> result = new HashMap<String, Transition>();
+		for (final Place p : places) {
+			for (final Arc a : p) {
+				if (p.getType().equals(processGroups.get(a.getTransition().getId()))) {
+					result.put(a.getTransition().getId(), a.getTransition());
+				}
+			}
 		}
-		lm = new LabelManager(channel);
+		return result.values();
 	}
 
 	/**
@@ -117,7 +317,7 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	@Override
 	public void update(final Observable o, final Object arg) {
 		try {
-			if (o instanceof Scraper && arg instanceof Scraper.Event) {
+			if (discovering && o instanceof Scraper && arg instanceof Scraper.Event) {
 				final Event e = (Event) arg;
 				switch (e.getType()) {
 				case ADDED:
@@ -133,6 +333,12 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 					arcChanged(e.getElm());
 					break;
 				}
+			} else if (o == this && arg == discover) {
+				if (getOption(discover)) {
+					enable();
+				} else {
+					disable();
+				}
 			} else {
 				System.out.println("Unhandled " + o + " - " + arg);
 			}
@@ -142,7 +348,11 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	}
 
 	private void added(final Element elm) {
-		changed(elm);
+		if (elm instanceof Page) {
+			pages.add((Page) elm);
+		} else {
+			changed(elm);
+		}
 	}
 
 	private void addLabel(final Node elm, final String string) {
@@ -190,45 +400,29 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 			if (inTypes.size() == 1 && outTypes.size() == 1 && in == out && in == inTransitions.size()
 			        && productTypes.get(elm.getType()).contains(inTypes.iterator().next())
 			        && inTransitions.equals(outTransitions)) {
-				addLabel(elm, "Local");
-				if (localPlaces.put(elm.getId(), elm) == null) {
-					if (channelPlaces.remove(elm.getId()) != null) {
-						channelRemoved(elm);
-					}
-					if (sharedPlaces.remove(elm.getId()) != null) {
-						sharedRemoved(elm);
-					}
-					localAdded(elm);
-				}
+				local(elm);
+			} else if (outTypes.size() == 1 && productTypes.get(elm.getType()).contains(outTypes.iterator().next())) {
+				buffer(elm);
 			} else {
-				addLabel(elm, "Buffer/unknown");
+				if (inTypes.size() == 1 && outTypes.size() == 1 && inTypes.equals(outTypes) && inTypes.contains("UNIT")) {
+					local(elm);
+				} else {
+					error(elm);
+				}
 			}
-		} else if (inTypes.size() == 1 && outTypes.size() == 1 && inTypes.equals(outTypes) && inTypes.contains("UNIT")) {
-			addLabel(elm, "UNIT local/buffer");
+		} else if (inTypes.size() == 1 && outTypes.size() == 1 && in == out && in == inTransitions.size()
+		        && inTransitions.equals(outTransitions) && inTypes.contains("UNIT")) {
+			local(elm); // UNIT
+		} else if (outTypes.size() == 1 && outTypes.contains("UNIT")
+		        && Collections.disjoint(inTransitions, outTransitions)) {
+			buffer(elm); // UNIT
 		} else {
+			// A buffer out is an input somewhere else and not handled here
 			if (in == out && in == inTransitions.size() && inTransitions.equals(outTransitions)
 			        && !inTypes.contains(null)) {
-				addLabel(elm, "Shared");
-				if (sharedPlaces.put(elm.getId(), elm) == null) {
-					if (channelPlaces.remove(elm.getId()) != null) {
-						channelRemoved(elm);
-					}
-					if (localPlaces.remove(elm.getId()) != null) {
-						localRemoved(elm);
-					}
-					sharedAdded(elm);
-				}
+				shared(elm);
 			} else {
-				if (channelPlaces.remove(elm.getId()) != null) {
-					channelRemoved(elm);
-				}
-				if (localPlaces.remove(elm.getId()) != null) {
-					localRemoved(elm);
-				}
-				if (sharedPlaces.remove(elm.getId()) != null) {
-					sharedRemoved(elm);
-				}
-				addLabel(elm, "Error");
+				error(elm);
 			}
 		}
 	}
@@ -262,7 +456,23 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 			}
 			addLabel(elm, type);
 		} else {
+			if (processGroups.remove(elm.getId()) != null) {
+				typeRemoved(elm);
+			}
 			removeLabel(elm);
+		}
+	}
+
+	private void buffer(final Place elm) {
+		addLabel(elm, "Buffer");
+		if (channelPlaces.put(elm.getId(), elm) == null) {
+			if (localPlaces.remove(elm.getId()) != null) {
+				localRemoved(elm);
+			}
+			if (sharedPlaces.remove(elm.getId()) != null) {
+				sharedRemoved(elm);
+			}
+			channelAdded(elm);
 		}
 	}
 
@@ -286,7 +496,8 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		} else {
 			processPlaces.remove(elm.getId());
 		}
-		if (productTypes.containsKey(elm.getType()) && hasProcessType(productTypes.get(elm.getType()))) {
+		if (productTypes.containsKey(elm.getType()) && hasProcessType(productTypes.get(elm.getType()))
+		        && productTypes.get(elm.getType()).size() <= 2) {
 			if (localOrInput.put(elm.getId(), elm) == null) {
 // addLabel(elm, "Local");
 			}
@@ -301,6 +512,11 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		// TODO needed?
 	}
 
+	private void channelAdded(final Place elm) {
+		// TODO Auto-generated method stub
+
+	}
+
 	private void channelRemoved(final Place elm) {
 		// TODO Auto-generated method stub
 
@@ -313,6 +529,19 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		}
 	}
 
+	private void error(final Place elm) {
+		addLabel(elm, "Error");
+		if (channelPlaces.remove(elm.getId()) != null) {
+			channelRemoved(elm);
+		}
+		if (localPlaces.remove(elm.getId()) != null) {
+			localRemoved(elm);
+		}
+		if (sharedPlaces.remove(elm.getId()) != null) {
+			sharedRemoved(elm);
+		}
+	}
+
 	private void handleCheckDeclaration(final Packet p) {
 		p.reset();
 		p.getInteger(); // command
@@ -320,17 +549,28 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		p.getString();
 		final int type = p.getInteger();
 		List<String> components = null;
+		Type t = null;
 		switch (type) {
 		case 1: // unit
 			p.getString();
+			t = new Unit();
 			break;
 		case 2: // bool
+			t = new Bool();
+			p.getString();
+			p.getString();
+			break;
 		case 3: // int
+			t = new Int();
+			p.getString();
+			p.getString();
+			break;
 		case 4: // real
 			p.getString();
 			p.getString();
 			break;
 		case 5: // string
+			t = new org.cpntools.simulator.extensions.scraper.types.String();
 			p.getString();
 			p.getString();
 			p.getString();
@@ -380,7 +620,14 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		}
 			break;
 		case 14: // time
+		case 22: // alias
+			break;
 		case 15: // duplicate (unused)
+			final String alias = p.getString();
+			t = types.get(alias);
+			if (t instanceof Other) {
+				t = null;
+			}
 			break;
 		case 20: { // Variable
 			final String name = p.getString();
@@ -393,10 +640,15 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		default:
 			return;
 		}
-		if (type == 22 || type == 15) { // alias
-			assert type == 22;
+		if (type == 22) {
+			System.out.println(p);
+			assert false;
 		} else {
 			final String name = p.getString();
+			if (t == null) {
+				t = new Other(name);
+			}
+			types.put(name, t);
 			final int vars = p.getInteger();
 			for (int i = 0; i < vars; i++) {
 				addVariable(name, p.getString());
@@ -441,6 +693,19 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		return false;
 	}
 
+	private void local(final Place elm) {
+		addLabel(elm, "Local");
+		if (localPlaces.put(elm.getId(), elm) == null) {
+			if (channelPlaces.remove(elm.getId()) != null) {
+				channelRemoved(elm);
+			}
+			if (sharedPlaces.remove(elm.getId()) != null) {
+				sharedRemoved(elm);
+			}
+			localAdded(elm);
+		}
+	}
+
 	private void localAdded(final Place elm) {
 		// TODO Auto-generated method stub
 
@@ -451,44 +716,91 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 
 	}
 
-	private void processTypeAdded(final String name) {
-		// TODO Auto-generated method stub
+	private Iterable<Place> neighbors(final Place p) {
+		final Map<String, Place> neighbors = new HashMap<String, Place>();
+		for (final Place pp : placesOf(transitionsOf(Collections.singleton(p)))) {
+			if (p.getType().equals(pp.getType())) {
+				neighbors.put(pp.getId(), pp);
+			}
+		}
+		neighbors.remove(p.getId());
+		return neighbors.values();
+	}
 
+	private void processTypeAdded(final String name) {
+		refreshPlaces(name);
 	}
 
 	private void processTypeChanged(final String name) {
-		// TODO Auto-generated method stub
-
+		refreshPlaces(name);
 	}
 
 	private void processTypeRemoved(final String name) {
-		// TODO Auto-generated method stub
-
+		refreshPlaces(name);
 	}
 
 	private void productTypeAdded(final String name) {
-		// TODO Auto-generated method stub
-
+		refreshPlaces(name);
 	}
 
 	private void productTypeChanged(final String name) {
-		// TODO Auto-generated method stub
-
+		refreshPlaces(name);
 	}
 
 	private void productTypeRemoved(final String name) {
-		// TODO Auto-generated method stub
+		refreshPlaces(name);
+	}
 
+	private void refreshPlaces(final String type) {
+		final Map<String, Transition> changed = new HashMap<String, Transition>();
+		for (final Page p : pages) {
+			for (final Place pp : p.places()) {
+				if (pp.getType().equals(type)) {
+					changed(pp);
+					for (final Arc a : pp) {
+						changed.put(a.getTransition().getId(), a.getTransition());
+					}
+				}
+			}
+		}
+		for (final Transition t : changed.values()) {
+			arcChanged(t);
+		}
+	}
+
+	private void refreshPlaces(final Transition elm) {
+		final Map<String, Place> places = new HashMap<String, Place>();
+		for (final Arc a : elm) {
+			places.put(a.getPlace().getId(), a.getPlace());
+		}
+		for (final Place p : places.values()) {
+			arcChanged(p);
+		}
 	}
 
 	private void removed(final Element elm) {
-		// TODO only needed for check
+		if (elm instanceof Page) {
+			pages.remove(elm);
+		}
 	}
 
 	private void removeLabel(final Node elm) {
 		try {
 			lm.delete(elm, this);
 		} catch (final Exception e) { // Ignore
+		}
+	}
+
+	private void shared(final Place elm) {
+		addLabel(elm, "Shared");
+		if (sharedPlaces.put(elm.getId(), elm) == null) {
+			if (channelPlaces.remove(elm.getId()) != null) {
+				channelRemoved(elm);
+			}
+			if (localPlaces.remove(elm.getId()) != null) {
+				localRemoved(elm);
+			}
+			sharedAdded(elm);
 		}
 	}
 
@@ -503,12 +815,14 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	}
 
 	private void typeAdded(final Transition elm) {
-		// TODO Auto-generated method stub
-
+		refreshPlaces(elm);
 	}
 
 	private void typeChanged(final Transition elm) {
-		// TODO Auto-generated method stub
+		refreshPlaces(elm);
+	}
 
+	private void typeRemoved(final Transition elm) {
+		refreshPlaces(elm);
 	}
 }

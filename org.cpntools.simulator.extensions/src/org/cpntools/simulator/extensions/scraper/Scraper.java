@@ -3,6 +3,7 @@ package org.cpntools.simulator.extensions.scraper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observer;
@@ -19,7 +20,7 @@ import org.cpntools.simulator.extensions.scraper.Arc.Type;
 /**
  * @author michael
  */
-public class Scraper extends AbstractExtension implements ElementDictionary {
+public class Scraper extends AbstractExtension implements ElementDictionary, Iterable<Page> {
 	/**
 	 * @author michael
 	 */
@@ -130,7 +131,7 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	}
 
 	private Scraper(final boolean b) {
-		addLazySubscription(new Command(400, 2)); // Syntax check page
+		addSubscription(new Command(400, 2)); // Syntax check page
 		new Thread("Scraper worker") {
 			{
 				setDaemon(true);
@@ -158,8 +159,29 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 	 */
 	@Override
 	public void addObserver(final Observer o) {
-		makeLazySubscriptions();
+		notifyMe(o);
 		super.addObserver(o);
+	}
+
+	/**
+	 * @param o
+	 */
+	public void notifyMe(final Observer o) {
+		for (final Page p : pages.values()) {
+			o.update(this, new Added(p));
+			for (final Place place : p.places()) {
+				o.update(this, new Added(place));
+			}
+			for (final Transition transition : p.transitions()) {
+				o.update(this, new Added(transition));
+			}
+			for (final Place place : p.places()) {
+				o.update(this, new ArcChanged(place));
+			}
+			for (final Transition transition : p.transitions()) {
+				o.update(this, new ArcChanged(transition));
+			}
+		}
 	}
 
 	/**
@@ -340,21 +362,42 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 		changed |= !addedP.isEmpty();
 		changed |= !changedP.isEmpty();
 
+		final Map<String, Subpage> removedS = p.retainSubpages(tkeepers);
+		final HashSet<Subpage> changedS = new HashSet<Subpage>();
+		final HashSet<Subpage> addedS = new HashSet<Subpage>();
+		for (int i = packet.getInteger(); i > 0; i--) {
+			boolean localchanged = false;
+			final String sid = packet.getString(); // id
+			final String sname = packet.getString(); // name
+			final String subpage = packet.getString(); // subpageid
+			Subpage s = removedS.remove(sid);
+			if (s == null) {
+				s = new Subpage(this, sid, sname, p, subpage);
+				for (int j = packet.getInteger(); j > 0; j--) {
+					final String port = packet.getString(); // portid
+					final String socket = packet.getString(); // socketid
+					s.addAssignment(new Assignment(s, port, p.getPlace(socket)));
+				}
+				addedS.add(s);
+			} else {
+				localchanged |= s.setName(sname);
+				s.prepareNewAssignments();
+				for (int j = packet.getInteger(); j > 0; j--) {
+					final String port = packet.getString(); // portid
+					final String socket = packet.getString(); // socketid
+					localchanged |= s.addAssignment(new Assignment(s, port, p.getPlace(socket)));
+				}
+				localchanged |= s.finishNewAssignments();
+				if (localchanged) {
+					changedS.add(s);
+				}
+			}
+		}
+
 		final Map<String, Transition> removedT = p.retainTransitions(tkeepers);
 		final HashSet<Transition> changedT = new HashSet<Transition>();
 		final HashSet<Transition> addedT = new HashSet<Transition>();
 		final HashSet<Transition> arcChangedT = new HashSet<Transition>();
-		for (int i = packet.getInteger(); i > 0; i--) {
-			packet.getString(); // id
-			packet.getString(); // name
-			packet.getString(); // subpageid
-			for (int j = packet.getInteger(); j > 0; j--) {
-				packet.getString(); // portid
-				packet.getString(); // socketid
-			}
-		}
-		// Ignore subst transitions
-
 		for (int i = packet.getInteger(); i > 0; i--) {
 			boolean localchanged = false;
 			final String tid = packet.getString();
@@ -468,5 +511,13 @@ public class Scraper extends AbstractExtension implements ElementDictionary {
 			break;
 		}
 
+	}
+
+	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<Page> iterator() {
+		return pages.values().iterator();
 	}
 }

@@ -50,7 +50,13 @@ public class Handler implements Channel {
 					switch (p.getOpcode()) {
 					case 9: // extension
 						try {
-							p = handleCommand(p);
+							try {
+								p = handleCommand(p);
+							} catch (final Exception e) {
+								e.printStackTrace();
+								p = new Packet(7, -1);
+								p.addString(e.getMessage());
+							}
 							sendLock.lock();
 // System.out.println("SEnda " + p);
 							p.send(out);

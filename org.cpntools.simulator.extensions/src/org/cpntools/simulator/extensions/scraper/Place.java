@@ -87,5 +87,4 @@ public class Place extends Node {
 		this.type = type;
 		return true;
 	}
-
 }

@@ -13,6 +13,7 @@ import java.util.Set;
 public class Page extends HasName {
 	private final Map<String, Place> places = new HashMap<String, Place>();
 	private final Map<String, Transition> transitions = new HashMap<String, Transition>();
+	private final Map<String, Subpage> subpages = new HashMap<String, Subpage>();
 
 	/**
 	 * @param dictionary
@@ -38,6 +39,13 @@ public class Page extends HasName {
 	}
 
 	/**
+	 * @param s
+	 */
+	public void add(final Subpage s) {
+		subpages.put(s.getId(), s);
+	}
+
+	/**
 	 * @param id
 	 * @return
 	 */
@@ -51,6 +59,14 @@ public class Page extends HasName {
 	 */
 	public Transition getTransition(final String id) {
 		return transitions.get(id);
+	}
+
+	/**
+	 * @param id
+	 * @return
+	 */
+	public Subpage getSubpage(final String id) {
+		return subpages.get(id);
 	}
 
 	/**
@@ -83,6 +99,26 @@ public class Page extends HasName {
 		return transitions.values();
 	}
 
+	/**
+	 * @return
+	 */
+	public Iterable<Place> sockets() {
+		final HashSet<Place> sockets = new HashSet<Place>();
+		for (final Subpage s : subpages()) {
+			for (final Assignment a : s.assignments()) {
+				sockets.add(a.getSocket());
+			}
+		}
+		return sockets;
+	}
+
+	/**
+	 * @return
+	 */
+	public Iterable<Subpage> subpages() {
+		return subpages.values();
+	}
+
 	private <E extends Element> Map<String, E> retain(final Collection<String> ids, final Map<String, E> nodes) {
 		final Set<String> idset = new HashSet<String>(ids);
 		final Map<String, E> result = new HashMap<String, E>();
@@ -92,5 +128,13 @@ public class Page extends HasName {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * @param ids
+	 * @return
+	 */
+	public Map<String, Subpage> retainSubpages(final Collection<String> ids) {
+		return retain(ids, subpages);
 	}
 }
