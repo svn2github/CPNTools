@@ -164,27 +164,6 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 	}
 
 	/**
-	 * @param o
-	 */
-	public void notifyMe(final Observer o) {
-		for (final Page p : pages.values()) {
-			o.update(this, new Added(p));
-			for (final Place place : p.places()) {
-				o.update(this, new Added(place));
-			}
-			for (final Transition transition : p.transitions()) {
-				o.update(this, new Added(transition));
-			}
-			for (final Place place : p.places()) {
-				o.update(this, new ArcChanged(place));
-			}
-			for (final Transition transition : p.transitions()) {
-				o.update(this, new ArcChanged(transition));
-			}
-		}
-	}
-
-	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -243,6 +222,35 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 	}
 
 	/**
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<Page> iterator() {
+		return pages.values().iterator();
+	}
+
+	/**
+	 * @param o
+	 */
+	public void notifyMe(final Observer o) {
+		for (final Page p : pages.values()) {
+			o.update(this, new Added(p));
+			for (final Place place : p.places()) {
+				o.update(this, new Added(place));
+			}
+			for (final Transition transition : p.transitions()) {
+				o.update(this, new Added(transition));
+			}
+			for (final Place place : p.places()) {
+				o.update(this, new ArcChanged(place));
+			}
+			for (final Transition transition : p.transitions()) {
+				o.update(this, new ArcChanged(transition));
+			}
+		}
+	}
+
+	/**
 	 * @return
 	 */
 	public Iterable<Page> pages() {
@@ -281,6 +289,7 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 	}
 
 	private void handleSyntaxCheck(final Packet packet) {
+		System.out.println(packet);
 		packet.reset();
 		packet.getInteger(); // cmd
 		packet.getInteger(); // subcmd
@@ -288,14 +297,15 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 		boolean added = false;
 		final String id = packet.getString();
 		final String name = packet.getString();
-		packet.getInteger(); // Prime multiplicity
+		final int prime = packet.getInteger(); // Prime multiplicity
 		Page p = getPage(id);
 		if (p == null) {
 			added = true;
-			p = new Page(this, id, name);
+			p = new Page(this, id, name, prime > 0);
 			add(p);
 		} else {
 			changed |= p.setName(name);
+			changed |= p.setPrime(prime > 0);
 		}
 
 		final List<String> pkeepers = new ArrayList<String>();
@@ -362,42 +372,55 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 		changed |= !addedP.isEmpty();
 		changed |= !changedP.isEmpty();
 
-		final Map<String, Subpage> removedS = p.retainSubpages(tkeepers);
-		final HashSet<Subpage> changedS = new HashSet<Subpage>();
-		final HashSet<Subpage> addedS = new HashSet<Subpage>();
-		for (int i = packet.getInteger(); i > 0; i--) {
-			boolean localchanged = false;
-			final String sid = packet.getString(); // id
-			final String sname = packet.getString(); // name
-			final String subpage = packet.getString(); // subpageid
-			Subpage s = removedS.remove(sid);
-			if (s == null) {
-				s = new Subpage(this, sid, sname, p, subpage);
-				for (int j = packet.getInteger(); j > 0; j--) {
-					final String port = packet.getString(); // portid
-					final String socket = packet.getString(); // socketid
-					s.addAssignment(new Assignment(s, port, p.getPlace(socket)));
-				}
-				addedS.add(s);
-			} else {
-				localchanged |= s.setName(sname);
-				s.prepareNewAssignments();
-				for (int j = packet.getInteger(); j > 0; j--) {
-					final String port = packet.getString(); // portid
-					final String socket = packet.getString(); // socketid
-					localchanged |= s.addAssignment(new Assignment(s, port, p.getPlace(socket)));
-				}
-				localchanged |= s.finishNewAssignments();
-				if (localchanged) {
-					changedS.add(s);
-				}
-			}
-		}
-
 		final Map<String, Transition> removedT = p.retainTransitions(tkeepers);
 		final HashSet<Transition> changedT = new HashSet<Transition>();
 		final HashSet<Transition> addedT = new HashSet<Transition>();
 		final HashSet<Transition> arcChangedT = new HashSet<Transition>();
+		for (int i = packet.getInteger(); i > 0; i--) {
+			boolean localchanged = false;
+			boolean justChanged = true;
+			final String sid = packet.getString(); // id
+			final String sname = packet.getString(); // name
+			final String subpage = packet.getString(); // subpageid
+			Transition s = removedT.remove(sid);
+			if (s == null) {
+				s = new Transition(this, sid, sname, p, "", "", "", "", "", subpage, true, true);
+				addedT.add(s);
+				justChanged = false;
+			} else {
+				localchanged |= s.setName(sname);
+				localchanged |= s.setGuard("");
+				localchanged |= s.setPriority("");
+				localchanged |= s.setTime("");
+				localchanged |= s.setCode("");
+				localchanged |= s.setChannel("");
+				localchanged |= s.setSubpage(subpage);
+				localchanged |= s.setControllable(true);
+				localchanged |= s.setSubstitution(true);
+			}
+			s.prepareNewArcs();
+			s.prepareNewPortSocket();
+			boolean arcChanged = false;
+			int aid = 0;
+			for (int j = packet.getInteger(); j > 0; j--) {
+				final String port = packet.getString(); // portid
+				final String socket = packet.getString(); // socketid
+				localchanged |= s.addPortSocket(port, socket);
+				arcChanged = new Arc(this, sid + "_" + aid++, "", Arc.Type.BOTHDIR, p, s, p.getPlace(socket))
+				        .addToNodes() | arcChanged;
+			}
+			localchanged |= !s.finishNewPortSocket().isEmpty();
+			final Set<Place> finishNewArcs = s.finishNewArcs();
+			arcChangedP.addAll(finishNewArcs);
+			arcChanged |= !finishNewArcs.isEmpty();
+			if (localchanged && justChanged) {
+				changedT.add(s);
+			}
+			if (arcChanged && justChanged) {
+				arcChangedT.add(s);
+			}
+		}
+
 		for (int i = packet.getInteger(); i > 0; i--) {
 			boolean localchanged = false;
 			final String tid = packet.getString();
@@ -410,7 +433,8 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 			final boolean tcontrollable = packet.getBoolean();
 			Transition t = removedT.remove(tid);
 			if (t == null) {
-				t = new Transition(this, tid, tname, p, tguard, tpriority, ttime, tcode, tchannel, tcontrollable);
+				t = new Transition(this, tid, tname, p, tguard, tpriority, ttime, tcode, tchannel, "", tcontrollable,
+				        false);
 				addedT.add(t);
 			} else {
 				localchanged |= t.setName(tname);
@@ -419,7 +443,11 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 				localchanged |= t.setCode(tcode);
 				localchanged |= t.setChannel(tchannel);
 				localchanged |= t.setPriority(tpriority);
+				localchanged |= t.setSubpage("");
 				localchanged |= t.setControllable(tcontrollable);
+				localchanged |= t.setSubstitution(false);
+				t.prepareNewPortSocket();
+				localchanged |= !t.finishNewPortSocket().isEmpty();
 				if (localchanged) {
 					changedT.add(t);
 				}
@@ -511,13 +539,5 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 			break;
 		}
 
-	}
-
-	/**
-	 * @see java.lang.Iterable#iterator()
-	 */
-	@Override
-	public Iterator<Page> iterator() {
-		return pages.values().iterator();
 	}
 }

@@ -17,11 +17,18 @@ public class Transition extends Node {
 	private boolean controllable;
 	private String guard;
 	private final Map<String, Arc> oldArcs = new HashMap<String, Arc>();
+	private final Map<String, String> oldPortSock = new HashMap<String, String>();
+	private final Map<String, String> portSocket = new HashMap<String, String>();
 	private String priority;
 
-	private String time;
+	private String subpage;
 
+	private boolean substitution;
+
+	private String time;
 	final Set<Place> changedPlaces = new HashSet<Place>();
+
+	final Set<String> changedSockets = new HashSet<String>();
 
 	/**
 	 * @param dictionary
@@ -33,18 +40,22 @@ public class Transition extends Node {
 	 * @param time
 	 * @param code
 	 * @param channel
+	 * @param subpage
 	 * @param controllable
+	 * @param substitution
 	 */
 	public Transition(final ElementDictionary dictionary, final String id, final String name, final Page page,
 	        final String guard, final String priority, final String time, final String code, final String channel,
-	        final boolean controllable) {
+	        final String subpage, final boolean controllable, final boolean substitution) {
 		super(dictionary, id, name, page);
+		this.subpage = subpage;
 		setChannel(channel);
 		setControllable(controllable);
 		setGuard(guard);
 		setPriority(priority);
 		setTime(time);
 		setCode(code);
+		this.substitution = substitution;
 	}
 
 	/**
@@ -62,6 +73,21 @@ public class Transition extends Node {
 			}
 			super.addArc(a);
 			changedPlaces.add(a.getPlace());
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * @param port
+	 * @param socket
+	 * @return
+	 */
+	public boolean addPortSocket(final String port, final String socket) {
+		final String oldPort = oldPortSock.remove(socket);
+		if (oldPort == null || !oldPort.equals(port)) {
+			portSocket.put(socket, port);
+			changedSockets.add(socket);
 			return true;
 		}
 		return false;
@@ -119,6 +145,18 @@ public class Transition extends Node {
 	/**
 	 * @return
 	 */
+	public Set<String> finishNewPortSocket() {
+		for (final String socket : oldPortSock.keySet()) {
+			portSocket.remove(socket);
+			changedSockets.add(socket);
+		}
+		oldPortSock.clear();
+		return changedSockets;
+	}
+
+	/**
+	 * @return
+	 */
 	public String getChannel() {
 		return channel;
 	}
@@ -142,6 +180,13 @@ public class Transition extends Node {
 	 */
 	public String getPriority() {
 		return priority;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getSubpage() {
+		return subpage;
 	}
 
 	/**
@@ -175,6 +220,13 @@ public class Transition extends Node {
 	}
 
 	/**
+	 * @return
+	 */
+	public boolean isSubstitution() {
+		return substitution;
+	}
+
+	/**
 	 * 
 	 */
 	public void prepareNewArcs() {
@@ -184,6 +236,15 @@ public class Transition extends Node {
 		oldArcs.putAll(outArcs); // Not test as they are in both in and out! sneaky!
 		oldArcs.putAll(resetArcs);
 		oldArcs.putAll(inhibitorArcs);
+	}
+
+	/**
+	 * 
+	 */
+	public void prepareNewPortSocket() {
+		oldPortSock.clear();
+		changedSockets.clear();
+		oldPortSock.putAll(portSocket);
 	}
 
 	/**
@@ -233,6 +294,26 @@ public class Transition extends Node {
 	public boolean setPriority(final String priority) {
 		if (priority.equals(this.priority)) { return false; }
 		this.priority = priority;
+		return true;
+	}
+
+	/**
+	 * @param subpage
+	 * @return
+	 */
+	public boolean setSubpage(final String subpage) {
+		if (subpage.equals(subpage)) { return false; }
+		this.subpage = subpage;
+		return true;
+	}
+
+	/**
+	 * @param substitution
+	 * @return
+	 */
+	public boolean setSubstitution(final boolean substitution) {
+		if (substitution == this.substitution) { return false; }
+		this.substitution = substitution;
 		return true;
 	}
 

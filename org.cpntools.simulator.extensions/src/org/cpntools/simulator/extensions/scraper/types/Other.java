@@ -17,13 +17,6 @@ public class Other extends Type {
 	/**
 	 * @return
 	 */
-	public java.lang.String getName() {
-		return name;
-	}
-
-	/**
-	 * @return
-	 */
 	@Override
 	public java.lang.String getJavaName() {
 		final StringBuilder result = new StringBuilder();
@@ -38,6 +31,13 @@ public class Other extends Type {
 			}
 		}
 		return result.toString();
+	}
+
+	/**
+	 * @return
+	 */
+	public java.lang.String getName() {
+		return name;
 	}
 
 }

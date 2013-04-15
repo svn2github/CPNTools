@@ -62,6 +62,8 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 
 	private final Map<String, List<String>> productTypes = new HashMap<String, List<String>>();
 
+	private final Map<String, Place> resourcePlaces = new HashMap<String, Place>();
+
 	private final Map<String, Place> sharedPlaces = new HashMap<String, Place>();
 
 	private final Map<String, Type> types = new HashMap<String, Type>();
@@ -106,6 +108,7 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 				processGroups.clear();
 				processPlaces.clear();
 				sharedPlaces.clear();
+				resourcePlaces.clear();
 			}
 		}
 	}
@@ -281,6 +284,13 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	}
 
 	/**
+	 * @return
+	 */
+	public Iterable<Place> resourcePlaces() {
+		return resourcePlaces.values();
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.AbstractExtension#setChannel(org.cpntools.simulator.extensions.Channel)
 	 */
 	@Override
@@ -380,7 +390,29 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	}
 
 	private void arcChanged(final Place elm) {
-		if (processPlaces.containsKey(elm.getId())) { return; }
+		if (processPlaces.containsKey(elm.getId())) {
+			boolean entry = false;
+			boolean exit = false;
+			if (!elm.isSocket() && !elm.out().iterator().hasNext()) {
+				exit = true;
+			}
+			if (!elm.isSocket() && !elm.in().iterator().hasNext()) {
+				entry = true;
+			}
+			if (!"".equals(elm.getInitMark())) {
+				entry = true;
+			}
+			if (entry && exit) {
+				addLabel(elm, "Entry/Exit");
+			} else if (entry) {
+				addLabel(elm, "Entry");
+			} else if (exit) {
+				addLabel(elm, "Exit");
+			} else {
+				removeLabel(elm);
+			}
+			return;
+		}
 		final Set<String> inTransitions = new HashSet<String>();
 		final Set<String> outTransitions = new HashSet<String>();
 		final Set<String> inTypes = new HashSet<String>();
@@ -415,10 +447,16 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 			local(elm); // UNIT
 		} else if (outTypes.size() == 1 && outTypes.contains("UNIT")
 		        && Collections.disjoint(inTransitions, outTransitions)) {
-			buffer(elm); // UNIT
+			if (types.get(elm.getType()) instanceof Unit && !"".equals(elm.getInitMark())) {
+				resource(elm);
+			} else {
+				buffer(elm); // UNIT
+			}
 		} else {
 			// A buffer out is an input somewhere else and not handled here
-			if (in == out && in == inTransitions.size() && inTransitions.equals(outTransitions)
+			if (types.get(elm.getType()) instanceof Unit && !"".equals(elm.getInitMark())) {
+				resource(elm);
+			} else if (in == out && in == inTransitions.size() && inTransitions.equals(outTransitions)
 			        && !inTypes.contains(null)) {
 				shared(elm);
 			} else {
@@ -472,6 +510,9 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 			if (sharedPlaces.remove(elm.getId()) != null) {
 				sharedRemoved(elm);
 			}
+			if (resourcePlaces.remove(elm.getId()) != null) {
+				resourceRemoved(elm);
+			}
 			channelAdded(elm);
 		}
 	}
@@ -487,11 +528,7 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 	private void changed(final Place elm) {
 		if (processTypes.contains(elm.getType())) {
 			processPlaces.put(elm.getId(), elm);
-			if ("".equals(elm.getInitMark())) {
-				removeLabel(elm);
-			} else {
-				addLabel(elm, "Entry");
-			}
+			arcChanged(elm);
 			return;
 		} else {
 			processPlaces.remove(elm.getId());
@@ -539,6 +576,9 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		}
 		if (sharedPlaces.remove(elm.getId()) != null) {
 			sharedRemoved(elm);
+		}
+		if (resourcePlaces.remove(elm.getId()) != null) {
+			resourceRemoved(elm);
 		}
 	}
 
@@ -702,6 +742,9 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 			if (sharedPlaces.remove(elm.getId()) != null) {
 				sharedRemoved(elm);
 			}
+			if (resourcePlaces.remove(elm.getId()) != null) {
+				resourceRemoved(elm);
+			}
 			localAdded(elm);
 		}
 	}
@@ -791,9 +834,33 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 		}
 	}
 
+	private void resource(final Place elm) {
+		addLabel(elm, "Resource");
+		if (resourcePlaces.put(elm.getId(), elm) == null) {
+			if (sharedPlaces.remove(elm.getId()) != null) {
+				sharedRemoved(elm);
+			}
+			if (channelPlaces.remove(elm.getId()) != null) {
+				channelRemoved(elm);
+			}
+			if (localPlaces.remove(elm.getId()) != null) {
+				localRemoved(elm);
+			}
+			sharedAdded(elm);
+		}
+	}
+
+	private void resourceRemoved(final Place elm) {
+		// TODO Auto-generated method stub
+
+	}
+
 	private void shared(final Place elm) {
 		addLabel(elm, "Shared");
 		if (sharedPlaces.put(elm.getId(), elm) == null) {
+			if (resourcePlaces.remove(elm.getId()) != null) {
+				resourceRemoved(elm);
+			}
 			if (channelPlaces.remove(elm.getId()) != null) {
 				channelRemoved(elm);
 			}

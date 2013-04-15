@@ -8,7 +8,7 @@ import org.cpntools.simulator.extensions.scraper.types.Type;
 /**
  * @author michael
  */
-public class Variable {
+public class Variable implements HasJavaName {
 
 	/**
 	 * @param args
@@ -138,6 +138,7 @@ public class Variable {
 	/**
 	 * @return
 	 */
+	@Override
 	public String getJavaName() {
 		return Variable.makeJavaName("".equals(name) ? getId() : name);
 	}
@@ -178,6 +179,7 @@ public class Variable {
 	/**
 	 * @param name
 	 */
+	@Override
 	public void setName(final String name) {
 		this.name = name;
 	}

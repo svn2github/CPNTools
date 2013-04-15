@@ -14,6 +14,15 @@ public class RemoveUnusedTemporaries extends Visitor<Object, Object, ASTNode, Bo
 	private Set<String> used;
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AcquireLock)
+	 */
+	@Override
+	public ASTNode visit(final AcquireLock e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.And)
 	 */
 	@Override
@@ -33,6 +42,15 @@ public class RemoveUnusedTemporaries extends Visitor<Object, Object, ASTNode, Bo
 				return visit(e.getNext());
 			}
 		}
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Comment)
+	 */
+	@Override
+	public ASTNode visit(final Comment e) {
 		e.setNext(visit(e.getNext()));
 		return e;
 	}
@@ -127,6 +145,24 @@ public class RemoveUnusedTemporaries extends Visitor<Object, Object, ASTNode, Bo
 	@Override
 	public Boolean visit(final Receive e) {
 		return false;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.ReleaseLock)
+	 */
+	@Override
+	public ASTNode visit(final ReleaseLock e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Return)
+	 */
+	@Override
+	public ASTNode visit(final Return e) {
+		e.setNext(visit(e.getNext()));
+		return e;
 	}
 
 	/**

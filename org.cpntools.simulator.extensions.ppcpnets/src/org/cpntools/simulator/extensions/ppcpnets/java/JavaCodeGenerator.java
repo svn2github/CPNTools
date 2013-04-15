@@ -9,6 +9,7 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,8 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 	private static final Pattern UNIT_PATTERN = Pattern
 	        .compile("\\p{Space}*+(1\\p{Space}*`\\p{Space}*)?+\\(?+\\p{Space}*+(.*)\\p{Space}*+\\)?+\\p{Space}*");
 	private final Instrument exportInstrument;
+
+	Pattern initUnit = Pattern.compile("([0-9]+)`\\(\\)");
 
 	/**
 	 * 
@@ -74,8 +77,8 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 						System.out.println(checker.partition());
 						System.out.println(checker.sharedPlaces());
 						System.out.println(checker.channelPlaces());
-						final ControlFlowGraph cfg = makeCFG(checker.partition(), checker.sharedPlaces(),
-						        checker.channelPlaces(), checker);
+						final ControlFlowGraph cfg = buildCFG(checker.partition(), checker.sharedPlaces(),
+						        checker.channelPlaces(), checker.resourcePlaces(), checker);
 						checkVariables(cfg, checker);
 						final AbstractSyntaxTree ast = buildAST(cfg, checker.getTypes(), checker);
 						emit(ast);
@@ -106,16 +109,108 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 			final Map<String, Variable> temporaries = new TreeMap<String, Variable>();
 			final Map<String, Variable> locals = new TreeMap<String, Variable>();
 			final Map<String, Variable> parameters = new TreeMap<String, Variable>();
+			final Set<Lock> locks = new TreeSet<Lock>();
 			ASTNode entry = translate(process.getValue(), translations, new HashMap<CFGNode, Expression>(), types,
-			        checker, temporaries, locals, parameters);
+			        checker, temporaries, locals, parameters, locks);
 			for (final Entry<String, Variable> e : temporaries.entrySet()) {
 				entry = new Declaration(entry, e.getValue());
 			}
 			final Process p = new Process(process.getKey(), entry, new ArrayList<Variable>(locals.values()),
-			        new ArrayList<Variable>(parameters.values()));
+			        new ArrayList<Variable>(parameters.values()), new ArrayList<Lock>(locks));
 			ast.addProcess(p);
 		}
 		return ast;
+	}
+
+	private ControlFlowGraph buildCFG(final Iterable<Set<Place>> partition, final Iterable<Place> sharedPlaces,
+	        final Iterable<Place> channelPlaces, final Iterable<Place> resourcePlaces, final PPCPNetChecker checker) {
+		final Map<String, Global> shared = ensureUniqueNames(buildShared(sharedPlaces, checker.getTypes()));
+		final Map<String, Channel> channels = ensureUniqueNames(buildChannels(channelPlaces, checker.getTypes()));
+		final Map<String, Lock> resources = ensureUniqueNames(buildResources(resourcePlaces));
+		final Map<String, CFGNode> processes = new HashMap<String, CFGNode>();
+		for (final Set<Place> p : partition) {
+			assert !p.isEmpty();
+			final String type = p.iterator().next().getType();
+			String name = new Other(type).getJavaName();
+			CFGNode init = null;
+			while (processes.containsKey(name)) {
+				name = Variable.nextName(name);
+			}
+			final HashMap<String, CFGNode> nodes = new HashMap<String, CFGNode>();
+			final Iterable<Transition> t = checker.transitionsOf(p);
+			final Map<String, Local> locals = ensureUniqueNames(buildLocals(checker.localPlacesOf(t),
+			        checker.getTypes()));
+			for (final Transition transition : t) {
+				final Pair<String, Place> predecessor = checker.prePlace(transition);
+				assert checker.isVariable(predecessor.getSecond().getType(), predecessor.getFirst());
+				final CFGNode node = new CFGNode(transition.getName(), transition.getGuard(), predecessor.getFirst(),
+				        predecessor.getSecond().getType());
+				if (!predecessor.getSecond().isSocket()
+				        && (!"".equals(predecessor.getSecond().getInitMark()) || !predecessor.getSecond().in()
+				                .iterator().hasNext())) {
+					assert init == null;
+					init = node;
+				}
+				nodes.put(transition.getId(), node);
+			}
+			assert init != null;
+			processes.put(name, init);
+			for (final Transition transition : t) {
+				checker.prePlace(transition);
+				final CFGNode node = nodes.get(transition.getId());
+				final Map<String, String> in = new HashMap<String, String>();
+				final Map<String, Pair<Place, String>> out = new HashMap<String, Pair<Place, String>>();
+				for (final Arc a : transition.in()) {
+					final String old = in.put(a.getPlace().getId(), a.getInscription());
+					assert old == null;
+				}
+				for (final Arc a : transition.out()) {
+					final Pair<Place, String> old = out.put(a.getPlace().getId(),
+					        Pair.createPair(a.getPlace(), a.getInscription()));
+					assert old == null;
+				}
+				for (final String id : new ArrayList<String>(in.keySet())) {
+					if (locals.containsKey(id)) {
+						final Pair<Place, String> outExp = out.remove(id);
+						final String inExp = in.remove(id);
+						assert outExp != null;
+						node.addAssignment(inExp, outExp.getSecond(), locals.get(id));
+					} else if (shared.containsKey(id)) {
+						final Pair<Place, String> outExp = out.remove(id);
+						final String inExp = in.remove(id);
+						assert outExp != null;
+						node.addAssignment(inExp, outExp.getSecond(), shared.get(id));
+					} else if (channels.containsKey(id)) {
+						assert !out.containsKey(id);
+						node.receive(channels.get(id), in.remove(id));
+					} else if (resources.containsKey(id)) {
+						node.addLock(resources.get(id));
+						final String expr = in.remove(id);
+						assert extractCount(expr) == 1;
+					} else {
+						assert checker.isProcessPlace(id);
+					}
+				}
+				assert in.size() == p.size();
+				for (final String id : new ArrayList<String>(out.keySet())) {
+					if (channels.containsKey(id)) {
+						assert !in.containsKey(id);
+						node.send(channels.get(id), in.remove(id));
+					} else if (resources.containsKey(id)) {
+						node.addUnlock(resources.get(id));
+					} else {
+						final Pair<Place, String> pair = out.remove(id);
+						for (final Arc a : pair.getFirst().out()) {
+							final CFGNode successor = nodes.get(a.getTransition().getId());
+							if (successor != null) {
+								node.addSuccessor(pair.getSecond(), successor, a.getTransition().getId());
+							}
+						}
+					}
+				}
+			}
+		}
+		return new ControlFlowGraph(shared.values(), channels.values(), processes);
 	}
 
 	private Map<String, Channel> buildChannels(final Iterable<Place> places, final Map<String, Type> types) {
@@ -150,6 +245,14 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 		final Map<String, Local> result = new HashMap<String, Local>();
 		for (final Place p : places) {
 			result.put(p.getId(), new Local(p.getId(), p.getName(), types.get(p.getType()), p.getType()));
+		}
+		return result;
+	}
+
+	private Map<String, Lock> buildResources(final Iterable<Place> places) {
+		final Map<String, Lock> result = new HashMap<String, Lock>();
+		for (final Place p : places) {
+			result.put(p.getId(), new Lock(p.getName(), extractCount(p.getInitMark())));
 		}
 		return result;
 	}
@@ -197,7 +300,7 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 		new JavaVisitor(System.out).visit(ast);
 	}
 
-	private <T extends Variable> Map<String, T> ensureUniqueNames(final Map<String, T> variables) {
+	private <T extends HasJavaName> Map<String, T> ensureUniqueNames(final Map<String, T> variables) {
 		final Map<String, T> names = new HashMap<String, T>();
 		for (final T global : variables.values()) {
 			names.put(global.getJavaName(), global);
@@ -217,8 +320,18 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 		return variables;
 	}
 
+	private int extractCount(final String initMark) {
+		assert initMark != null;
+		final String i = initMark.trim();
+		if ("()".equals(i)) { return 1; }
+		final Matcher m = initUnit.matcher(i);
+		if (!m.matches()) { return 1; }
+		return Integer.parseInt(m.group(1));
+	}
+
 	private String getTypeName(final String pvariable, final Variable variable, final PPCPNetChecker checker) {
 		final List<String> product = checker.getProduct(variable.getOriginalType());
+		if (product == null) { return variable.getOriginalType(); }
 		assert product.size() == 2;
 		if (checker.isVariable(product.get(0), pvariable)) { return product.get(1); }
 		if (checker.isVariable(product.get(1), pvariable)) { return product.get(0); }
@@ -251,88 +364,6 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 			}
 		}
 		return null;
-	}
-
-	private ControlFlowGraph makeCFG(final Iterable<Set<Place>> partition, final Iterable<Place> sharedPlaces,
-	        final Iterable<Place> channelPlaces, final PPCPNetChecker checker) {
-		final Map<String, Global> shared = ensureUniqueNames(buildShared(sharedPlaces, checker.getTypes()));
-		final Map<String, Channel> channels = ensureUniqueNames(buildChannels(channelPlaces, checker.getTypes()));
-		final Map<String, CFGNode> processes = new HashMap<String, CFGNode>();
-		for (final Set<Place> p : partition) {
-			assert !p.isEmpty();
-			final String type = p.iterator().next().getType();
-			String name = new Other(type).getJavaName();
-			CFGNode init = null;
-			while (processes.containsKey(name)) {
-				name = Variable.nextName(name);
-			}
-			final HashMap<String, CFGNode> nodes = new HashMap<String, CFGNode>();
-			final Iterable<Transition> t = checker.transitionsOf(p);
-			final Map<String, Local> locals = ensureUniqueNames(buildLocals(checker.localPlacesOf(t),
-			        checker.getTypes()));
-			for (final Transition transition : t) {
-				final Pair<String, Place> predecessor = checker.prePlace(transition);
-				assert checker.isVariable(predecessor.getSecond().getType(), predecessor.getFirst());
-				final CFGNode node = new CFGNode(transition.getName(), transition.getGuard(), predecessor.getFirst(),
-				        predecessor.getSecond().getType());
-				if (!"".equals(predecessor.getSecond().getInitMark())) {
-					assert init == null;
-					init = node;
-				}
-				nodes.put(transition.getId(), node);
-			}
-			assert init != null;
-			processes.put(name, init);
-			for (final Transition transition : t) {
-				checker.prePlace(transition);
-				final CFGNode node = nodes.get(transition.getId());
-				final Map<String, String> in = new HashMap<String, String>();
-				final Map<String, Pair<Place, String>> out = new HashMap<String, Pair<Place, String>>();
-				for (final Arc a : transition.in()) {
-					final String old = in.put(a.getPlace().getId(), a.getInscription());
-					assert old == null;
-				}
-				for (final Arc a : transition.out()) {
-					final Pair<Place, String> old = out.put(a.getPlace().getId(),
-					        Pair.createPair(a.getPlace(), a.getInscription()));
-					assert old == null;
-				}
-				for (final String id : new ArrayList<String>(in.keySet())) {
-					if (locals.containsKey(id)) {
-						final Pair<Place, String> outExp = out.remove(id);
-						final String inExp = in.remove(id);
-						assert outExp != null;
-						node.addAssignment(inExp, outExp.getSecond(), locals.get(id));
-					} else if (shared.containsKey(id)) {
-						final Pair<Place, String> outExp = out.remove(id);
-						final String inExp = in.remove(id);
-						assert outExp != null;
-						node.addAssignment(inExp, outExp.getSecond(), shared.get(id));
-					} else if (channels.containsKey(id)) {
-						assert !out.containsKey(id);
-						node.receive(channels.get(id), in.remove(id));
-					} else {
-						assert checker.isProcessPlace(id);
-					}
-				}
-				assert in.size() == p.size();
-				for (final String id : new ArrayList<String>(out.keySet())) {
-					if (channels.containsKey(id)) {
-						assert !in.containsKey(id);
-						node.send(channels.get(id), in.remove(id));
-					} else {
-						final Pair<Place, String> pair = out.remove(id);
-						for (final Arc a : pair.getFirst().out()) {
-							final CFGNode successor = nodes.get(a.getTransition().getId());
-							if (successor != null) {
-								node.addSuccessor(pair.getSecond(), successor);
-							}
-						}
-					}
-				}
-			}
-		}
-		return new ControlFlowGraph(shared.values(), channels.values(), processes);
 	}
 
 	private String matchesProduct(final String process, final String expr, final String processType,
@@ -380,11 +411,16 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 	private Label translate(final CFGNode value, final Map<CFGNode, Label> translations,
 	        final Map<CFGNode, Expression> guards, final Map<String, Type> types, final PPCPNetChecker checker,
 	        final Map<String, Variable> temporaries, final Map<String, Variable> locals,
-	        final Map<String, Variable> parameters) {
+	        final Map<String, Variable> parameters, final Set<Lock> locks) {
 		if (translations.containsKey(value)) { return translations.get(value); }
 		ASTNode code = new Skip(null);
-		final ASTNode first = code;
+		ASTNode first = code;
 		guards.put(value, new Whatever(value.getGuard()));
+
+		for (final Lock l : value.unlocks()) {
+			locks.add(l);
+			code = new ReleaseLock(code, l);
+		}
 
 		for (final Entry<Channel, String> e : value.sends()) {
 			parameters.put("channel." + e.getKey().getJavaName(), createSendChannel(e.getKey()));
@@ -399,16 +435,36 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 			}
 			final String expr = getVariable(value.getVariable(), a.getWrite(), value.getType(), a.getVariable()
 			        .getOriginalType(), checker, a.getVariable() instanceof Local, false);
+			if (expr == null) {
+				System.err.println("Null here");
+			}
 			code = new AssignmentExp(code, a.getVariable(), new Whatever(expr));
 		}
 
 		final Map<String, Variable> collissions = new HashMap<String, Variable>();
 		for (final Assignment a : value.assignments()) {
-			final String variable = getVariable(value.getVariable(), a.getRead(), value.getType(), a.getVariable()
+			String variable = getVariable(value.getVariable(), a.getRead(), value.getType(), a.getVariable()
 			        .getOriginalType(), checker, a.getVariable() instanceof Local, true);
+			if (variable == null) {
+				System.err.println("Null everywhere");
+			}
 			assert variable != null;
 			final Variable old;
-			if (!(a.getVariable() instanceof Global)) {
+			if (variable == null) {
+				assert a.getVariable() instanceof Local;
+				String name = "tmp";
+				while (collissions.containsKey(name)) {
+					name = Variable.nextName(name);
+				}
+				variable = name;
+				final String expr = getVariable(value.getVariable(), a.getRead(), value.getType(), a.getVariable()
+				        .getOriginalType(), checker, a.getVariable() instanceof Local, false);
+				guards.put(value,
+				        new And(guards.get(value), new Equal(new Whatever(expr),
+				                new VariableExpression(a.getVariable()))));
+				old = collissions.put(name, a.getVariable());
+				assert old == null;
+			} else if (!(a.getVariable() instanceof Global)) {
 				old = collissions.put(variable, createLocal(value.getVariable(), a.getVariable(), checker));
 			} else {
 				old = collissions.put(variable, a.getVariable());
@@ -439,15 +495,41 @@ public class JavaCodeGenerator extends AbstractExtension implements Observer {
 			code = new AssignmentExp(code, temporary, new Receive(readChannel));
 		}
 
+		for (final Lock l : value.locks()) {
+			locks.add(l);
+			code = new AcquireLock(code, l);
+		}
+
+		if ("UNIT".equals(value.getType()) && code instanceof Skip && code == first) {
+			first = code = new Comment(value.getName());
+		}
 		code = new Label(code, value.getName());
 		translations.put(value, (Label) code);
 
 		ASTNode conditionals = null;
-		for (final Entry<Pair<String, String>, CFGNode> e : value.successors()) {
+		boolean firstCond = true;
+		for (final Entry<Pair<Pair<String, String>, String>, CFGNode> e : value.successors()) {
 			final Label translated = translate(e.getValue(), translations, guards, types, checker, temporaries, locals,
-			        parameters);
-			conditionals = new Conditional(new And(buildGuard(value.getVariable(), e.getKey().getFirst(),
-			        value.getType(), checker), guards.get(e.getValue())), conditionals, translated);
+			        parameters, locks);
+			if (firstCond) {
+				conditionals = new Jump(conditionals, translated);
+			} else {
+				final Expression variableGuard = buildGuard(value.getVariable(), e.getKey().getFirst().getFirst(),
+				        value.getType(), checker);
+				final Expression guardGuard = guards.get(e.getValue());
+				Expression guard;
+				if ("UNIT".equals(value.getType()) && variableGuard instanceof True && guardGuard instanceof Whatever
+				        && "".equals(((Whatever) guardGuard).getE())) {
+					guard = new Whatever("new Random().nextBoolean()");
+				} else {
+					guard = new And(variableGuard, guardGuard);
+				}
+				conditionals = new Conditional(guard, conditionals, translated);
+			}
+			firstCond = false;
+		}
+		if (firstCond) {
+			conditionals = new Return();
 		}
 
 		first.setNext(conditionals);

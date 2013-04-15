@@ -1,9 +1,12 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import dk.klafbang.tools.Pair;
 
@@ -18,14 +21,16 @@ public class CFGNode {
 
 	private final String guard;
 	private final int id = CFGNode.counter++;
+	private final SortedSet<Lock> lock = new TreeSet<Lock>();
+
 	private final String name;
 
 	private final Map<Channel, String> receive = new HashMap<Channel, String>();
-
 	private final Map<Channel, String> send = new HashMap<Channel, String>();
+	private final Map<Pair<Pair<String, String>, String>, CFGNode> successors = new HashMap<Pair<Pair<String, String>, String>, CFGNode>();
 
-	private final Map<Pair<String, String>, CFGNode> successors = new HashMap<Pair<String, String>, CFGNode>();
 	private final String type;
+	private final SortedSet<Lock> unlock = new TreeSet<Lock>(Collections.reverseOrder());
 
 	private final String variable;
 
@@ -53,12 +58,29 @@ public class CFGNode {
 	}
 
 	/**
+	 * @param theLock
+	 */
+	public void addLock(final Lock theLock) {
+		final boolean added = lock.add(theLock);
+		assert added;
+	}
+
+	/**
 	 * @param function
 	 * @param successor
+	 * @param id
 	 */
-	public void addSuccessor(final String function, final CFGNode successor) {
-		final CFGNode old = successors.put(Pair.createPair(function, successor.guard), successor);
+	public void addSuccessor(final String function, final CFGNode successor, @SuppressWarnings("hiding") final String id) {
+		final CFGNode old = successors.put(Pair.createPair(Pair.createPair(function, successor.guard), id), successor);
 		assert old == null;
+	}
+
+	/**
+	 * @param theLock
+	 */
+	public void addUnlock(final Lock theLock) {
+		final boolean added = unlock.add(theLock);
+		assert added;
 	}
 
 	/**
@@ -155,7 +177,15 @@ public class CFGNode {
 	/**
 	 * @return
 	 */
-	public Set<Entry<Pair<String, String>, CFGNode>> successors() {
+	public Set<Entry<Pair<Pair<String, String>, String>, CFGNode>> successors() {
 		return successors.entrySet();
+	}
+
+	Iterable<Lock> locks() {
+		return lock;
+	}
+
+	Iterable<Lock> unlocks() {
+		return unlock;
 	}
 }

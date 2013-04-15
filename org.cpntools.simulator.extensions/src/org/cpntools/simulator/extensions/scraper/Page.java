@@ -12,16 +12,18 @@ import java.util.Set;
  */
 public class Page extends HasName {
 	private final Map<String, Place> places = new HashMap<String, Place>();
+	private boolean prime;
 	private final Map<String, Transition> transitions = new HashMap<String, Transition>();
-	private final Map<String, Subpage> subpages = new HashMap<String, Subpage>();
 
 	/**
 	 * @param dictionary
 	 * @param id
 	 * @param name
+	 * @param prime
 	 */
-	public Page(final ElementDictionary dictionary, final String id, final String name) {
+	public Page(final ElementDictionary dictionary, final String id, final String name, final boolean prime) {
 		super(dictionary, id, name);
+		this.prime = prime;
 	}
 
 	/**
@@ -36,13 +38,6 @@ public class Page extends HasName {
 	 */
 	public void add(final Transition t) {
 		transitions.put(t.getId(), t);
-	}
-
-	/**
-	 * @param s
-	 */
-	public void add(final Subpage s) {
-		subpages.put(s.getId(), s);
 	}
 
 	/**
@@ -62,11 +57,10 @@ public class Page extends HasName {
 	}
 
 	/**
-	 * @param id
 	 * @return
 	 */
-	public Subpage getSubpage(final String id) {
-		return subpages.get(id);
+	public boolean isPrime() {
+		return prime;
 	}
 
 	/**
@@ -93,30 +87,20 @@ public class Page extends HasName {
 	}
 
 	/**
+	 * @param prime
+	 * @return
+	 */
+	public boolean setPrime(final boolean prime) {
+		if (prime == this.prime) { return false; }
+		this.prime = prime;
+		return true;
+	}
+
+	/**
 	 * @return
 	 */
 	public Iterable<Transition> transitions() {
 		return transitions.values();
-	}
-
-	/**
-	 * @return
-	 */
-	public Iterable<Place> sockets() {
-		final HashSet<Place> sockets = new HashSet<Place>();
-		for (final Subpage s : subpages()) {
-			for (final Assignment a : s.assignments()) {
-				sockets.add(a.getSocket());
-			}
-		}
-		return sockets;
-	}
-
-	/**
-	 * @return
-	 */
-	public Iterable<Subpage> subpages() {
-		return subpages.values();
 	}
 
 	private <E extends Element> Map<String, E> retain(final Collection<String> ids, final Map<String, E> nodes) {
@@ -130,11 +114,4 @@ public class Page extends HasName {
 		return result;
 	}
 
-	/**
-	 * @param ids
-	 * @return
-	 */
-	public Map<String, Subpage> retainSubpages(final Collection<String> ids) {
-		return retain(ids, subpages);
-	}
 }

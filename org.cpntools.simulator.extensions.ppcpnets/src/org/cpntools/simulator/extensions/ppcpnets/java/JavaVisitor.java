@@ -1,7 +1,6 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -18,9 +17,13 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 
 	private Set<ASTNode> done;
 
-	private LinkedList<ASTNode> entries;
+	private boolean elseif = false;
+
+	private LinkedList<Label> entries;
 
 	private int indent = 2;
+
+	private int inLocks = 0;
 
 	/**
 	 * @param out
@@ -205,6 +208,44 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	}
 
 	/**
+	 * @param process
+	 */
+	public void makeLocks(final Process process) {
+		final StringBuilder sb = new StringBuilder();
+
+		boolean seen = false;
+		sb.append("\tpublic static class Locks {\n");
+		for (final Lock l : process.getLocks()) {
+			seen = true;
+			sb.append("\t\t");
+			sb.append("Semaphore ");
+			sb.append(l.getJavaName());
+			sb.append(" = new Semaphore(");
+			sb.append(l.getCount());
+			sb.append(", true);\n");
+		}
+		sb.append("\t}\n");
+		sb.append("\tstatic Locks locks = new Locks();\n");
+		sb.append("\n");
+		if (seen) {
+			out.print(sb);
+		}
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AcquireLock)
+	 */
+	@Override
+	public Object visit(final AcquireLock e) {
+		indent();
+		inLocks++;
+		out.print("locks.");
+		out.print(e.getLock().getJavaName());
+		out.println(".acquireUninterruptibly();");
+		return super.visit(e);
+	}
+
+	/**
 	 * @return
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.And)
 	 */
@@ -249,15 +290,24 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final ASTNode entry) {
-		if (entry == null) {
-			if (entries.isEmpty()) { return null; }
-			out.println();
-			return visit(entries.removeFirst());
-		}
+		if (entry == null) { return null; }
 
 		super.visit(entry);
-		visit(entry.getNext());
+		if (!(entry instanceof Label) && !(entry instanceof Jump) || entry instanceof Conditional) {
+			visit(entry.getNext());
+		}
 		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Comment)
+	 */
+	@Override
+	public Object visit(final Comment e) {
+		indent();
+		out.print("// ");
+		out.println(e.getComment());
+		return super.visit(e);
 	}
 
 	/**
@@ -269,9 +319,9 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 		indent();
 		out.print("if ");
 		visit(entry.getCondition());
-		out.print(" goto ");
+		out.print(" { ");
 		out.print(entry.getJump().getLabel());
-		out.println(";");
+		out.println("(); return; }");
 		add(entry.getJump());
 
 		return super.visit(entry);
@@ -340,7 +390,12 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final If entry) {
+		final boolean wasElseIf = elseif;
+		elseif = false;
 		indent();
+		if (wasElseIf) {
+			out.print("} else ");
+		}
 		out.print("if ");
 		visit(entry.getCondition());
 		out.println(" {");
@@ -348,14 +403,21 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 		visit(entry.getThenBranch());
 		end();
 		if (entry.getElseBranch() != null) {
-			indent();
-			out.println("} else {");
-			start();
-			visit(entry.getElseBranch());
-			end();
+			if (entry.getElseBranch() instanceof If) {
+				elseif = true;
+				visit(entry.getElseBranch());
+			} else {
+				indent();
+				out.println("} else {");
+				start();
+				visit(entry.getElseBranch());
+				end();
+			}
 		}
-		indent();
-		out.println("}");
+		if (!wasElseIf) {
+			indent();
+			out.println("}");
+		}
 		return super.visit(entry);
 	}
 
@@ -366,9 +428,8 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	@Override
 	public Object visit(final Jump entry) {
 		indent();
-		out.print("goto ");
 		out.print(entry.getJump().getLabel());
-		out.println(";");
+		out.println("();");
 		add(entry.getJump());
 
 		return super.visit(entry);
@@ -380,12 +441,11 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Label entry) {
-		done.add(entry);
 		indent();
 		out.print(entry.getLabel());
-		out.println(":");
-
-		return super.visit(entry);
+		out.println("();");
+		add(entry);
+		return null;
 	}
 
 	/**
@@ -404,18 +464,34 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	 */
 	@Override
 	public Object visit(final Process process) {
+		out.println("import java.io.*;");
+		out.println("import java.util.concurrent.*;");
+		out.println();
 		out.println("public class " + process.getName() + " implements Runnable {");
 		makeGlobalsDecl(process);
 		makeChannelDecl(process);
 		makeLocalDecl(process);
+		makeLocks(process);
 		makeConstructor(process);
 
-		entries = new LinkedList<ASTNode>();
-		done = new HashSet<ASTNode>(Collections.singleton(process.getEntry()));
+		entries = new LinkedList<Label>();
+		done = new HashSet<ASTNode>();
 
 		out.println("\tpublic void run() {");
 		super.visit(process);
 		out.println("\t}");
+
+		while (!entries.isEmpty()) {
+			final Label e = entries.removeFirst();
+			out.println();
+			out.print("\tprivate void ");
+			out.print(e.getLabel());
+			out.println("() {");
+			inLocks = 0;
+			visit(e.getNext());
+			assert inLocks == 0;
+			out.println("\t}");
+		}
 
 		out.println("}");
 		return null;
@@ -433,6 +509,29 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 		out.print(e.getC().getJavaName());
 		out.print(".readObject()");
 		return super.visit(e);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.ReleaseLock)
+	 */
+	@Override
+	public Object visit(final ReleaseLock e) {
+		indent();
+		inLocks--;
+		out.print("locks.");
+		out.print(e.getLock().getJavaName());
+		out.println(".release();");
+		return super.visit(e);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Return)
+	 */
+	@Override
+	public Object visit(final Return entry) {
+		indent();
+		out.println("return;");
+		return super.visit(entry);
 	}
 
 	/**

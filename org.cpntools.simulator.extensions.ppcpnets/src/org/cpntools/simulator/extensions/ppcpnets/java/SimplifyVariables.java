@@ -18,6 +18,15 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 	Map<Variable, Variable> renamings;
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AcquireLock)
+	 */
+	@Override
+	public ASTNode visit(final AcquireLock e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.And)
 	 */
 	@Override
@@ -41,6 +50,15 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 			}
 		}
 		e.setE(value);
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Comment)
+	 */
+	@Override
+	public ASTNode visit(final Comment e) {
 		e.setNext(visit(e.getNext()));
 		return e;
 	}
@@ -140,6 +158,24 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 	 */
 	@Override
 	public Expression visit(final Receive e) {
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.ReleaseLock)
+	 */
+	@Override
+	public ASTNode visit(final ReleaseLock e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Return)
+	 */
+	@Override
+	public ASTNode visit(final Return e) {
+		e.setNext(visit(e.getNext()));
 		return e;
 	}
 

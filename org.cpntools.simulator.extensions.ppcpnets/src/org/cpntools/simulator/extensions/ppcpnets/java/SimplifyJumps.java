@@ -16,6 +16,15 @@ public class SimplifyJumps extends Visitor<Object, Object, ASTNode, Object> {
 	private Set<Label> seen;
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AcquireLock)
+	 */
+	@Override
+	public ASTNode visit(final AcquireLock e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AssignmentExp)
 	 */
 	@Override
@@ -31,6 +40,15 @@ public class SimplifyJumps extends Visitor<Object, Object, ASTNode, Object> {
 	public ASTNode visit(final ASTNode entry) {
 		if (entry == null) { return null; }
 		return super.visit(entry);
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Comment)
+	 */
+	@Override
+	public ASTNode visit(final Comment e) {
+		e.setNext(visit(e.getNext()));
+		return e;
 	}
 
 	/**
@@ -63,7 +81,9 @@ public class SimplifyJumps extends Visitor<Object, Object, ASTNode, Object> {
 	 */
 	@Override
 	public ASTNode visit(final DoWhile entry) {
-		throw new UnsupportedOperationException("Please do not use this pattern with structured programs");
+		// The inner part cannot (by construction) contain jumps
+		entry.setNext(visit(entry.getNext()));
+		return entry;
 	}
 
 	/**
@@ -71,7 +91,9 @@ public class SimplifyJumps extends Visitor<Object, Object, ASTNode, Object> {
 	 */
 	@Override
 	public ASTNode visit(final If entry) {
-		throw new UnsupportedOperationException("Please do not use this pattern with structured programs");
+		// The inner part cannot (by construction) contain jumps
+		entry.setNext(visit(entry.getNext()));
+		return entry;
 	}
 
 	/**
@@ -138,7 +160,26 @@ public class SimplifyJumps extends Visitor<Object, Object, ASTNode, Object> {
 				n = n.getNext();
 			}
 		}
-		return super.visit(p);
+		p.setEntry(visit(p.getEntry()));
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.ReleaseLock)
+	 */
+	@Override
+	public ASTNode visit(final ReleaseLock e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Return)
+	 */
+	@Override
+	public ASTNode visit(final Return entry) {
+		entry.setNext(visit(entry.getNext()));
+		return entry;
 	}
 
 	/**

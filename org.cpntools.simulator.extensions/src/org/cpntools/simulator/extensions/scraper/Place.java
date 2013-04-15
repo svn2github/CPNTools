@@ -7,6 +7,8 @@ public class Place extends Node {
 
 	private String initMark;
 
+	private boolean port, socket;
+
 	private String type;
 
 	/**
@@ -69,6 +71,20 @@ public class Place extends Node {
 	}
 
 	/**
+	 * @return
+	 */
+	public boolean isPort() {
+		return port;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean isSocket() {
+		return socket;
+	}
+
+	/**
 	 * @param initMark
 	 * @return
 	 */
@@ -76,6 +92,20 @@ public class Place extends Node {
 		if (initMark.equals(this.initMark)) { return false; }
 		this.initMark = initMark;
 		return true;
+	}
+
+	/**
+	 * @param port
+	 */
+	public void setPort(final boolean port) {
+		this.port = port;
+	}
+
+	/**
+	 * @param socket
+	 */
+	public void setSocket(final boolean socket) {
+		this.socket = socket;
 	}
 
 	/**

@@ -20,6 +20,14 @@ public abstract class Visitor<T, P, N, E> {
 	}
 
 	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final AcquireLock entry) {
+		return null;
+	}
+
+	/**
 	 * @param e
 	 * @return
 	 */
@@ -55,13 +63,29 @@ public abstract class Visitor<T, P, N, E> {
 			return visit((Send) entry);
 		} else if (entry instanceof Skip) {
 			return visit((Skip) entry);
+		} else if (entry instanceof Comment) {
+			return visit((Comment) entry);
 		} else if (entry instanceof If) {
 			return visit((If) entry);
+		} else if (entry instanceof AcquireLock) {
+			return visit((AcquireLock) entry);
+		} else if (entry instanceof ReleaseLock) {
+			return visit((ReleaseLock) entry);
+		} else if (entry instanceof Return) {
+			return visit((Return) entry);
 		} else if (entry instanceof DoWhile) {
 			return visit((DoWhile) entry);
 		} else {
 			assert false;
 		}
+		return null;
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final Comment entry) {
 		return null;
 	}
 
@@ -168,6 +192,22 @@ public abstract class Visitor<T, P, N, E> {
 	 * @return
 	 */
 	public E visit(final Receive e) {
+		return null;
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final ReleaseLock entry) {
+		return null;
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final Return entry) {
 		return null;
 	}
 
