@@ -1,7 +1,10 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+
+import dk.klafbang.tools.Pair;
 
 /**
  * @author michael
@@ -9,7 +12,7 @@ import java.util.Map;
 public class ControlFlowGraph {
 
 	private final Collection<Channel> channels;
-	private final Map<String, CFGNode> processes;
+	private final Map<String, Pair<List<String>, CFGNode>> processes;
 	private final Collection<Global> shared;
 
 	/**
@@ -18,7 +21,7 @@ public class ControlFlowGraph {
 	 * @param processes
 	 */
 	public ControlFlowGraph(final Collection<Global> shared, final Collection<Channel> channels,
-	        final Map<String, CFGNode> processes) {
+	        final Map<String, Pair<List<String>, CFGNode>> processes) {
 		this.shared = shared;
 		this.channels = channels;
 		this.processes = processes;
@@ -34,7 +37,7 @@ public class ControlFlowGraph {
 	/**
 	 * @return
 	 */
-	public Map<String, CFGNode> getProcesses() {
+	public Map<String, Pair<List<String>, CFGNode>> getProcesses() {
 		return processes;
 	}
 

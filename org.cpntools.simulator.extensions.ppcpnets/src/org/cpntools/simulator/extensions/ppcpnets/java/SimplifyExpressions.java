@@ -1,6 +1,8 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -79,6 +81,20 @@ public class SimplifyExpressions extends Visitor<Object, Object, Object, Object>
 	@Override
 	public Object visit(final Label e) {
 		labels.add(e);
+		return null;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Launch)
+	 */
+	@Override
+	public Object visit(final Launch e) {
+		final List<Expression> exps = new ArrayList<Expression>();
+		for (final Expression exp : e.getParameters()) {
+			exps.add(exp.simplify());
+		}
+		e.getParameters().clear();
+		e.getParameters().addAll(exps);
 		return null;
 	}
 

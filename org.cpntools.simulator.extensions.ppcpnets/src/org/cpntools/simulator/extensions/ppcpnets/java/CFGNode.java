@@ -1,7 +1,9 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -15,21 +17,39 @@ import dk.klafbang.tools.Pair;
  */
 public class CFGNode {
 
+	/**
+	 * @author michael
+	 */
+	public static enum Kind {
+		/** */
+		INVOKE, /** */
+		LAUNCH, /** */
+		NORMAL;
+	}
+
 	private static int counter = 0;
 
+	private Map<String, String> assignmentOrder;
 	private final Map<Variable, Assignment> assignments = new HashMap<Variable, Assignment>();
-
 	private final String guard;
+
 	private final int id = CFGNode.counter++;
+
+	private Kind kind = Kind.NORMAL;
+
 	private final SortedSet<Lock> lock = new TreeSet<Lock>();
 
+	private CFGNode method;
+	private String methodName;
 	private final String name;
 
 	private final Map<Channel, String> receive = new HashMap<Channel, String>();
 	private final Map<Channel, String> send = new HashMap<Channel, String>();
+
 	private final Map<Pair<Pair<String, String>, String>, CFGNode> successors = new HashMap<Pair<Pair<String, String>, String>, CFGNode>();
 
 	private final String type;
+
 	private final SortedSet<Lock> unlock = new TreeSet<Lock>(Collections.reverseOrder());
 
 	private final String variable;
@@ -104,10 +124,51 @@ public class CFGNode {
 	}
 
 	/**
+	 * @param order
+	 * @return
+	 */
+	public List<Assignment> getAssignments(final List<String> order) {
+		final Map<String, Assignment> cache = new HashMap<String, Assignment>();
+		for (final Entry<Variable, Assignment> e : assignments.entrySet()) {
+			cache.put(e.getKey().getId(), e.getValue());
+		}
+		final List<Assignment> result = new ArrayList<Assignment>();
+		final Map<String, String> reverse = new HashMap<String, String>();
+		for (final Entry<String, String> e : assignmentOrder.entrySet()) {
+			reverse.put(e.getValue(), e.getKey());
+		}
+		for (final String o : order) {
+			result.add(cache.get(reverse.get(o)));
+		}
+		return result;
+	}
+
+	/**
 	 * @return
 	 */
 	public String getGuard() {
 		return guard;
+	}
+
+	/**
+	 * @return
+	 */
+	public Kind getKind() {
+		return kind;
+	}
+
+	/**
+	 * @return
+	 */
+	public CFGNode getMethod() {
+		return method;
+	}
+
+	/**
+	 * @return
+	 */
+	public String getMethodName() {
+		return methodName;
 	}
 
 	/**
@@ -175,14 +236,38 @@ public class CFGNode {
 	}
 
 	/**
+	 * @param kind
+	 */
+	public void setKind(final Kind kind) {
+		this.kind = kind;
+	}
+
+	/**
+	 * @param methodName
+	 * @param method
+	 */
+	public void setMethod(final String methodName, final CFGNode method) {
+		this.methodName = methodName;
+		this.method = method;
+	}
+
+	/**
 	 * @return
 	 */
 	public Set<Entry<Pair<Pair<String, String>, String>, CFGNode>> successors() {
 		return successors.entrySet();
 	}
 
+	Map<String, String> getAssignmentOrder() {
+		return assignmentOrder;
+	}
+
 	Iterable<Lock> locks() {
 		return lock;
+	}
+
+	void setAssignmentOrder(final Map<String, String> map) {
+		assignmentOrder = map;
 	}
 
 	Iterable<Lock> unlocks() {

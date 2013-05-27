@@ -22,7 +22,7 @@ public class Other extends Type {
 		final StringBuilder result = new StringBuilder();
 		for (final java.lang.String t : name.split("_")) {
 			if (!"".equals(t.trim())) {
-				if (t.equals(t.toUpperCase())) {
+				if (t.equals(t.toUpperCase()) || t.equals(t.toLowerCase())) {
 					result.append(t.substring(0, 1).toUpperCase());
 					result.append(t.substring(1).toLowerCase());
 				} else {

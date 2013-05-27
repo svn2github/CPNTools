@@ -7,6 +7,7 @@ import java.util.List;
  */
 public class Process {
 	private ASTNode entry;
+	private final List<String> initial;
 	private final List<Variable> locals;
 	private final List<Lock> locks;
 	private final String name;
@@ -18,14 +19,16 @@ public class Process {
 	 * @param locals
 	 * @param parameters
 	 * @param locks
+	 * @param initial
 	 */
 	public Process(final String name, final ASTNode entry, final List<Variable> locals,
-	        final List<Variable> parameters, final List<Lock> locks) {
+	        final List<Variable> parameters, final List<Lock> locks, final List<String> initial) {
 		this.name = name;
 		this.entry = entry;
 		this.locals = locals;
 		this.parameters = parameters;
 		this.locks = locks;
+		this.initial = initial;
 	}
 
 	/**
@@ -33,6 +36,13 @@ public class Process {
 	 */
 	public ASTNode getEntry() {
 		return entry;
+	}
+
+	/**
+	 * @return
+	 */
+	public List<String> getInitial() {
+		return initial;
 	}
 
 	/**

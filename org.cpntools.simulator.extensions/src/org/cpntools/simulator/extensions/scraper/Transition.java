@@ -86,7 +86,7 @@ public class Transition extends Node {
 	public boolean addPortSocket(final String port, final String socket) {
 		final String oldPort = oldPortSock.remove(socket);
 		if (oldPort == null || !oldPort.equals(port)) {
-			portSocket.put(socket, port);
+			getPortSocket().put(socket, port);
 			changedSockets.add(socket);
 			return true;
 		}
@@ -147,7 +147,7 @@ public class Transition extends Node {
 	 */
 	public Set<String> finishNewPortSocket() {
 		for (final String socket : oldPortSock.keySet()) {
-			portSocket.remove(socket);
+			getPortSocket().remove(socket);
 			changedSockets.add(socket);
 		}
 		oldPortSock.clear();
@@ -244,7 +244,7 @@ public class Transition extends Node {
 	public void prepareNewPortSocket() {
 		oldPortSock.clear();
 		changedSockets.clear();
-		oldPortSock.putAll(portSocket);
+		oldPortSock.putAll(getPortSocket());
 	}
 
 	/**
@@ -325,5 +325,12 @@ public class Transition extends Node {
 		if (time.equals(this.time)) { return false; }
 		this.time = time;
 		return true;
+	}
+
+	/**
+	 * @return
+	 */
+	public Map<String, String> getPortSocket() {
+		return portSocket;
 	}
 }

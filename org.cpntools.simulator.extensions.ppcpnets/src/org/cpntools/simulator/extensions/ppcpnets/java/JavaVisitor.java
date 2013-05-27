@@ -1,9 +1,14 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
 import java.io.PrintStream;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author michael
@@ -24,6 +29,10 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	private int indent = 2;
 
 	private int inLocks = 0;
+
+	private String name;
+
+	private StringBuilder parameterDeclaration;
 
 	/**
 	 * @param out
@@ -57,7 +66,7 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 				sb.append(";\n");
 			} else if (v instanceof SendChannel) {
 				seen = true;
-				sb.append("\t\tObjectOutputStream ");
+				sb.append("\t\tMap<String, ObjectOutputStream> ");
 				sb.append(v.getJavaName());
 				sb.append(";\n");
 			} else {
@@ -80,9 +89,15 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 		out.print(process.getName());
 		out.print("(");
 		boolean globals = false, channels = false;
+		final StringBuilder sb = new StringBuilder("        ");
+		for (int i = process.getName().length(); i > 0; i--) {
+			sb.append(' ');
+		}
+		final String s = sb.toString();
 		for (final Variable v : process.getParameters()) {
 			if (globals || channels) {
-				out.print(", ");
+				out.print(",\n\t");
+				out.print(s);
 			}
 			if (v instanceof Global) {
 				globals = true;
@@ -90,7 +105,7 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 				out.print(" global");
 			} else if (v instanceof SendChannel) {
 				channels = true;
-				out.print("ObjectOutputStream channel");
+				out.print("Map<String, ObjectOutputStream> channel");
 			} else if (v instanceof ReceiveChannel) {
 				channels = true;
 				out.print("ObjectInputStream channel");
@@ -102,7 +117,8 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 		boolean locals = false;
 		for (final Variable v : process.getLocals()) {
 			if (globals || channels || locals) {
-				out.print(", ");
+				out.print(",\n\t");
+				out.print(s);
 			}
 			if (v instanceof Local) {
 				locals = true;
@@ -233,6 +249,167 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AbstractSyntaxTree)
+	 */
+	@SuppressWarnings("null")
+	@Override
+	public Object visit(final AbstractSyntaxTree ast) {
+		out.println("import java.io.*;");
+		out.println("import java.util.*;");
+		out.println("import java.util.concurrent.*;");
+		out.println();
+		out.println("public class " + ast.getJavaName() + " {");
+		out.println("\tpublic static void main(String... args) {");
+
+		final Comparator<Variable> comparator = new Comparator<Variable>() {
+			@Override
+			public int compare(final Variable o1, final Variable o2) {
+				return o1.getJavaName().compareTo(o2.getJavaName());
+			}
+		};
+		final Map<String, Variable> names = new HashMap<String, Variable>();
+		final SortedSet<Global> globals = new TreeSet<Global>(comparator);
+		final SortedSet<Channel> channels = new TreeSet<Channel>(comparator);
+		for (final Process p : ast.getProcesses()) {
+			if (!p.getInitial().isEmpty()) {
+				for (final Variable v : p.getParameters()) {
+					names.put(v.getJavaName(), v);
+// assert old == null || old == v; // Not true for channels
+					if (v instanceof Global) {
+						globals.add((Global) v);
+					} else if (v instanceof Channel) {
+						channels.add((Channel) v);
+					}
+				}
+			}
+		}
+		boolean first = true;
+		for (final Global g : globals) {
+			first = false;
+			out.print("\t\t");
+			out.print(g.getType().getJavaName());
+			out.print(" ");
+			out.print(g.getJavaName());
+			out.print(" = ");
+			out.print(g.getInit());
+			out.println(";");
+		}
+		if (!first) {
+			out.println();
+		}
+
+		first = true;
+		for (final Channel c : channels) {
+			first = false;
+			out.print("\t\tMap<String, ObjectInputStream> ");
+			out.print(c.getJavaName());
+			out.println("_input = new HashMap<String, ObjectInputStream>();");
+			out.print("\t\tMap<String, ObjectOutputStream> ");
+			out.print(c.getJavaName());
+			out.println("_output = new HashMap<String, ObjectOutputStream>();");
+		}
+		if (!first) {
+			out.println();
+		}
+
+		first = true;
+		for (final Process p : ast.getProcesses()) {
+			for (final Variable v : p.getParameters()) {
+				if (v instanceof ReceiveChannel && channels.remove(v)) {
+					for (final String instance : p.getInitial()) {
+						out.print("\t\t");
+						if (first) {
+							out.print("PipedInputStream ");
+						}
+						first = false;
+						out.println("inputpipe = new PipedInputStream();");
+						out.print("\t\t");
+						out.print(v.getJavaName());
+						out.print("_input.put(\"");
+						out.print(instance);
+						out.println("\", new ObjectInputStream(inputpipe));");
+						out.print("\t\t");
+						out.print(v.getJavaName());
+						out.print("_output.put(\"");
+						out.print(instance);
+						out.println("\", new ObjectOutputStream(new PipedOutputStream(inputpipe)));");
+					}
+				}
+			}
+		}
+		if (!first) {
+			out.println();
+		}
+
+		for (final Process p : ast.getProcesses()) {
+			final StringBuilder sb = new StringBuilder("                ");
+			for (int i = p.getName().length(); i > 0; i--) {
+				sb.append(' ');
+			}
+			final String s = sb.toString();
+			for (final String instance : p.getInitial()) {
+				out.print("\t\tnew Thread(new ");
+				out.print(p.getName());
+				out.print("(");
+				first = true;
+				Variable lastVariable = null;
+				for (final Variable v : p.getParameters()) {
+					if (!first) {
+						out.print(", \t// ");
+						out.print(lastVariable.getType().getJavaName());
+						out.print(" ");
+						out.println(lastVariable.getJavaName());
+						out.print("\t\t");
+						out.print(s);
+					}
+					first = false;
+					lastVariable = v;
+					out.print(v.getJavaName());
+					if (v instanceof ReceiveChannel) {
+						out.print("_input.get(\"");
+						out.print(instance);
+						out.print("\")");
+					} else if (v instanceof SendChannel) {
+						out.print("_output");
+					}
+				}
+				for (final Variable v : p.getLocals()) {
+					if (!first) {
+						out.print(", \t// ");
+						out.print(lastVariable.getType().getJavaName());
+						out.print(" ");
+						out.println(lastVariable.getJavaName());
+						out.print("\t\t");
+						out.print(s);
+					}
+					first = false;
+					lastVariable = v;
+					if (v instanceof Local) {
+						final Local l = (Local) v;
+						out.print(l.getInitialValue(instance));
+					}
+				}
+				out.print("),");
+				if (lastVariable != null) {
+					out.print(" \t// ");
+					out.print(lastVariable.getType().getJavaName());
+					out.print(" ");
+					out.print(lastVariable.getJavaName());
+				}
+				out.print("\n\t\t           \"");
+				out.print(p.getName());
+				out.print(", ");
+				out.print(instance);
+				out.println("\").start();");
+			}
+		}
+		out.println("\t}");
+		out.println("}");
+
+		return super.visit(ast);
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.AcquireLock)
 	 */
 	@Override
@@ -334,10 +511,10 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	@Override
 	public Object visit(final Declaration entry) {
 		indent();
-		out.print(entry.getV().getType().getJavaName());
-		out.print(" ");
-		out.print(entry.getV().getJavaName());
-		out.println(";");
+		final String s = entry.getV().getType().getJavaName() + " " + entry.getV().getJavaName() + ";\n";
+		parameterDeclaration.append("\t\t");
+		parameterDeclaration.append(s);
+		out.print(s);
 
 		return super.visit(entry);
 	}
@@ -449,6 +626,42 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Launch)
+	 */
+	@Override
+	public Object visit(final Launch e) {
+		name = Variable.nextName(name);
+		indent();
+		out.print(e.getProcedure());
+		out.print(" ");
+		out.print(name);
+		out.println(" =");
+		start();
+		indent();
+		out.print("new ");
+		out.print(e.getProcedure());
+		out.print("(");
+		boolean first = true;
+		final StringBuilder sb = new StringBuilder("     ");
+		for (int i = e.getProcedure().length(); i > 0; i--) {
+			sb.append(' ');
+		}
+		final String s = sb.toString();
+		for (final Expression exp : e.getParameters()) {
+			if (!first) {
+				out.print(",\n");
+				indent();
+				out.print(s);
+			}
+			first = false;
+			visit(exp);
+		}
+		out.println(").run();");
+		end();
+		return null;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Not)
 	 */
 	@Override
@@ -465,6 +678,7 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	@Override
 	public Object visit(final Process process) {
 		out.println("import java.io.*;");
+		out.println("import java.util.*;");
 		out.println("import java.util.concurrent.*;");
 		out.println();
 		out.println("public class " + process.getName() + " implements Runnable {");
@@ -477,6 +691,8 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 		entries = new LinkedList<Label>();
 		done = new HashSet<ASTNode>();
 
+		name = "tmpprocedure0";
+		parameterDeclaration = new StringBuilder();
 		out.println("\tpublic void run() {");
 		super.visit(process);
 		out.println("\t}");
@@ -486,7 +702,9 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 			out.println();
 			out.print("\tprivate void ");
 			out.print(e.getLabel());
-			out.println("() {");
+			out.print("(");
+			out.println(") {");
+			out.print(parameterDeclaration);
 			inLocks = 0;
 			visit(e.getNext());
 			assert inLocks == 0;
@@ -541,11 +759,18 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	@Override
 	public Object visit(final Send entry) {
 		indent();
-		out.print("channels.");
+		out.print("synchronized (channels.");
 		out.print(entry.getC().getJavaName());
-		out.print(".writeObject(");
+		out.println(") {");
+		indent();
+		out.print("\tchannels.");
+		out.print(entry.getC().getJavaName());
+		out.print(".get(\"");
+		out.print("TODO\").writeObject(");
 		visit(entry.getE());
 		out.println(");");
+		indent();
+		out.println("}");
 
 		return super.visit(entry);
 	}
@@ -570,24 +795,36 @@ public class JavaVisitor extends Visitor<Object, Object, Object, Object> {
 	}
 
 	/**
+	 * @param v
+	 */
+	public void visit(final Variable v) {
+		if (v instanceof Local) {
+			out.print("this.");
+			out.print(v.getJavaName());
+		} else if (v instanceof Global) {
+			out.print("globals.");
+			out.print(v.getJavaName());
+		} else if (v instanceof Resource) {
+			assert false; // Not implemented yet
+		} else if (v instanceof Temporary) {
+			out.print(v.getJavaName());
+		} else if (v instanceof ProcessVariable) {
+			out.print(name);
+			out.print(".");
+			visit(((ProcessVariable) v).getVariable());
+		} else {
+			assert false;
+		}
+
+	}
+
+	/**
 	 * @return
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.VariableExpression)
 	 */
 	@Override
 	public Object visit(final VariableExpression e) {
-		if (e.getV() instanceof Local) {
-			out.print("this.");
-			out.print(e.getV().getJavaName());
-		} else if (e.getV() instanceof Global) {
-			out.print("globals.");
-			out.print(e.getV().getJavaName());
-		} else if (e.getV() instanceof Resource) {
-			assert false; // Not implemented yet
-		} else if (e.getV() instanceof Temporary) {
-			out.print(e.getV().getJavaName());
-		} else {
-			assert false;
-		}
+		visit(e.getV());
 		return super.visit(e);
 	}
 

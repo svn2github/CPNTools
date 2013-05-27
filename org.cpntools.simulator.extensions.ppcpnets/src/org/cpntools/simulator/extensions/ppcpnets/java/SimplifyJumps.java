@@ -130,6 +130,15 @@ public class SimplifyJumps extends Visitor<Object, Object, ASTNode, Object> {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Launch)
+	 */
+	@Override
+	public ASTNode visit(final Launch e) {
+		e.setNext(visit(e.getNext()));
+		return e;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Process)
 	 */
 	@Override

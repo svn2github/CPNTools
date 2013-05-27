@@ -198,6 +198,14 @@ public class PPCPNetChecker extends AbstractExtension implements Observer {
 
 	/**
 	 * @param type
+	 * @return
+	 */
+	public boolean isProcessType(final String type) {
+		return processTypes.contains(type);
+	}
+
+	/**
+	 * @param type
 	 * @param variable
 	 * @return
 	 */

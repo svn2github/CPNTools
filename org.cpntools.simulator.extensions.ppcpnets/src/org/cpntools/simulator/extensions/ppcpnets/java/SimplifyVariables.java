@@ -1,13 +1,19 @@
 package org.cpntools.simulator.extensions.ppcpnets.java;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @author michael
+ *
+ */
 /**
  * @author michael
  */
@@ -127,6 +133,21 @@ public class SimplifyVariables extends Visitor<Object, Object, ASTNode, Expressi
 			renamings = new HashMap<Variable, Variable>();
 			e.setNext(visit(e.getNext()));
 		}
+		return e;
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.ppcpnets.java.Visitor#visit(org.cpntools.simulator.extensions.ppcpnets.java.Launch)
+	 */
+	@Override
+	public ASTNode visit(final Launch e) {
+		final List<Expression> exps = new ArrayList<Expression>();
+		for (final Expression exp : e.getParameters()) {
+			exps.add(visit(exp));
+		}
+		e.getParameters().clear();
+		e.getParameters().addAll(exps);
+		e.setNext(e.getNext());
 		return e;
 	}
 

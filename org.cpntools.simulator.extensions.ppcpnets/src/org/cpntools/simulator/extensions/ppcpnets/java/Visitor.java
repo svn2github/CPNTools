@@ -63,6 +63,8 @@ public abstract class Visitor<T, P, N, E> {
 			return visit((Send) entry);
 		} else if (entry instanceof Skip) {
 			return visit((Skip) entry);
+		} else if (entry instanceof Launch) {
+			return visit((Launch) entry);
 		} else if (entry instanceof Comment) {
 			return visit((Comment) entry);
 		} else if (entry instanceof If) {
@@ -167,6 +169,14 @@ public abstract class Visitor<T, P, N, E> {
 	 * @return
 	 */
 	public N visit(final Label entry) {
+		return null;
+	}
+
+	/**
+	 * @param entry
+	 * @return
+	 */
+	public N visit(final Launch entry) {
 		return null;
 	}
 

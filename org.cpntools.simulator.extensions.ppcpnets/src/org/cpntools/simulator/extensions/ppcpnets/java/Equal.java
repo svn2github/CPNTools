@@ -83,6 +83,18 @@ public class Equal extends Expression {
 		final Expression newe1 = e1.simplify();
 		final Expression newe2 = e2.simplify();
 		if (newe1.equals(newe2)) { return new True(); }
+		if (newe1.equals(new True())) { return newe2; }
+		if (newe2.equals(new True())) { return newe1; }
+		if (newe1 instanceof Whatever) {
+			final Whatever w = (Whatever) newe1;
+			if ("true".equals(w.getE())) { return newe2; }
+			if ("false".equals(w.getE())) { return new Not(newe2).simplify(); }
+		}
+		if (newe2 instanceof Whatever) {
+			final Whatever w = (Whatever) newe2;
+			if ("true".equals(w.getE())) { return newe1; }
+			if ("false".equals(w.getE())) { return new Not(newe1).simplify(); }
+		}
 		if (newe1 == e1 && newe2 == e2) { return this; }
 		return new And(newe1, newe2);
 	}

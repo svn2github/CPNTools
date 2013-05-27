@@ -189,7 +189,8 @@ public class Variable implements HasJavaName {
 	 */
 	@Override
 	public String toString() {
-		return type.getJavaName() + " " + getJavaName();
+		if (type != null) { return type.getJavaName() + " " + getJavaName(); }
+		return getJavaName();
 	}
 
 }

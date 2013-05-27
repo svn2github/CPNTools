@@ -46,63 +46,9 @@ public class Handler implements Channel {
 		public void run() {
 			while (true) {
 				try {
-					Packet p = packetQueue.get();
-					switch (p.getOpcode()) {
-					case 9: // extension
-						try {
-							try {
-								p = handleCommand(p);
-							} catch (final Exception e) {
-								e.printStackTrace();
-								p = new Packet(7, -1);
-								p.addString(e.getMessage());
-							}
-							sendLock.lock();
-// System.out.println("SEnda " + p);
-							p.send(out);
-						} catch (final Exception e) {
-							p = new Packet(7, -1);
-							p.addBoolean(false);
-							p.addString(e.toString());
-							p.send(out);
-						}
-						sendLock.unlock();
-						break;
-					case 5: // GFC
-						p = handleGFC(p);
-						sendLock.lock();
-// System.out.println("SEndb " + p);
-						p.send(out);
-						sendLock.unlock();
-						break;
-					case 12: // filter
-						p = handleForward(p);
-						if (p == null) {
-							p = new Packet(7, 0);
-						}
-						sendLock.lock();
-// System.out.println("SEndc " + p);
-						p.send(out);
-						sendLock.unlock();
-						break;
-					case 7: // invocation response
-					case 3: // CB reponse
-						final boolean delay = packetQueue.isEmpty();
-						packetQueue.put(p);
-						if (delay) {
-							try {
-								Thread.sleep(100);
-							} catch (final InterruptedException ie) {
-								// Ignore
-							}
-						}
-						break;
-					case -1:
-						return;
-					default:
-						assert false;
-						// Ignore, this should never happen...
-					}
+					final Packet p = packetQueue.get();
+					if (p.getOpcode() == -1) { return; }
+					dispatch(p);
 				} catch (final IOException ioe) {
 					ioe.printStackTrace();
 					return;
@@ -226,6 +172,7 @@ public class Handler implements Channel {
 	final BlockingQueue<Packet> packetQueue;
 
 	final Lock sendLock;
+	private Thread dispatcher;
 
 	/**
 	 * @param in
@@ -255,7 +202,7 @@ public class Handler implements Channel {
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
 		instruments = new HashMap<Pair<Integer, String>, Instrument>();
 		registerExtensions(extensionTypes.values());
-		new DispatcherThread("Dispatcher " + name).start();
+		(dispatcher = new DispatcherThread("Dispatcher " + name)).start();
 	}
 
 	/**
@@ -270,11 +217,14 @@ public class Handler implements Channel {
 	}
 
 	/**
+	 * @throws Exception
 	 * @see org.cpntools.simulator.extensions.Channel#evaluate(java.lang.String)
 	 */
 	@Override
-	public String evaluate(final String expresion) {
-		return "val a = 3 : int\nval b = 5 : int\n";
+	public String evaluate(final String expresion) throws Exception {
+		final Packet p = send(createInjectPacket(expresion));
+		if (!p.getBoolean()) { throw new Exception(p.getString()); }
+		return "";
 	}
 
 	/**
@@ -442,7 +392,11 @@ public class Handler implements Channel {
 				result = packetQueue.get();
 				if (result.getOpcode() != expectedCode) {
 					final boolean sleep = packetQueue.isEmpty();
-					packetQueue.put(result);
+					if (Thread.currentThread() == dispatcher) {
+						dispatch(result);
+					} else {
+						packetQueue.put(result);
+					}
 					if (sleep) {
 						try {
 							Thread.sleep(100);
@@ -815,6 +769,64 @@ public class Handler implements Channel {
 					send(createSubscriptionMessage(entry.getKey(), i, prefilters2.get(entry.getKey()).get(i)));
 				}
 			}
+		}
+	}
+
+	void dispatch(final Packet p) throws IOException {
+		Packet q;
+		switch (p.getOpcode()) {
+		case 9: // extension
+			try {
+				try {
+					q = handleCommand(p);
+				} catch (final Exception e) {
+					e.printStackTrace();
+					q = new Packet(7, -1);
+					q.addString(e.getMessage());
+				}
+				sendLock.lock();
+// System.out.println("SEnda " + q);
+				q.send(out);
+			} catch (final Exception e) {
+				q = new Packet(7, -1);
+				q.addBoolean(false);
+				q.addString(e.toString());
+				q.send(out);
+			}
+			sendLock.unlock();
+			break;
+		case 5: // GFC
+			q = handleGFC(p);
+			sendLock.lock();
+// System.out.println("SEndb " + q);
+			q.send(out);
+			sendLock.unlock();
+			break;
+		case 12: // filter
+			q = handleForward(p);
+			if (q == null) {
+				q = new Packet(7, 0);
+			}
+			sendLock.lock();
+// System.out.println("SEndc " + q);
+			q.send(out);
+			sendLock.unlock();
+			break;
+		case 7: // invocation response
+		case 3: // CB reponse
+			final boolean delay = packetQueue.isEmpty();
+			packetQueue.put(p);
+			if (delay) {
+				try {
+					Thread.sleep(100);
+				} catch (final InterruptedException ie) {
+					// Ignore
+				}
+			}
+			break;
+		default:
+			assert false;
+			// Ignore, this should never happen...
 		}
 	}
 }

@@ -289,7 +289,6 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 	}
 
 	private void handleSyntaxCheck(final Packet packet) {
-		System.out.println(packet);
 		packet.reset();
 		packet.getInteger(); // cmd
 		packet.getInteger(); // subcmd
@@ -398,16 +397,30 @@ public class Scraper extends AbstractExtension implements ElementDictionary, Ite
 				localchanged |= s.setControllable(true);
 				localchanged |= s.setSubstitution(true);
 			}
+			p.add(s);
 			s.prepareNewArcs();
 			s.prepareNewPortSocket();
 			boolean arcChanged = false;
 			int aid = 0;
+			final Page sp = getPage(subpage);
+			assert sp != null;
 			for (int j = packet.getInteger(); j > 0; j--) {
 				final String port = packet.getString(); // portid
 				final String socket = packet.getString(); // socketid
 				localchanged |= s.addPortSocket(port, socket);
-				arcChanged = new Arc(this, sid + "_" + aid++, "", Arc.Type.BOTHDIR, p, s, p.getPlace(socket))
-				        .addToNodes() | arcChanged;
+				final Place portPlace = sp.getPlace(port);
+				assert portPlace != null;
+				final boolean in = portPlace.in().iterator().hasNext();
+				final boolean out = portPlace.out().iterator().hasNext();
+				Arc.Type type = Arc.Type.BOTHDIR;
+				if (out && !in) {
+					type = Arc.Type.INPUT;
+				}
+				if (!out && in) {
+					type = Arc.Type.OUTPUT;
+				}
+				arcChanged = new Arc(this, sid + "_" + aid++, "", type, p, s, p.getPlace(socket)).addToNodes()
+				        | arcChanged;
 			}
 			localchanged |= !s.finishNewPortSocket().isEmpty();
 			final Set<Place> finishNewArcs = s.finishNewArcs();
