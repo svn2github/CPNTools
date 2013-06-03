@@ -51,8 +51,7 @@ public class Translator {
 	public void colorAutomaton(final Automaton a) {
 		final SCCGraph<Automaton> sccGraph = new SCCGraph<Automaton>(a);
 		AcceptabilityFlavor.apply(sccGraph);
-		AcceptableFlavor.apply(sccGraph);
-
+// AcceptableFlavor.apply(sccGraph);
 	}
 
 	/**

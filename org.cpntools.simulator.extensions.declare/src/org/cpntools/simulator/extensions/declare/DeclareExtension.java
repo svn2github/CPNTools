@@ -2,6 +2,7 @@ package org.cpntools.simulator.extensions.declare;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ltl2aut.automaton.AcceptabilityFlavor;
@@ -31,16 +32,18 @@ public class DeclareExtension extends AbstractExtension {
 
 	private final Map<String, Integer> states = new HashMap<String, Integer>();
 	private final Map<String, Task> tasks = new HashMap<String, Task>();
+	private final List<String> trace = new ArrayList<String>();
 
 	/**
 	 * 
 	 */
 	public DeclareExtension() {
-		addOption(DATA_AWARE, SMART);
+		addOption(SMART);
+// addOption(DATA_AWARE, SMART);
 		addLazySubscription(new Command(400, 2), // Syntax check page
-		        new Command(500, 3), // Generate instances
-		        new Command(500, 4), // Update instances
-		        new Command(500, 11), // Start run
+// new Command(500, 3), // Generate instances
+// new Command(500, 4), // Update instances
+// new Command(500, 11), // Start run
 		        new Command(500, 12), // Execute transition
 		        new Command(500, 13), // Check transition for enabledness
 		        new Command(500, 14), // Checked enabledness without scheduler
@@ -124,10 +127,7 @@ public class DeclareExtension extends AbstractExtension {
 	}
 
 	private boolean acceptable(final Automaton a, final int state, final Object transition) {
-		int next = a.next(state, transition);
-		if (next < 0) {
-			next = a.next(state, Automaton.OTHERWISE);
-		}
+		final int next = execute(transition, a, state);
 		if (next < 0) { return false; }
 		return !AcceptabilityFlavor.isImpossible(a, next);
 	}
@@ -135,42 +135,69 @@ public class DeclareExtension extends AbstractExtension {
 	private Packet enabled(final Packet p, final Packet response) {
 		response.reset();
 		p.reset();
+		System.out.println("-----------------------------------");
 		if (response.getBoolean()) {
 			final Packet result = new Packet(7, 1);
 			result.addBoolean(enabled(p.getString(), p.getInteger()));
+			System.out.println("-----------------------------------");
 			return result;
 		}
+		System.out.println("Rejecting " + p.getString());
+		System.out.println("-----------------------------------");
 		return response;
 	}
 
 	private boolean enabled(final String string, final int integer) {
-		Object task = tasks.get(string);
-		if (task == null) {
-			task = Automaton.OTHERWISE;
-		}
+		System.out.print("Enabled? " + string + " - ");
+		final Object task = getTask(string);
 		for (final String pageId : new ArrayList<String>(automata.keySet())) {
 			final Automaton a = automata.get(pageId);
 			final int state = states.get(pageId);
-			if (!acceptable(a, state, task)) { return false; }
+			System.out.print(state + " ");
+			if (!acceptable(a, state, task)) {
+				System.out.println("= false");
+				return false;
+			}
 		}
+		System.out.println("= true");
 		return true;
 	}
 
 	private void execute(final Packet p) {
 		p.reset();
-		Object task = tasks.get(p.getString());
-		if (task == null) {
-			task = Automaton.OTHERWISE;
-		}
+		final String taskId = p.getString();
+		System.out.print(taskId + ": (");
+		trace.add(taskId);
+		final Object task = getTask(taskId);
+		boolean first = true;
 		for (final String pageId : new ArrayList<String>(automata.keySet())) {
 			final Automaton a = automata.get(pageId);
 			final int state = states.get(pageId);
-			int next = a.next(state, task);
-			if (next < 0) {
-				next = a.next(state, Automaton.OTHERWISE);
+			final int next = execute(task, a, state);
+			System.out.print(state + " -> " + next);
+			if (!first) {
+				System.out.print(", ");
 			}
+			first = false;
 			states.put(pageId, next);
 		}
+		System.out.println(")");
+	}
+
+	Object getTask(final String taskId) {
+		Object task = tasks.get(taskId);
+		if (task == null) {
+			task = Automaton.OTHERWISE;
+		}
+		return task;
+	}
+
+	int execute(final Object task, final Automaton a, final int state) {
+		int next = a.next(state, task);
+		if (next < 0) {
+			next = a.next(state, Automaton.OTHERWISE);
+		}
+		return next;
 	}
 
 	private Packet handleCheckPage(final Packet p) {
@@ -215,10 +242,16 @@ public class DeclareExtension extends AbstractExtension {
 			final Map<Formula<Task>, Constraint> formulae = Translator.INSTANCE.parse(m);
 			final Automaton automaton = Translator.INSTANCE.translateRaw(formulae);
 			Translator.INSTANCE.colorAutomaton(automaton);
-			states.put(pageId, automaton.getInit());
+			int state = automaton.getInit();
+			for (final String taskId : trace) {
+				final Object task = getTask(taskId);
+				state = execute(task, automaton, state);
+			}
+			states.put(pageId, state);
 			automata.put(pageId, automaton);
 			System.out.println(automaton);
 		} catch (final Exception e) {
+			e.printStackTrace();
 			result.addBoolean(false);
 			result.addString(e.toString());
 		}
@@ -234,18 +267,25 @@ public class DeclareExtension extends AbstractExtension {
 		p.getInteger(); // Skip command and subcmd
 		final int count = p.getInteger();
 		result.addInteger(count);
+		System.out.println("=================================== " + count);
 		for (int i = 0; i < count; i++) {
 			if (response.getBoolean()) {
 				result.addBoolean(enabled(p.getString(), p.getInteger()));
 			} else {
+				final String taskId = p.getString();
+				p.getInteger();
 				result.addBoolean(false);
+				System.out.println("Rejecting " + taskId);
 			}
 			result.addString(response.getString());
 		}
+		System.out.println("=================================== " + count);
 		return result;
 	}
 
 	private void reset() {
+		System.out.println("Reset");
+		trace.clear();
 		for (final String page : new ArrayList<String>(modules.keySet())) {
 			states.put(page, automata.get(page).getInit());
 		}
