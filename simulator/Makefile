@@ -51,7 +51,7 @@ cpn.ML.$(MLARCH): sml-full.$(MLARCH)
 	make)
 
 sml-full.$(MLARCH):
-	(echo "SMLofNJ.exportML \"sml-full\";" | sml -m image.cm;\
+	(echo "SMLofNJ.exportML \"sml-full\";" | ~/sml/bin/sml -m image.cm;\
 	mv sml-full.* runtime/heap/)
 
 .SILENT:
