@@ -102,6 +102,12 @@ structure ProbLibDist :
 
         exception Gamma
         val gamma : real * real -> real
+
+        exception Weibull
+        val weibull : real * real -> real
+
+        exception Rayleigh
+        val rayleigh : real -> real
     end = 
 
 struct
