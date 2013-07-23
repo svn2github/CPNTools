@@ -7,7 +7,7 @@ import java.util.Map;
 
 import ltl2aut.automaton.AcceptabilityFlavor;
 import ltl2aut.automaton.Automaton;
-import ltl2aut.formula.Formula;
+import ltl2aut.regexp.RegExp;
 
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.AbstractExtension;
@@ -24,6 +24,7 @@ public class DeclareExtension extends AbstractExtension {
 	 */
 	public static final int ID = 10001;
 	private final Map<String, Automaton> automata = new HashMap<String, Automaton>();
+	@SuppressWarnings("unused")
 	private final Option<Boolean> DATA_AWARE = Option.create("Data-aware simulation", "data_aware", Boolean.class);
 
 	private final Map<String, Module> modules = new HashMap<String, Module>();
@@ -239,7 +240,7 @@ public class DeclareExtension extends AbstractExtension {
 				}
 				m.addConstraint(c);
 			}
-			final Map<Formula<Task>, Constraint> formulae = Translator.INSTANCE.parse(m);
+			final Map<RegExp<Task>, Constraint> formulae = Translator.INSTANCE.parse(m);
 			final Automaton automaton = Translator.INSTANCE.translateRaw(formulae);
 			Translator.INSTANCE.colorAutomaton(automaton);
 			int state = automaton.getInit();

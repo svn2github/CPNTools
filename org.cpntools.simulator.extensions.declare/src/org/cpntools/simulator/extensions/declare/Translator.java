@@ -2,21 +2,24 @@ package org.cpntools.simulator.extensions.declare;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import ltl2aut.APCollector;
-import ltl2aut.LTL2Automaton;
+import ltl2aut.RegExp2Automaton;
 import ltl2aut.automaton.AcceptabilityFlavor;
 import ltl2aut.automaton.Automaton;
 import ltl2aut.automaton.scc.SCCGraph;
-import ltl2aut.cup_parser.CupParser;
-import ltl2aut.formula.Atomic;
-import ltl2aut.formula.Formula;
-import ltl2aut.formula.Or;
-import ltl2aut.formula.sugared.visitor.SimplifyVisitor;
-import ltl2aut.formula.visitor.Mapper;
+import ltl2aut.regexp.CharacterClass;
+import ltl2aut.regexp.Disjunction;
+import ltl2aut.regexp.Kleene;
+import ltl2aut.regexp.Optional;
+import ltl2aut.regexp.RegExp;
+import ltl2aut.regexp.Sequence;
+import ltl2aut.regexp.conjunction.FormulaTools;
+import ltl2aut.regexp.cup_parser.CupParser;
 
 /**
  * @author michael
@@ -35,11 +38,11 @@ public class Translator {
 	 * @param c
 	 * @return
 	 */
-	public Map<String, Collection<Task>> buildMap(final SortedSet<String> aps, final Constraint c) {
+	public Map<Character, Collection<Task>> buildMap(final SortedSet<Character> aps, final Constraint c) {
 		assert aps.size() == c.parameterCount();
-		final Map<String, Collection<Task>> result = new HashMap<String, Collection<Task>>();
+		final Map<Character, Collection<Task>> result = new HashMap<Character, Collection<Task>>();
 		int i = 0;
-		for (final String ap : aps) {
+		for (final Character ap : aps) {
 			result.put(ap, c.getParameters(i++));
 		}
 		return result;
@@ -58,8 +61,8 @@ public class Translator {
 	 * @param formula
 	 * @return
 	 */
-	public <T> SortedSet<T> getAPs(final Formula<T> formula) {
-		return new TreeSet<T>(APCollector.apply(formula));
+	public <T> SortedSet<T> getAPs(final RegExp<T> formula) {
+		return new TreeSet<T>(FormulaTools.getAtomicPropositions(formula));
 	}
 
 	/**
@@ -67,12 +70,12 @@ public class Translator {
 	 * @return
 	 * @throws Exception
 	 */
-	public Formula<Task> parse(final Constraint c) throws Exception {
-		final Formula<String> formula = parse(c.getFormula());
-		final SortedSet<String> aps = getAPs(formula);
-		final Map<String, Collection<Task>> map = buildMap(aps, c);
-		final Formula<Task> mappedFormula = replaceParameters(formula, map);
-		return mappedFormula;
+	public RegExp<Task> parse(final Constraint c) throws Exception {
+		final RegExp<Character> formula = parse(c.getFormula());
+		final SortedSet<Character> aps = getAPs(formula);
+		final Map<Character, Collection<Task>> map = buildMap(aps, c);
+		final RegExp<Task> mappedRegExp = replaceParameters(formula, map);
+		return mappedRegExp;
 	}
 
 	/**
@@ -80,8 +83,8 @@ public class Translator {
 	 * @return
 	 * @throws Exception
 	 */
-	public Map<Formula<Task>, Constraint> parse(final Module module) throws Exception {
-		final Map<Formula<Task>, Constraint> result = new HashMap<Formula<Task>, Constraint>();
+	public Map<RegExp<Task>, Constraint> parse(final Module module) throws Exception {
+		final Map<RegExp<Task>, Constraint> result = new HashMap<RegExp<Task>, Constraint>();
 		for (final Constraint c : module.constraints()) {
 			result.put(parse(c), c);
 		}
@@ -93,50 +96,44 @@ public class Translator {
 	 * @return
 	 * @throws Exception
 	 */
-	public Formula<String> parse(final String formula) throws Exception {
-		final Formula<String> parsed = CupParser.parse(formula);
-		final Formula<String> simplified = SimplifyVisitor.apply(parsed);
-		return simplified;
+	public RegExp<Character> parse(final String formula) throws Exception {
+		final RegExp<Character> parsed = CupParser.parse(formula);
+		return parsed;
 	}
 
 	/**
-	 * @param f
+	 * @param r
 	 * @param parameters
 	 * @return
 	 */
-	public <S, T> Formula<T> replaceParameters(final Formula<S> f, final Map<S, Collection<T>> parameters) {
-		return f.traverse(new Mapper<S, T>(null) {
-			@Override
-			public Formula<T> atomic(final S ap) {
-				final Collection<T> tasks = parameters.get(ap);
-				if (tasks == null || tasks.isEmpty()) { return t(); }
-				Formula<T> result = null;
-				for (final T activity : tasks) {
-					if (result == null) {
-						result = new Atomic<T>(activity);
-					} else {
-						result = new Or<T>(result, new Atomic<T>(activity));
-					}
+	public <S, T> RegExp<T> replaceParameters(final RegExp<S> r, final Map<S, Collection<T>> parameters) {
+		if (r instanceof CharacterClass) {
+			final Set<T> prop = new HashSet<T>();
+			for (final S ap : ((CharacterClass<S>) r).getPositive().isEmpty() ? ((CharacterClass<S>) r).getNegative()
+			        : ((CharacterClass<S>) r).getPositive()) {
+				final Collection<T> collection = parameters.get(ap);
+				if (collection != null) {
+					prop.addAll(collection);
 				}
-				return result;
 			}
-		});
-	}
-
-	/**
-	 * @param f
-	 * @param parameters
-	 * @return
-	 */
-	public <S, T> Formula<T> replaceParametersPrimitive(final Formula<S> f, final Map<S, T> parameters) {
-		return f.traverse(new Mapper<S, T>(null) {
-			@Override
-			public Formula<T> atomic(final S ap) {
-				final T tasks = parameters.get(ap);
-				if (tasks == null) { return t(); }
-				return new Atomic<T>(tasks);
+			if (((CharacterClass<S>) r).getPositive().isEmpty()) {
+				return CharacterClass.create(prop).negate();
+			} else {
+				return CharacterClass.create(prop);
 			}
-		});
+		} else if (r instanceof Sequence) {
+			return new Sequence<T>(replaceParameters(((Sequence<S>) r).getFirst(), parameters), replaceParameters(
+			        ((Sequence<S>) r).getSecond(), parameters));
+		} else if (r instanceof Optional) {
+			return new Optional<T>(replaceParameters(((Optional<S>) r).getExp(), parameters));
+		} else if (r instanceof Disjunction) {
+			return new Disjunction<T>(replaceParameters(((Disjunction<S>) r).getFirst(), parameters),
+			        replaceParameters(((Disjunction<S>) r).getSecond(), parameters));
+		} else if (r instanceof Kleene) {
+			return new Kleene<T>(replaceParameters(((Kleene<S>) r).getExp(), parameters));
+		} else {
+			throw new IllegalArgumentException("Unknown RegExp type");
+		}
 	}
 
 	/**
@@ -144,8 +141,8 @@ public class Translator {
 	 * @return
 	 * @throws Exception
 	 */
-	public <AP> Automaton translateRaw(final Map<Formula<AP>, Constraint> formulas) throws Exception {
-		return LTL2Automaton.INSTANCE.translate(formulas.keySet());
+	public <AP> Automaton translateRaw(final Map<RegExp<AP>, Constraint> formulas) throws Exception {
+		return RegExp2Automaton.INSTANCE.translate(formulas.keySet());
 	}
 
 }
