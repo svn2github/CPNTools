@@ -71,10 +71,15 @@ public class Translator {
 	 * @throws Exception
 	 */
 	public RegExp<Task> parse(final Constraint c) throws Exception {
+		System.out.println(c.getFormula());
 		final RegExp<Character> formula = parse(c.getFormula());
+		System.out.println(formula);
 		final SortedSet<Character> aps = getAPs(formula);
+		System.out.println(aps);
 		final Map<Character, Collection<Task>> map = buildMap(aps, c);
+		System.out.println(map);
 		final RegExp<Task> mappedRegExp = replaceParameters(formula, map);
+		System.out.println(mappedRegExp);
 		return mappedRegExp;
 	}
 
@@ -109,17 +114,17 @@ public class Translator {
 	public <S, T> RegExp<T> replaceParameters(final RegExp<S> r, final Map<S, Collection<T>> parameters) {
 		if (r instanceof CharacterClass) {
 			final Set<T> prop = new HashSet<T>();
-			for (final S ap : ((CharacterClass<S>) r).getPositive().isEmpty() ? ((CharacterClass<S>) r).getNegative()
-			        : ((CharacterClass<S>) r).getPositive()) {
+			for (final S ap : ((CharacterClass<S>) r).getNegative().isEmpty() ? ((CharacterClass<S>) r).getPositive()
+			        : ((CharacterClass<S>) r).getNegative()) {
 				final Collection<T> collection = parameters.get(ap);
 				if (collection != null) {
 					prop.addAll(collection);
 				}
 			}
-			if (((CharacterClass<S>) r).getPositive().isEmpty()) {
-				return CharacterClass.create(prop).negate();
-			} else {
+			if (((CharacterClass<S>) r).getNegative().isEmpty()) {
 				return CharacterClass.create(prop);
+			} else {
+				return CharacterClass.create(prop).negate();
 			}
 		} else if (r instanceof Sequence) {
 			return new Sequence<T>(replaceParameters(((Sequence<S>) r).getFirst(), parameters), replaceParameters(
