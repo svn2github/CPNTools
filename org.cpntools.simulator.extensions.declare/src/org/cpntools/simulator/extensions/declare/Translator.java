@@ -2,9 +2,7 @@ package org.cpntools.simulator.extensions.declare;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -12,12 +10,7 @@ import ltl2aut.RegExp2Automaton;
 import ltl2aut.automaton.AcceptabilityFlavor;
 import ltl2aut.automaton.Automaton;
 import ltl2aut.automaton.scc.SCCGraph;
-import ltl2aut.regexp.CharacterClass;
-import ltl2aut.regexp.Disjunction;
-import ltl2aut.regexp.Kleene;
-import ltl2aut.regexp.Optional;
 import ltl2aut.regexp.RegExp;
-import ltl2aut.regexp.Sequence;
 import ltl2aut.regexp.conjunction.FormulaTools;
 import ltl2aut.regexp.cup_parser.CupParser;
 
@@ -78,7 +71,7 @@ public class Translator {
 		System.out.println(aps);
 		final Map<Character, Collection<Task>> map = buildMap(aps, c);
 		System.out.println(map);
-		final RegExp<Task> mappedRegExp = replaceParameters(formula, map);
+		final RegExp<Task> mappedRegExp = RegExp2Automaton.INSTANCE.replaceParameters(formula, map);
 		System.out.println(mappedRegExp);
 		return mappedRegExp;
 	}
@@ -104,41 +97,6 @@ public class Translator {
 	public RegExp<Character> parse(final String formula) throws Exception {
 		final RegExp<Character> parsed = CupParser.parse(formula);
 		return parsed;
-	}
-
-	/**
-	 * @param r
-	 * @param parameters
-	 * @return
-	 */
-	public <S, T> RegExp<T> replaceParameters(final RegExp<S> r, final Map<S, Collection<T>> parameters) {
-		if (r instanceof CharacterClass) {
-			final Set<T> prop = new HashSet<T>();
-			for (final S ap : ((CharacterClass<S>) r).getNegative().isEmpty() ? ((CharacterClass<S>) r).getPositive()
-			        : ((CharacterClass<S>) r).getNegative()) {
-				final Collection<T> collection = parameters.get(ap);
-				if (collection != null) {
-					prop.addAll(collection);
-				}
-			}
-			if (((CharacterClass<S>) r).getNegative().isEmpty()) {
-				return CharacterClass.create(prop);
-			} else {
-				return CharacterClass.create(prop).negate();
-			}
-		} else if (r instanceof Sequence) {
-			return new Sequence<T>(replaceParameters(((Sequence<S>) r).getFirst(), parameters), replaceParameters(
-			        ((Sequence<S>) r).getSecond(), parameters));
-		} else if (r instanceof Optional) {
-			return new Optional<T>(replaceParameters(((Optional<S>) r).getExp(), parameters));
-		} else if (r instanceof Disjunction) {
-			return new Disjunction<T>(replaceParameters(((Disjunction<S>) r).getFirst(), parameters),
-			        replaceParameters(((Disjunction<S>) r).getSecond(), parameters));
-		} else if (r instanceof Kleene) {
-			return new Kleene<T>(replaceParameters(((Kleene<S>) r).getExp(), parameters));
-		} else {
-			throw new IllegalArgumentException("Unknown RegExp type");
-		}
 	}
 
 	/**
