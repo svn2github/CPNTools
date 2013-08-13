@@ -210,21 +210,20 @@ public class DeclareExtension extends AbstractExtension {
 			p.getInteger(); // subcmd
 			final int count = p.getInteger();
 			final String pageId = p.getString();
-			if (count == 0) {
-				modules.remove(pageId);
-				states.remove(pageId);
-				automata.remove(pageId);
-				return result;
-			}
+// if (count == 0) {
+// modules.remove(pageId);
+// states.remove(pageId);
+// automata.remove(pageId);
+// return result;
+// }
 			Module m = modules.get(pageId);
 			if (m == null) {
 				m = new Module();
 				modules.put(pageId, m);
 			}
-			m.removeAllConstraints();
 			for (int i = 0; i < count; i++) {
 				final int parameters = p.getInteger();
-				p.getString();
+				final String id = p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
 				final Constraint c = new Constraint(name, formula, parameters);
@@ -238,7 +237,11 @@ public class DeclareExtension extends AbstractExtension {
 					}
 					c.setParameters(j, t);
 				}
-				m.addConstraint(c);
+				m.addConstraint(id, c);
+			}
+			final int removeCount = p.getInteger();
+			for (int i = 0; i < removeCount; i++) {
+				m.removeConstraint(p.getString());
 			}
 			final Map<RegExp<Task>, Constraint> formulae = Translator.INSTANCE.parse(m);
 			final Automaton automaton = Translator.INSTANCE.translateRaw(formulae);
@@ -250,7 +253,9 @@ public class DeclareExtension extends AbstractExtension {
 			}
 			states.put(pageId, state);
 			automata.put(pageId, automaton);
-			System.out.println(automaton);
+			result.addBoolean(true);
+			result.addInteger(0);
+// System.out.println(automaton);
 		} catch (final Exception e) {
 			e.printStackTrace();
 			result.addBoolean(false);

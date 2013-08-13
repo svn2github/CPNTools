@@ -1,13 +1,13 @@
 package org.cpntools.simulator.extensions.declare;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author michael
  */
 public class Module {
-	private final Set<Constraint> constraints = new HashSet<Constraint>();
+	private final Map<String, Constraint> constraints = new HashMap<String, Constraint>();
 
 	/**
 	 * 
@@ -16,17 +16,18 @@ public class Module {
 	}
 
 	/**
+	 * @param id
 	 * @param c
 	 */
-	public void addConstraint(final Constraint c) {
-		constraints.add(c);
+	public void addConstraint(final String id, final Constraint c) {
+		constraints.put(id, c);
 	}
 
 	/**
 	 * @return
 	 */
 	public Iterable<Constraint> constraints() {
-		return constraints;
+		return constraints.values();
 	}
 
 	/**
@@ -37,9 +38,9 @@ public class Module {
 	}
 
 	/**
-	 * @param c
+	 * @param id
 	 */
-	public void removeConstraint(final Constraint c) {
-		constraints.remove(c);
+	public void removeConstraint(final String id) {
+		constraints.remove(id);
 	}
 }
