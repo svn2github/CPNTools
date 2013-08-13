@@ -136,53 +136,53 @@ public class DeclareExtension extends AbstractExtension {
 	private Packet enabled(final Packet p, final Packet response) {
 		response.reset();
 		p.reset();
-		System.out.println("-----------------------------------");
+// System.out.println("-----------------------------------");
 		if (response.getBoolean()) {
 			final Packet result = new Packet(7, 1);
 			result.addBoolean(enabled(p.getString(), p.getInteger()));
-			System.out.println("-----------------------------------");
+// System.out.println("-----------------------------------");
 			return result;
 		}
-		System.out.println("Rejecting " + p.getString());
-		System.out.println("-----------------------------------");
+// System.out.println("Rejecting " + p.getString());
+// System.out.println("-----------------------------------");
 		return response;
 	}
 
 	private boolean enabled(final String string, final int integer) {
-		System.out.print("Enabled? " + string + " - ");
+// System.out.print("Enabled? " + string + " - ");
 		final Object task = getTask(string);
 		for (final String pageId : new ArrayList<String>(automata.keySet())) {
 			final Automaton a = automata.get(pageId);
 			final int state = states.get(pageId);
-			System.out.print(state + " ");
+// System.out.print(state + " ");
 			if (!acceptable(a, state, task)) {
-				System.out.println("= false");
+// System.out.println("= false");
 				return false;
 			}
 		}
-		System.out.println("= true");
+// System.out.println("= true");
 		return true;
 	}
 
 	private void execute(final Packet p) {
 		p.reset();
 		final String taskId = p.getString();
-		System.out.print(taskId + ": (");
+// System.out.print(taskId + ": (");
 		trace.add(taskId);
 		final Object task = getTask(taskId);
-		boolean first = true;
+// boolean first = true;
 		for (final String pageId : new ArrayList<String>(automata.keySet())) {
 			final Automaton a = automata.get(pageId);
 			final int state = states.get(pageId);
 			final int next = execute(task, a, state);
-			System.out.print(state + " -> " + next);
-			if (!first) {
-				System.out.print(", ");
-			}
-			first = false;
+// System.out.print(state + " -> " + next);
+// if (!first) {
+// System.out.print(", ");
+// }
+// first = false;
 			states.put(pageId, next);
 		}
-		System.out.println(")");
+// System.out.println(")");
 	}
 
 	Object getTask(final String taskId) {
@@ -210,12 +210,6 @@ public class DeclareExtension extends AbstractExtension {
 			p.getInteger(); // subcmd
 			final int count = p.getInteger();
 			final String pageId = p.getString();
-// if (count == 0) {
-// modules.remove(pageId);
-// states.remove(pageId);
-// automata.remove(pageId);
-// return result;
-// }
 			Module m = modules.get(pageId);
 			if (m == null) {
 				m = new Module();
@@ -242,6 +236,14 @@ public class DeclareExtension extends AbstractExtension {
 			final int removeCount = p.getInteger();
 			for (int i = 0; i < removeCount; i++) {
 				m.removeConstraint(p.getString());
+			}
+			if (m.count() == 0) {
+				modules.remove(pageId);
+				states.remove(pageId);
+				automata.remove(pageId);
+				result.addBoolean(true);
+				result.addInteger(0);
+				return result;
 			}
 			final Map<RegExp<Task>, Constraint> formulae = Translator.INSTANCE.parse(m);
 			final Automaton automaton = Translator.INSTANCE.translateRaw(formulae);
@@ -273,24 +275,24 @@ public class DeclareExtension extends AbstractExtension {
 		p.getInteger(); // Skip command and subcmd
 		final int count = p.getInteger();
 		result.addInteger(count);
-		System.out.println("=================================== " + count);
+// System.out.println("=================================== " + count);
 		for (int i = 0; i < count; i++) {
 			if (response.getBoolean()) {
 				result.addBoolean(enabled(p.getString(), p.getInteger()));
 			} else {
-				final String taskId = p.getString();
+				p.getString();
 				p.getInteger();
 				result.addBoolean(false);
-				System.out.println("Rejecting " + taskId);
+// System.out.println("Rejecting " + taskId);
 			}
 			result.addString(response.getString());
 		}
-		System.out.println("=================================== " + count);
+// System.out.println("=================================== " + count);
 		return result;
 	}
 
 	private void reset() {
-		System.out.println("Reset");
+// System.out.println("Reset");
 		trace.clear();
 		for (final String page : new ArrayList<String>(modules.keySet())) {
 			states.put(page, automata.get(page).getInit());

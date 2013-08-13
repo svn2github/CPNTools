@@ -43,4 +43,11 @@ public class Module {
 	public void removeConstraint(final String id) {
 		constraints.remove(id);
 	}
+
+	/**
+	 * @return
+	 */
+	public int count() {
+		return constraints.size();
+	}
 }

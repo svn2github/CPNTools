@@ -64,15 +64,15 @@ public class Translator {
 	 * @throws Exception
 	 */
 	public RegExp<Task> parse(final Constraint c) throws Exception {
-		System.out.println(c.getFormula());
+// System.out.println(c.getFormula());
 		final RegExp<Character> formula = parse(c.getFormula());
-		System.out.println(formula);
+// System.out.println(formula);
 		final SortedSet<Character> aps = getAPs(formula);
-		System.out.println(aps);
+// System.out.println(aps);
 		final Map<Character, Collection<Task>> map = buildMap(aps, c);
-		System.out.println(map);
+// System.out.println(map);
 		final RegExp<Task> mappedRegExp = RegExp2Automaton.INSTANCE.replaceParameters(formula, map);
-		System.out.println(mappedRegExp);
+// System.out.println(mappedRegExp);
 		return mappedRegExp;
 	}
 
