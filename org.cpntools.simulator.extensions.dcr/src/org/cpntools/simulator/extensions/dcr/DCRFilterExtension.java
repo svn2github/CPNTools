@@ -35,9 +35,11 @@ import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.scraper.Transition;
 import org.cpntools.simulator.extensions.server.Handler;
 
+import java.util.Date;
+
 public class DCRFilterExtension  extends AbstractExtension {
 	
-	public static final int ID = 10002;
+	public static final int ID = 10003;
 	private JDialog dialog;
 	private JTabbedPane tabs;
 	private JTextField stringOption;
@@ -104,6 +106,7 @@ public class DCRFilterExtension  extends AbstractExtension {
 			dialog.add(pane);
 			dialog.setVisible(true);
 			pane.setDividerLocation(0.66);
+			System.out.println("107");
 
 			//final Scraper scraper = c.getExtension(Scraper.class);
 			//if (scraper != null) {
@@ -126,6 +129,7 @@ public class DCRFilterExtension  extends AbstractExtension {
 	
 	@Override
 	public Packet prefilter(final Packet p) {
+		System.out.println("130");
 		p.reset();
 		final int command = p.getInteger();
 		//final int extension = p.getInteger();
@@ -293,19 +297,21 @@ public class DCRFilterExtension  extends AbstractExtension {
 	
 
 	private Packet handleCheckPage(final Packet p) {
+		System.out.println("298");
 		//final Packet result = new Packet(7, 1);
 		final Packet f = new Packet(p.getOpcode(), 400);
 		
 		//try {
 			p.reset();
 			p.getInteger(); // command
-			//p.getInteger(); // extension
+			p.getInteger(); // extension
 			p.getInteger(); // subcmd
 			final int count = p.getInteger();
 			// f.addInteger(count);
 			final String pageId = p.getString();
 			// f.addString(pageId);
 			if (count == 0) {
+				System.out.println("count is 0");
 				p.reset();
 				p.getInteger();
 				//f.addInteger(p.getInteger()); // extension
@@ -314,6 +320,7 @@ public class DCRFilterExtension  extends AbstractExtension {
 				f.addString(p.getString());
 				return f;
 			}
+			System.out.println("count is not 0");
 			
 			int newCount = count;
 			
@@ -334,14 +341,17 @@ public class DCRFilterExtension  extends AbstractExtension {
 			}			
 			
 			DCRGraph d = new DCRGraph();
+			System.out.println("new DCRGraph");
 			
+			Date date = new Date();
+			System.out.println(date.toString() + "Going for count:" + Integer.toString(count));
 			for (int i = 0; i < count; i++) {
 				final int parameters = p.getInteger();
 				p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
 				//lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + parameters);
-				
+				System.out.println("Name: " + name + " formula: " + formula);
 				//final Constraint c = new Constraint(name, formula, parameters);
 				
 				String param1 = "";

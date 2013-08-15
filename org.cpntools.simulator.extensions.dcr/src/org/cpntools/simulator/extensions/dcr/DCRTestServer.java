@@ -26,7 +26,7 @@ public class DCRTestServer {
 	public static void main(final String[] args) throws InterruptedException, IOException, ClassNotFoundException,
 	        InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
 		final MainFrame main = new MainFrame();
-		final Server server = new Server(Server.DEFAULT_PORT, Scraper.INSTANCE, new DCRExtension());
+		final Server server = new Server(Server.DEFAULT_PORT, /*Scraper.INSTANCE,*/ new DCRExtension());
 		final Thread t = new Thread(server, "Main server on port " + Server.DEFAULT_PORT);
 		for (final Extension e : server) {
 			main.addExtension(e);
