@@ -220,6 +220,7 @@ public class DeclareExtension extends AbstractExtension {
 				final String id = p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
+				p.getString(); // inscription
 				final Constraint c = new Constraint(name, formula, parameters);
 				for (int j = 0; j < parameters; j++) {
 					final String tid = p.getString();
