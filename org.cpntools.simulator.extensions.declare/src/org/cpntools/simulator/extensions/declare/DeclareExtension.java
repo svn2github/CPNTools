@@ -41,7 +41,7 @@ public class DeclareExtension extends AbstractExtension {
 	public DeclareExtension() {
 		addOption(SMART);
 // addOption(DATA_AWARE, SMART);
-		addLazySubscription(new Command(400, 2), // Syntax check page
+		addLazySubscription(// new Command(400, 2), // Syntax check page
 // new Command(500, 3), // Generate instances
 // new Command(500, 4), // Update instances
 // new Command(500, 11), // Start run
