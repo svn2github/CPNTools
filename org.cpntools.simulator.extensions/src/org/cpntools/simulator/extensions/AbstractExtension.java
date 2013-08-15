@@ -26,6 +26,11 @@ public abstract class AbstractExtension extends Observable implements Extension 
 	protected Map<Option<Integer>, Integer> integerOptions = new HashMap<Option<Integer>, Integer>();
 	protected boolean lazyDone = false;
 
+	/**
+	 * used for notification when lazy subscriptions are made
+	 */
+	public static final Object LAZY_SUBSCRIPTIONS_DONE = new Object();
+
 	protected Map<Option<String>, String> stringOptions = new HashMap<Option<String>, String>();
 
 	/**
@@ -237,6 +242,8 @@ public abstract class AbstractExtension extends Observable implements Extension 
 			for (final Command c : lazysubscriptions) {
 				channel.subscribe(c, this);
 			}
+			setChanged();
+			notifyObservers(lazysubscriptions);
 		} catch (final Exception _) {
 			// If called before channel is set or before subscriptions is created buy channel
 			subscriptions.addAll(lazysubscriptions);
