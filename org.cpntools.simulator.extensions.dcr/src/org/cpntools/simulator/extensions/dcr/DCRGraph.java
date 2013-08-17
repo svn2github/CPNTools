@@ -1,5 +1,6 @@
 package org.cpntools.simulator.extensions.dcr;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class DCRGraph {
@@ -9,6 +10,28 @@ public class DCRGraph {
 	public HashSet<Tuple<String, String>> excludes = new HashSet<Tuple<String, String>>();
 	public HashSet<Tuple<String, String>> milestones = new HashSet<Tuple<String, String>>();
 	public HashSet<String> events = new HashSet<String>();
+	
+	public HashMap<String, Tuple<Integer, Tuple<String, String>>> relationID = new HashMap<String, Tuple<Integer, Tuple<String, String>>>();
+	
+	public void RemoveRealtion(String ID)
+	{
+		if (relationID.containsKey(ID))
+		{
+			Integer relationType = relationID.get(ID).getLeft();
+			Tuple<String, String> relation = relationID.get(ID).getRight();
+			if (relationType == 1)
+				conditions.remove(relation);
+			if (relationType == 2)
+				responses.remove(relation);
+			if (relationType == 3)
+				includes.remove(relation);
+			if (relationType == 4)
+				excludes.remove(relation);
+			if (relationType == 5)
+				milestones.remove(relation);			
+		}		
+	}
+	
 	
 	public DCRMarking Execute(DCRMarking m, String e)
 	{
@@ -80,6 +103,34 @@ public class DCRGraph {
 			result.included.add(e);		
 		return result;
 	}
+	
+	
+	  @Override public String toString() {
+		    StringBuilder result = new StringBuilder();
+		    String NEW_LINE = System.getProperty("line.separator");
+
+		    result.append(this.getClass().getName() + " DCR Graph {" + NEW_LINE);
+		    result.append(" Events: ");
+		    for (String e : events)
+		    	result.append(e + "; ");
+		    result.append(NEW_LINE);
+		    
+		    result.append(" Responses: ");
+		    for (Tuple<String, String> r : responses)
+		    	result.append(r.getLeft() + " *-> " + r.getRight() + ";");
+		    result.append(NEW_LINE);		    
+
+		    result.append(" Conditions: ");
+		    for (Tuple<String, String> r : conditions)
+		    	result.append(r.getLeft() + " ->* " + r.getRight() + ";");
+		    result.append(NEW_LINE);		    
+		    
+		    //Note that Collections and Maps also override toString
+		    //result.append(" RelationID: " + relationID.toString() + NEW_LINE);
+		    result.append("}");
+
+		    return result.toString();
+		  }	
 	
 	
 

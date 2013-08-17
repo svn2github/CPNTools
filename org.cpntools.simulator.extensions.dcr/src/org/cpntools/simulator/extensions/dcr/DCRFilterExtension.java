@@ -30,6 +30,7 @@ import org.cpntools.simulator.extensions.AbstractExtension;
 import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.Command;
 import org.cpntools.simulator.extensions.Option;
+import org.cpntools.simulator.extensions.declare.DeclareExtension;
 import org.cpntools.simulator.extensions.scraper.Page;
 import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.scraper.Transition;
@@ -39,7 +40,7 @@ import java.util.Date;
 
 public class DCRFilterExtension  extends AbstractExtension {
 	
-	public static final int ID = 10003;
+	public static final int ID = 10001;
 	private JDialog dialog;
 	private JTabbedPane tabs;
 	private JTextField stringOption;
@@ -56,20 +57,23 @@ public class DCRFilterExtension  extends AbstractExtension {
 	public DCRFilterExtension() {
 		//addOption(Option.create("String", "string", String.class), Option.create("Integer", "integer", Integer.class),
 		//        Option.create("Boolean", "boolean", Boolean.class));
+		//addLazySubscription(new Command(400, 2));				
+		
 		addSubscription(//new Command(200, 9), 
-				new Command(400, 2, true)//, // Syntax check page
+				//new Command(400, 2, true)//, // Syntax check page
+				new Command(10000, 10001, true),
 		        //new Command(500, 3, true), // Generate instances
 		        //new Command(500, 4, true), // Update instances
 		        //new Command(500, 11, true), // Start run
-		        //new Command(500, 12, true), // Execute transition
-		        //new Command(500, 13, true), // Check transition for enabledness
-		        //new Command(500, 14, true), // Checked enabledness without scheduler
-		        //new Command(500, 15, true), // Manual binding
-		        //new Command(500, 20, true), // Init state
-		        //new Command(500, 21, true), // Create + reset scheduler
-		        //new Command(500, 35, true), // Check enabling of list of transitions
-		        //new Command(500, 36, true), // Check enabling of transitions without scheduler
-		        //new Command(800, 1, true) // Set state space options
+		        new Command(500, 12, true), // Execute transition
+		        new Command(500, 13, true), // Check transition for enabledness
+		        new Command(500, 14, true), // Checked enabledness without scheduler
+		        new Command(500, 15, true), // Manual binding
+		        new Command(500, 20, true), // Init state
+		        new Command(500, 21, true), // Create + reset scheduler
+		        new Command(500, 35, true), // Check enabling of list of transitions
+		        new Command(500, 36, true), // Check enabling of transitions without scheduler
+		        new Command(800, 1, true) // Set state space options
 				);
 		//addObserver(this);
 	}
@@ -79,35 +83,7 @@ public class DCRFilterExtension  extends AbstractExtension {
 		super.setChannel(c);
 
 		try {
-			dialog = new JDialog((Frame) null, "DCR Extension", false);
-			dialog.setSize(new Dimension(600, 400));
-			dialog.setLayout(new BorderLayout());
-			tabs = new JTabbedPane(SwingConstants.LEFT, JTabbedPane.SCROLL_TAB_LAYOUT);
-			final JPanel rightPanel = new JPanel();
-			rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-			final JPanel stringPanel = new JPanel(new BorderLayout());
-			stringPanel.setBorder(BorderFactory.createTitledBorder("String"));
-			stringOption = new JTextField();
-			stringOption.setEditable(false);
-			stringPanel.add(stringOption);
-			rightPanel.add(stringPanel);
-			final JPanel integerPanel = new JPanel(new BorderLayout());
-			integerPanel.setBorder(BorderFactory.createTitledBorder("Integer"));
-			integerOption = new JTextField();
-			integerOption.setEditable(false);
-			integerPanel.add(integerOption);
-			rightPanel.add(integerPanel);
-			final JPanel booleanPanel = new JPanel(new BorderLayout());
-			booleanPanel.setBorder(BorderFactory.createTitledBorder("Boolean"));
-			booleanOption = new JCheckBox();
-			booleanPanel.add(booleanOption);
-			rightPanel.add(booleanPanel);
-			final JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tabs, rightPanel);
-			dialog.add(pane);
-			dialog.setVisible(true);
-			pane.setDividerLocation(0.66);
 			System.out.println("107");
-
 			//final Scraper scraper = c.getExtension(Scraper.class);
 			//if (scraper != null) {
 			//	scraper.addObserver(this);
@@ -127,88 +103,46 @@ public class DCRFilterExtension  extends AbstractExtension {
 		return "DCR Filter Extension";
 	}
 	
+	
+
+	
 	@Override
-	public Packet prefilter(final Packet p) {
-		System.out.println("130");
+	public Packet prefilter(final Packet p) {		
+		//makeLazySubscriptions();		
 		p.reset();
+		
+		System.out.println("Prefilter for: ");
+		System.out.println(p.toString());
+		System.out.println("------");
+		
+		p.reset();
+		
 		final int command = p.getInteger();
-		//final int extension = p.getInteger();
+		//System.out.print(command);
+		//System.out.print(" ");
+		final int extension = p.getInteger();
+		//System.out.print(extension);
+		//System.out.print(" ");
 		final int subcommand = p.getInteger();
+		//System.out.println(subcommand);
 		p.reset();
-		if (command == 400) {
-			if (subcommand == 2) 
+		if (command == 10000) {
+			if (subcommand == 1) 
 				return handleCheckPage(p);
 				//return null;
 			else
 				return null;
 		}
-		return null;
-		/*
-		p.reset();
-		final int command = p.getInteger();
-		final int subcommand = p.getInteger();
-		if (command == 200 && subcommand == 9) {
-			dialog.setTitle("DCR Extension [" + p.getString() + "]");
-		}
-		if (command == 500) {			
-			switch (subcommand) {
-			case 12:
-				execute(p);
-				return p;
-			case 13:
-			case 14:
-				return enabled(p, p);
-			case 20:
-			case 21:
-				reset();
-				return p;
-			case 35:
-			case 36:
-				return multipleEnabled(p, p);
-			}
-		}		
-		return null;*/
-	}	
-	
-	@Override
-	public Packet handle(final Packet p) {
+		
 		return null;
 	}	
-	
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
-	 */
-	/*
-	@Override
-	public Packet handle(final Packet p) {
-		p.reset();
-		final int command = p.getInteger();
-		final int extension = p.getInteger();
-		final int subcommand = p.getInteger();
-		assert command == Handler.EXTERNAL_COMMAND;
-		assert extension == ID;
-		Packet result;
-		switch (subcommand) {
-		case 1:
-			result = handleCheckPage(p);
-			break;
-		default:
-			result = new Packet(7, -1);
-			result.addString("Unknown Declare command");
-			break;
-		}
-		return result;
-	}
 	
 	@Override
 	public Packet handle(final Packet p, final Packet response) {
 		p.reset();
 		final int command = p.getInteger();
-		final int subcommand = p.getInteger();
-		if (command == 200 && subcommand == 9) {
-			dialog.setTitle("DCR Extension [" + p.getString() + "]");
-		}
-		if (command == 500) {			
+		if (command == 500) {
+			final int subcommand = p.getInteger();
 			switch (subcommand) {
 			case 12:
 				execute(p);
@@ -224,19 +158,32 @@ public class DCRFilterExtension  extends AbstractExtension {
 			case 36:
 				return multipleEnabled(p, response);
 			}
-		}		
+		}
 		return null;
-	}*/
+	}
+
+	
+	@Override
+	public Packet handle(final Packet p) {
+		//System.out.println("Handle for: ");
+		//System.out.println(p.toString());
+		//System.out.println("------");
+		
+		return null;
+	}	
+	
+	
 	
 	private Packet enabled(final Packet p, final Packet response) {
+		response.reset();
 		p.reset();
-		if (p.getBoolean()) {
+		if (response.getBoolean()) {
 			final Packet result = new Packet(7, 1);
 			result.addBoolean(enabled(p.getString(), p.getInteger()));
 			return result;
 		}
 		return response;
-	}
+	}	
 
 	private boolean enabled(final String task, final int integer) {
 		//Object task = tasks.get(string);
@@ -265,12 +212,14 @@ public class DCRFilterExtension  extends AbstractExtension {
 			if (response.getBoolean()) {
 				result.addBoolean(enabled(p.getString(), p.getInteger()));
 			} else {
+				p.getString();
+				p.getInteger();
 				result.addBoolean(false);
 			}
 			result.addString(response.getString());
 		}
 		return result;
-	}	
+	}
 	
 	private void execute(final Packet p) {
 		p.reset();
@@ -297,9 +246,9 @@ public class DCRFilterExtension  extends AbstractExtension {
 	
 
 	private Packet handleCheckPage(final Packet p) {
-		System.out.println("298");
+		System.out.println("In handleCheckPage");
 		//final Packet result = new Packet(7, 1);
-		final Packet f = new Packet(p.getOpcode(), 400);
+		final Packet f = new Packet(p.getOpcode(), 10000);
 		
 		//try {
 			p.reset();
@@ -307,51 +256,55 @@ public class DCRFilterExtension  extends AbstractExtension {
 			p.getInteger(); // extension
 			p.getInteger(); // subcmd
 			final int count = p.getInteger();
+			System.out.println("Count:" + Integer.toString(count));
 			// f.addInteger(count);
 			final String pageId = p.getString();
+			System.out.println("pageId:" + pageId);
 			// f.addString(pageId);
+			
+			/*
 			if (count == 0) {
 				System.out.println("count is 0");
 				p.reset();
-				p.getInteger();
-				//f.addInteger(p.getInteger()); // extension
+				p.getInteger(); // command - not added				
+				f.addInteger(p.getInteger()); // extension
 				f.addInteger(p.getInteger()); // subcmd
 				f.addInteger(p.getInteger());				
 				f.addString(p.getString());
 				return f;
 			}
 			System.out.println("count is not 0");
+			*/
+
 			
-			int newCount = count;
-			
-			DCRGraph oldD = null;
-			if (!indexes.containsKey(pageId))
+			DCRGraph d;
+			if (!dcrgraphs.containsKey(pageId))
 			{
-				final DefaultListModel model = new DefaultListModel();
-				final JList list = new JList(model);
-				indexes.put(pageId, tabs.getTabCount());
-				tabs.addTab(pageId, new JScrollPane(list));				
-				lists.put(pageId, model);
 				markings.put(pageId, new DCRMarking());
+				d = new DCRGraph();
+				dcrgraphs.put(pageId, d);
 			}			
 			else
 			{
-				lists.get(pageId).clear();
-				oldD = dcrgraphs.get(pageId);
-			}			
+				//lists.get(pageId).clear();
+				d = dcrgraphs.get(pageId);
+			}	
 			
-			DCRGraph d = new DCRGraph();
-			System.out.println("new DCRGraph");
+			int newCount = count;
+			if (count != 0)
+			{
+
 			
 			Date date = new Date();
 			System.out.println(date.toString() + "Going for count:" + Integer.toString(count));
 			for (int i = 0; i < count; i++) {
 				final int parameters = p.getInteger();
-				p.getString();
+				//p.getString();
+				final String relationID = p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
 				//lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + parameters);
-				System.out.println("Name: " + name + " formula: " + formula);
+				System.out.println("RelationID: " + relationID + "Name: " + name + " formula: " + formula);
 				//final Constraint c = new Constraint(name, formula, parameters);
 				
 				String param1 = "";
@@ -369,32 +322,43 @@ public class DCRFilterExtension  extends AbstractExtension {
 					//c.setParameters(j, t);
 					if (j == 0) param1 = tid;
 					if (j == 1) param2 = tid;
-					if (!d.events.contains(tid)) d.events.add(tid);					
-					
-					if (oldD == null)
-						markings.get(pageId).included.add(tid);
-					else
-						if (!oldD.events.contains(tid)) 
-							markings.get(pageId).included.add(tid);					
+					if (!d.events.contains(tid)) 
+						{
+							markings.get(pageId).included.add(tid);						
+							d.events.add(tid);					
+						}											
 				}
 				
 				
+				Tuple<String, String> relation = new Tuple<String, String>(param1, param2);
+				
 				if (name.equals("precedence"))
 				{
-					d.conditions.add(new Tuple<String, String>(param1, param2));
+					d.conditions.add(relation);
+					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(1, relation));
 					newCount = newCount - 1;
 				}
 				if (name.equals("response"))
 				{
-					d.responses.add(new Tuple<String, String>(param1, param2));
+					d.responses.add(relation);
+					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(2, relation));
 					newCount = newCount - 1;
 				}
 				if (name.equals("include"))
-					d.includes.add(new Tuple<String, String>(param1, param2));
+				{
+					d.includes.add(relation);
+					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(3, relation));
+				}
 				if (name.equals("exclude"))
-					d.excludes.add(new Tuple<String, String>(param1, param2));
+				{
+					d.excludes.add(relation);
+					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(4, relation));
+				}
 				if (name.equals("milestone"))
-					d.milestones.add(new Tuple<String, String>(param1, param2));				
+				{
+					d.milestones.add(relation);
+					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(5, relation));
+				}
 				
 				/*if (!indexes.containsKey(pageId))
 				{
@@ -406,10 +370,30 @@ public class DCRFilterExtension  extends AbstractExtension {
 					lists.put(pageId, model);					
 				}
 				else*/
-					lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + paramString);
+					//lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + paramString);
 				
 				//m.addConstraint(c);
 			}
+			}
+			
+			final int delcount = p.getInteger();
+			int newdelcount = delcount;
+			for (int i = 0; i < delcount; i++) {
+				String delid = p.getString();
+				System.out.println("test1");
+				if (d.relationID.containsKey(delid))
+				{
+					System.out.println("test2");
+					int reltype = d.relationID.get(delid).getLeft();
+					if ((reltype == 1) || (reltype == 2))
+					{
+						newdelcount = newdelcount - 1;
+					}
+					d.RemoveRealtion(delid);
+				}				
+			}
+			
+			
 
 			p.reset();
 			p.getInteger();
@@ -452,10 +436,33 @@ public class DCRFilterExtension  extends AbstractExtension {
 						f.addString(p.getString());
 					}
 				}
+			}			
+			f.addInteger(newdelcount);
+			for (int i = 0; i < delcount; i++) {
+				String delid = p.getString();
+				if (d.relationID.containsKey(delid))
+				{
+					int reltype = d.relationID.get(delid).getLeft();
+					if (!((reltype == 1) || (reltype == 2)))
+					{
+						f.addString(delid);
+					}
+				}
+				else
+					f.addString(delid);
 			}
-			
-			
+
 			dcrgraphs.put(pageId, d);
+
+			System.out.println("DCR Graph:");
+			System.out.println(d.toString());
+			System.out.println("-----------------");
+
+			
+			System.out.println("Outgoing packet:");
+			System.out.println(f.toString());
+			System.out.println("-----------------");
+			
 			//markings.put(pageId,  d.InitialMarking());
 		//} catch (final Exception e) {
 		//	return null;
