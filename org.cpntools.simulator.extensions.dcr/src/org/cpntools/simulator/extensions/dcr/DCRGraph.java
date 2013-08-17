@@ -2,6 +2,7 @@ package org.cpntools.simulator.extensions.dcr;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 public class DCRGraph {
 	public HashSet<Tuple<String, String>> conditions = new HashSet<Tuple<String, String>>();
@@ -64,12 +65,20 @@ public class DCRGraph {
 		if (!m.included.contains(e)) 
 			return false;
 		// check conditions		
-		if (!m.executed.containsAll(RelationsFor(conditions, e)))
+		
+		//if (!m.executed.containsAll(RelationsFor(conditions, e)))		
+		Set<String> inccon = new HashSet<String>(RelationsFor(conditions, e));
+		inccon.retainAll(m.included);		
+		if (!m.executed. containsAll(inccon))
 			return false;	
-		// check milestones 
-		//TODO
+
+		// check milestones
+		
+		Set<String> incmil = new HashSet<String>(RelationsFor(milestones, e));
+		incmil.retainAll(m.included);		
+		
 		for (String p : m.pending)
-			if (RelationsFor(milestones, e).contains(p))
+			if (incmil.contains(p))
 				return false;	
 		return true;
 	}	

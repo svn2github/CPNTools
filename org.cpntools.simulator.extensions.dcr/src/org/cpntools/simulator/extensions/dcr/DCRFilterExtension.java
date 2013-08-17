@@ -40,7 +40,7 @@ import java.util.Date;
 
 public class DCRFilterExtension  extends AbstractExtension {
 	
-	public static final int ID = 10001;
+	public static final int ID = 10011;
 	private JDialog dialog;
 	private JTabbedPane tabs;
 	private JTextField stringOption;
@@ -118,15 +118,16 @@ public class DCRFilterExtension  extends AbstractExtension {
 		p.reset();
 		
 		final int command = p.getInteger();
-		//System.out.print(command);
-		//System.out.print(" ");
-		final int extension = p.getInteger();
-		//System.out.print(extension);
-		//System.out.print(" ");
-		final int subcommand = p.getInteger();
-		//System.out.println(subcommand);
-		p.reset();
 		if (command == 10000) {
+			//System.out.print(command);
+			//System.out.print(" ");
+			final int extension = p.getInteger();
+			//System.out.print(extension);
+			//System.out.print(" ");
+			final int subcommand = p.getInteger();
+			//System.out.println(subcommand);
+			p.reset();
+		
 			if (subcommand == 1) 
 				return handleCheckPage(p);
 				//return null;
@@ -218,6 +219,9 @@ public class DCRFilterExtension  extends AbstractExtension {
 			}
 			result.addString(response.getString());
 		}
+		System.out.println("Multipleenabled result: ");
+		System.out.println(result.toString());
+		System.out.println("------");		
 		return result;
 	}
 	
@@ -228,6 +232,8 @@ public class DCRFilterExtension  extends AbstractExtension {
 			final DCRGraph d = dcrgraphs.get(pageId);
 			final DCRMarking m = markings.get(pageId);
 			DCRMarking next = d.Execute(m, task);
+			System.out.println("Marking after execution:");
+			System.out.println(next.toString());
 			markings.put(pageId, next);
 		}
 	}
@@ -303,6 +309,7 @@ public class DCRFilterExtension  extends AbstractExtension {
 				final String relationID = p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
+				final String inscription = p.getString();
 				//lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + parameters);
 				System.out.println("RelationID: " + relationID + "Name: " + name + " formula: " + formula);
 				//final Constraint c = new Constraint(name, formula, parameters);
@@ -348,16 +355,19 @@ public class DCRFilterExtension  extends AbstractExtension {
 				{
 					d.includes.add(relation);
 					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(3, relation));
+					newCount = newCount - 1;
 				}
 				if (name.equals("exclude"))
 				{
 					d.excludes.add(relation);
 					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(4, relation));
+					newCount = newCount - 1;
 				}
 				if (name.equals("milestone"))
 				{
 					d.milestones.add(relation);
 					d.relationID.put(relationID, new Tuple<Integer, Tuple<String, String>>(5, relation));
+					newCount = newCount - 1;
 				}
 				
 				/*if (!indexes.containsKey(pageId))
@@ -385,10 +395,10 @@ public class DCRFilterExtension  extends AbstractExtension {
 				{
 					System.out.println("test2");
 					int reltype = d.relationID.get(delid).getLeft();
-					if ((reltype == 1) || (reltype == 2))
-					{
+					//if ((reltype == 1) || (reltype == 2))
+					//{
 						newdelcount = newdelcount - 1;
-					}
+					//}
 					d.RemoveRealtion(delid);
 				}				
 			}
@@ -412,8 +422,9 @@ public class DCRFilterExtension  extends AbstractExtension {
 				final String s1 = p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
+				final String inscription = p.getString();
 				
-				if ((name.equals("precedence")) || (name.equals("response")))
+				if ((name.equals("precedence")) || (name.equals("response")) || (name.equals("include")) || (name.equals("exclude")) || (name.equals("milestone")))
 				{
 					b = false;					
 				}
@@ -423,6 +434,7 @@ public class DCRFilterExtension  extends AbstractExtension {
 					f.addString(s1);
 					f.addString(name);
 					f.addString(formula);
+					f.addString(inscription);
 				}
 				
 				for (int j = 0; j < parameters; j++) 
@@ -442,11 +454,11 @@ public class DCRFilterExtension  extends AbstractExtension {
 				String delid = p.getString();
 				if (d.relationID.containsKey(delid))
 				{
-					int reltype = d.relationID.get(delid).getLeft();
-					if (!((reltype == 1) || (reltype == 2)))
-					{
-						f.addString(delid);
-					}
+					//int reltype = d.relationID.get(delid).getLeft();
+					//if (!((reltype == 1) || (reltype == 2)))
+					//{
+					//	f.addString(delid);
+					//}
 				}
 				else
 					f.addString(delid);
