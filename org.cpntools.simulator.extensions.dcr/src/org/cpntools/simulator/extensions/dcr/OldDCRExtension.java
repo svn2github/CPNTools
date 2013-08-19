@@ -24,7 +24,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-
 import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.AbstractExtension;
 import org.cpntools.simulator.extensions.Channel;
@@ -35,16 +34,15 @@ import org.cpntools.simulator.extensions.scraper.Scraper;
 import org.cpntools.simulator.extensions.scraper.Transition;
 import org.cpntools.simulator.extensions.server.Handler;
 
-public class OldDCRExtension  extends AbstractExtension {
-	
+public abstract class OldDCRExtension extends AbstractExtension {
+
 	public static final int ID = 10001;
 	private JDialog dialog;
 	private JTabbedPane tabs;
 	private JTextField stringOption;
 	private JTextField integerOption;
 	private JCheckBox booleanOption;
-	
-	
+
 	private final Map<String, DCRGraph> dcrgraphs = new HashMap<String, DCRGraph>();
 	private final Map<String, DCRMarking> markings = new HashMap<String, DCRMarking>();
 
@@ -52,10 +50,11 @@ public class OldDCRExtension  extends AbstractExtension {
 	 * 
 	 */
 	public OldDCRExtension() {
-		//addOption(Option.create("String", "string", String.class), Option.create("Integer", "integer", Integer.class),
-		//        Option.create("Boolean", "boolean", Boolean.class));
-		addSubscription(//new Command(200, 9), 
-				new Command(400, 2), // Syntax check page
+		// addOption(Option.create("String", "string", String.class), Option.create("Integer", "integer",
+// Integer.class),
+		// Option.create("Boolean", "boolean", Boolean.class));
+		addSubscription(// new Command(200, 9),
+		        new Command(400, 2), // Syntax check page
 		        new Command(500, 3), // Generate instances
 		        new Command(500, 4), // Update instances
 		        new Command(500, 11), // Start run
@@ -68,8 +67,8 @@ public class OldDCRExtension  extends AbstractExtension {
 		        new Command(500, 35), // Check enabling of list of transitions
 		        new Command(500, 36), // Check enabling of transitions without scheduler
 		        new Command(800, 1) // Set state space options
-				);
-		//addObserver(this);
+		);
+		// addObserver(this);
 	}
 
 	@Override
@@ -105,10 +104,10 @@ public class OldDCRExtension  extends AbstractExtension {
 			dialog.setVisible(true);
 			pane.setDividerLocation(0.66);
 
-			//final Scraper scraper = c.getExtension(Scraper.class);
-			//if (scraper != null) {
-			//	scraper.addObserver(this);
-			//}
+			// final Scraper scraper = c.getExtension(Scraper.class);
+			// if (scraper != null) {
+			// scraper.addObserver(this);
+			// }
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
@@ -123,7 +122,7 @@ public class OldDCRExtension  extends AbstractExtension {
 	public String getName() {
 		return "Old DCR Extension";
 	}
-	
+
 	/**
 	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
 	 */
@@ -147,7 +146,7 @@ public class OldDCRExtension  extends AbstractExtension {
 		}
 		return result;
 	}
-	
+
 	@Override
 	public Packet handle(final Packet p, final Packet response) {
 		p.reset();
@@ -156,7 +155,7 @@ public class OldDCRExtension  extends AbstractExtension {
 		if (command == 200 && subcommand == 9) {
 			dialog.setTitle("DCR Extension [" + p.getString() + "]");
 		}
-		if (command == 500) {			
+		if (command == 500) {
 			switch (subcommand) {
 			case 12:
 				execute(p);
@@ -172,10 +171,10 @@ public class OldDCRExtension  extends AbstractExtension {
 			case 36:
 				return multipleEnabled(p, response);
 			}
-		}		
+		}
 		return null;
 	}
-	
+
 	private Packet enabled(final Packet p, final Packet response) {
 		p.reset();
 		if (p.getBoolean()) {
@@ -187,23 +186,22 @@ public class OldDCRExtension  extends AbstractExtension {
 	}
 
 	private boolean enabled(final String task, final int integer) {
-		//Object task = tasks.get(string);
-		
+		// Object task = tasks.get(string);
+
 		for (final String pageId : new ArrayList<String>(dcrgraphs.keySet())) {
 			final DCRGraph d = dcrgraphs.get(pageId);
-			final DCRMarking m = markings.get(pageId);			
+			final DCRMarking m = markings.get(pageId);
 			if (!d.Enabled(m, task)) return false;
-			//final int state = states.get(pageId);
-			//if (!acceptable(a, state, task)) { return false; }
+			// final int state = states.get(pageId);
+			// if (!acceptable(a, state, task)) { return false; }
 		}
 		return true;
-	}	
-	
-	
+	}
+
 	private Packet multipleEnabled(final Packet p, final Packet response) {
 		p.reset();
 		response.reset();
-		if (response.getInteger() != 1) { return response; }
+		if (response.getInteger() != 1) return response;
 		final Packet result = new Packet(7, 1);
 		p.getInteger();
 		p.getInteger(); // Skip command and subcmd
@@ -218,31 +216,27 @@ public class OldDCRExtension  extends AbstractExtension {
 			result.addString(response.getString());
 		}
 		return result;
-	}	
-	
+	}
+
 	private void execute(final Packet p) {
 		p.reset();
-		String task = p.getString();
+		final String task = p.getString();
 		for (final String pageId : new ArrayList<String>(dcrgraphs.keySet())) {
 			final DCRGraph d = dcrgraphs.get(pageId);
 			final DCRMarking m = markings.get(pageId);
-			DCRMarking next = d.Execute(m, task);
+			final DCRMarking next = d.Execute(m, task);
 			markings.put(pageId, next);
 		}
 	}
-	
-	
+
 	private void reset() {
 		for (final String page : new ArrayList<String>(dcrgraphs.keySet())) {
 			markings.put(page, dcrgraphs.get(page).InitialMarking());
 		}
-	}	
-	
-	
+	}
 
 	private final Map<String, DefaultListModel> lists = new HashMap<String, DefaultListModel>();
 	private final Map<String, Integer> indexes = new HashMap<String, Integer>();
-	
 
 	private Packet handleCheckPage(final Packet p) {
 		final Packet result = new Packet(7, 1);
@@ -253,152 +247,117 @@ public class OldDCRExtension  extends AbstractExtension {
 			p.getInteger(); // subcmd
 			final int count = p.getInteger();
 			final String pageId = p.getString();
-			if (count == 0) {
-				return result;
-			}
-			
+			if (count == 0) return result;
+
 			DCRGraph oldD = null;
-			if (!indexes.containsKey(pageId))
-			{
+			if (!indexes.containsKey(pageId)) {
 				final DefaultListModel model = new DefaultListModel();
 				final JList list = new JList(model);
 				indexes.put(pageId, tabs.getTabCount());
-				tabs.addTab(pageId, new JScrollPane(list));				
+				tabs.addTab(pageId, new JScrollPane(list));
 				lists.put(pageId, model);
 				markings.put(pageId, new DCRMarking());
-			}			
-			else
-			{
+			} else {
 				lists.get(pageId).clear();
 				oldD = dcrgraphs.get(pageId);
-			}			
-			
-			DCRGraph d = new DCRGraph();
-			
+			}
+
+			final DCRGraph d = new DCRGraph();
+
 			for (int i = 0; i < count; i++) {
 				final int parameters = p.getInteger();
 				p.getString();
 				final String name = p.getString();
 				final String formula = p.getString();
-				//lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + parameters);
-				
-				//final Constraint c = new Constraint(name, formula, parameters);
-				
+				// lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + parameters);
+
+				// final Constraint c = new Constraint(name, formula, parameters);
+
 				String param1 = "";
 				String param2 = "";
 				String paramString = "";
 				for (int j = 0; j < parameters; j++) {
-					final String tid = p.getString();					
+					final String tid = p.getString();
 					paramString += tid + ",";
-					//Task t = tasks.get(tid);
-					//if (t == null) {
-					//	t = new Task();
-					//	t.setName(tid);
-					//	tasks.put(tid, t);
-					//}
-					//c.setParameters(j, t);
-					if (j == 0) param1 = tid;
-					if (j == 1) param2 = tid;
-					if (!d.events.contains(tid)) d.events.add(tid);					
-					
-					if (oldD == null)
+					// Task t = tasks.get(tid);
+					// if (t == null) {
+					// t = new Task();
+					// t.setName(tid);
+					// tasks.put(tid, t);
+					// }
+					// c.setParameters(j, t);
+					if (j == 0) {
+						param1 = tid;
+					}
+					if (j == 1) {
+						param2 = tid;
+					}
+					if (!d.events.contains(tid)) {
+						d.events.add(tid);
+					}
+
+					if (oldD == null) {
 						markings.get(pageId).included.add(tid);
-					else
-						if (!oldD.events.contains(tid)) 
-							markings.get(pageId).included.add(tid);					
+					} else if (!oldD.events.contains(tid)) {
+						markings.get(pageId).included.add(tid);
+					}
 				}
-				
-				
-				if (name.equals("precedence"))
-					d.conditions.add(new Tuple<String, String>(param1, param2));				
-				if (name.equals("response"))
+
+				if (name.equals("precedence")) {
+					d.conditions.add(new Tuple<String, String>(param1, param2));
+				}
+				if (name.equals("response")) {
 					d.responses.add(new Tuple<String, String>(param1, param2));
-				if (name.equals("include"))
-					d.includes.add(new Tuple<String, String>(param1, param2));
-				if (name.equals("exclude"))
-					d.excludes.add(new Tuple<String, String>(param1, param2));
-				if (name.equals("milestone"))
-					d.milestones.add(new Tuple<String, String>(param1, param2));				
-				
-				/*if (!indexes.containsKey(pageId))
-				{
-					final DefaultListModel model = new DefaultListModel();
-					final JList list = new JList(model);
-					indexes.put(pageId, tabs.getTabCount());
-					tabs.addTab(pageId, new JScrollPane(list));
-					model.addElement(name.toString() + ", " + formula.toString() + "," + paramString);
-					lists.put(pageId, model);					
 				}
-				else*/
-					lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + paramString);
-				
-				//m.addConstraint(c);
+				if (name.equals("include")) {
+					d.includes.add(new Tuple<String, String>(param1, param2));
+				}
+				if (name.equals("exclude")) {
+					d.excludes.add(new Tuple<String, String>(param1, param2));
+				}
+				if (name.equals("milestone")) {
+					d.milestones.add(new Tuple<String, String>(param1, param2));
+				}
+
+				/*
+				 * if (!indexes.containsKey(pageId)) { final DefaultListModel model = new DefaultListModel(); final
+				 * JList list = new JList(model); indexes.put(pageId, tabs.getTabCount()); tabs.addTab(pageId, new
+				 * JScrollPane(list)); model.addElement(name.toString() + ", " + formula.toString() + "," +
+				 * paramString); lists.put(pageId, model); } else
+				 */
+				lists.get(pageId).addElement(name.toString() + ", " + formula.toString() + "," + paramString);
+
+				// m.addConstraint(c);
 			}
 			dcrgraphs.put(pageId, d);
-			//markings.put(pageId,  d.InitialMarking());
+			// markings.put(pageId, d.InitialMarking());
 		} catch (final Exception e) {
 			result.addBoolean(false);
 			result.addString(e.toString());
 		}
 		return result;
-	}	
-	
-	
-	
+	}
 
 	/**
 	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
 	 */
-	//@Override
-	//public void update(final Observable arg0, final Object arg1) {
-		/*
-		if (arg0 == this) {
-			if (arg1 instanceof Option) {
-				final Option<?> option = (Option<?>) arg1;
-				if ("string".equals(option.getKey())) {
-					stringOption.setText((String) getOption(option));
-				} else if ("integer".equals(option.getKey())) {
-					integerOption.setText("" + getOption(option));
-				} else if ("boolean".equals(option.getKey())) {
-					booleanOption.setSelected((Boolean) getOption(option));
-				}
-			}
-		}
-		if (arg0 instanceof Scraper && arg1 instanceof Scraper.Event) {
-			final Scraper.Event event = (Scraper.Event) arg1;
-			if (event.getElm() instanceof Page) {
-				final Page p = (Page) event.getElm();
-				switch (event.getType()) {
-				case ADDED: {
-					final DefaultListModel model = new DefaultListModel();
-					final JList list = new JList(model);
-					indexes.put(p, tabs.getTabCount());
-					tabs.addTab(p.getName(), new JScrollPane(list));
-					lists.put(p, model);
-				}
-				//$FALL-THROUGH$
-				case CHANGED: {
-					try {
-						final DefaultListModel model = lists.get(p);
-						tabs.setTitleAt(indexes.get(p), p.getName());
-						final SortedSet<String> transitionNames = new TreeSet<String>();
-						for (final Transition t : p.transitions()) {
-							transitionNames.add(t.getName());
-						}
-						model.removeAllElements();
-						for (final String name : transitionNames) {
-							model.addElement(name);
-						}
-					} catch (final Exception e) {
-						e.printStackTrace();
-					}
-				}
-					break;
-				case REMOVED:
-					break;
-				}
-			}
-		}*/
-	//}
+	// @Override
+	// public void update(final Observable arg0, final Object arg1) {
+	/*
+	 * if (arg0 == this) { if (arg1 instanceof Option) { final Option<?> option = (Option<?>) arg1; if
+	 * ("string".equals(option.getKey())) { stringOption.setText((String) getOption(option)); } else if
+	 * ("integer".equals(option.getKey())) { integerOption.setText("" + getOption(option)); } else if
+	 * ("boolean".equals(option.getKey())) { booleanOption.setSelected((Boolean) getOption(option)); } } } if (arg0
+	 * instanceof Scraper && arg1 instanceof Scraper.Event) { final Scraper.Event event = (Scraper.Event) arg1; if
+	 * (event.getElm() instanceof Page) { final Page p = (Page) event.getElm(); switch (event.getType()) { case ADDED: {
+	 * final DefaultListModel model = new DefaultListModel(); final JList list = new JList(model); indexes.put(p,
+	 * tabs.getTabCount()); tabs.addTab(p.getName(), new JScrollPane(list)); lists.put(p, model); } //$FALL-THROUGH$
+	 * case CHANGED: { try { final DefaultListModel model = lists.get(p); tabs.setTitleAt(indexes.get(p), p.getName());
+	 * final SortedSet<String> transitionNames = new TreeSet<String>(); for (final Transition t : p.transitions()) {
+	 * transitionNames.add(t.getName()); } model.removeAllElements(); for (final String name : transitionNames) {
+	 * model.addElement(name); } } catch (final Exception e) { e.printStackTrace(); } } break; case REMOVED: break; } }
+	 * }
+	 */
+	// }
 
 }
