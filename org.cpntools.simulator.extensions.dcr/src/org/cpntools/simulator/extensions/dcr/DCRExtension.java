@@ -40,7 +40,7 @@ public class DCRExtension extends AbstractExtension {
 
 	@Override
 	public String getName() {
-		return "DCR Extension";
+		return "DCR Graphs";
 	}
 
 	@Override
@@ -93,11 +93,9 @@ public class DCRExtension extends AbstractExtension {
 			final int subcommand = p.getInteger();
 			p.reset();
 
-			if (subcommand == 1) {
-				return handleCheckPage(p);
-			} else {
-				return null;
-			}
+			if (subcommand == 1) return handleCheckPage(p);
+            else
+	            return null;
 		}
 
 		return null;
@@ -123,7 +121,7 @@ public class DCRExtension extends AbstractExtension {
 		for (final String pageId : new ArrayList<String>(dcrgraphs.keySet())) {
 			final DCRGraph d = dcrgraphs.get(pageId);
 			final DCRMarking m = markings.get(pageId);
-			if (!d.Enabled(m, task)) { return false; }
+			if (!d.Enabled(m, task)) return false;
 		}
 		return true;
 	}
@@ -292,7 +290,7 @@ public class DCRExtension extends AbstractExtension {
 	private Packet multipleEnabled(final Packet p, final Packet response) {
 		p.reset();
 		response.reset();
-		if (response.getInteger() != 1) { return response; }
+		if (response.getInteger() != 1) return response;
 		final Packet result = new Packet(7, 1);
 		p.getInteger();
 		p.getInteger(); // Skip command and subcmd
