@@ -307,10 +307,12 @@
 		</pnml:transition>
 	</xsl:template>
 
-    <!-- Bidirectional arcs need to be split into two unidriectional arcs. Therefore, we need to massage the ids of both arcs. -->
+	<xsl:template name="arccommon">
+		<xsl:apply-templates select="annot"/>
+	</xsl:template>
 	<xsl:template name="arccommonTP">
 		<xsl:attribute name="id"><xsl:value-of select="concat(@id,'tp')"/></xsl:attribute>
-		<xsl:apply-templates select="annot"/>
+		<xsl:call-template name="arccommon"/>
 		<pnml:graphics>
 			<xsl:apply-templates select="lineattr" mode="graphics"/>
 			<xsl:for-each select="bendpoint">
@@ -321,11 +323,10 @@
 	</xsl:template>
 	<xsl:template name="arccommonPT">
 		<xsl:attribute name="id"><xsl:value-of select="concat(@id,'pt')"/></xsl:attribute>
-		<xsl:apply-templates select="annot"/>
+		<xsl:call-template name="arccommon"/>
 		<pnml:graphics>
 			<xsl:apply-templates select="lineattr" mode="graphics"/>
 			<xsl:for-each select="bendpoint">
-                <!--HV: Use descending here instead of ascending to get reverse order. -->
 				<xsl:sort select="@serial" order="descending" data-type="number"/>
 				<xsl:apply-templates select="posattr" mode="graphics"/>
 			</xsl:for-each>
@@ -337,7 +338,7 @@
 			<xsl:attribute name="source"><xsl:value-of select="placeend/@idref"/></xsl:attribute>
 			<xsl:attribute name="target"><xsl:value-of select="transend/@idref"/></xsl:attribute>
 			<xsl:call-template name="arccommonPT"/>
-			<pnml:type><pnml:text>normal</pnml:text></pnml:type>
+			<pnml:arctype><pnml:text>normal</pnml:text></pnml:arctype>
 		</pnml:arc>
 	</xsl:template>
 
@@ -346,7 +347,23 @@
 			<xsl:attribute name="source"><xsl:value-of select="transend/@idref"/></xsl:attribute>
 			<xsl:attribute name="target"><xsl:value-of select="placeend/@idref"/></xsl:attribute>
 			<xsl:call-template name="arccommonTP"/>
-			<pnml:type><pnml:text>normal</pnml:text></pnml:type>
+			<pnml:arctype><pnml:text>normal</pnml:text></pnml:arctype>
+		</pnml:arc>
+	</xsl:template>
+	<xsl:template match="arc[@orientation='Reset']">
+		<pnml:arc>
+			<xsl:attribute name="source"><xsl:value-of select="transend/@idref"/></xsl:attribute>
+			<xsl:attribute name="target"><xsl:value-of select="placeend/@idref"/></xsl:attribute>
+			<xsl:call-template name="arccommonTP"/>
+			<pnml:arctype><pnml:text>reset</pnml:text></pnml:arctype>
+		</pnml:arc>
+	</xsl:template>
+	<xsl:template match="arc[@orientation='Inhibitor']">
+		<pnml:arc>
+			<xsl:attribute name="source"><xsl:value-of select="transend/@idref"/></xsl:attribute>
+			<xsl:attribute name="target"><xsl:value-of select="placeend/@idref"/></xsl:attribute>
+			<xsl:call-template name="arccommonTP"/>
+			<pnml:arctype><pnml:text>inhibitor</pnml:text></pnml:arctype>
 		</pnml:arc>
 	</xsl:template>
 
@@ -356,13 +373,13 @@
 			<xsl:attribute name="source"><xsl:value-of select="transend/@idref"/></xsl:attribute>
 			<xsl:attribute name="target"><xsl:value-of select="placeend/@idref"/></xsl:attribute>
 			<xsl:call-template name="arccommonTP"/>
-			<pnml:type><pnml:text>test</pnml:text></pnml:type>
+			<pnml:arctype><pnml:text>normal</pnml:text></pnml:arctype>
 		</pnml:arc>
 		<pnml:arc>
 			<xsl:attribute name="source"><xsl:value-of select="placeend/@idref"/></xsl:attribute>
 			<xsl:attribute name="target"><xsl:value-of select="transend/@idref"/></xsl:attribute>
 			<xsl:call-template name="arccommonPT"/>
-			<pnml:type><pnml:text>test</pnml:text></pnml:type>
+			<pnml:arctype><pnml:text>normal</pnml:text></pnml:arctype>
 		</pnml:arc>
 	</xsl:template>
 
@@ -392,21 +409,18 @@
 		</pnml:name>
 	</xsl:template>
 
-    <!--HV: Added test whether initial marking is a number. -->
 	<xsl:template match="initmark">
 		<xsl:variable name="text"><xsl:value-of select="text"/></xsl:variable>
         <xsl:choose>
-	        <!--HV: Test whether single UNIT token. -->
 	        <xsl:when test="$text = '()'">
 				<pnml:initialMarking>
 					<pnml:text>1</pnml:text>
 					<xsl:call-template name="annotationcommon"/>
 				</pnml:initialMarking>
 	        </xsl:when>
-	        <!--HV: Test whether multiple single UNIT tokens (like "(3)`()"), or just a number (like "3"). -->
 	        <xsl:when test="string(number(translate($text,'(`)','   '))) != 'NaN'">
 				<pnml:initialMarking>
-					<pnml:text><xsl:value-of select="translate($text,'(`)','   ')"/></pnml:text>
+					<pnml:text><xsl:value-of select="normalize-space(translate($text,'(`)','   '))"/></pnml:text>
 					<xsl:call-template name="annotationcommon"/>
 				</pnml:initialMarking>
 	        </xsl:when>
@@ -452,16 +466,32 @@
 		</cpn:code>
 	</xsl:template>
 
-    <!--HV: Added test whether annotation is a number. -->
 	<xsl:template match="annot">
-		<xsl:variable name="text"><xsl:value-of select="text"/></xsl:variable>
-        <xsl:if test="string(number($text)) != 'NaN'">
-			<pnml:inscription>
-				<pnml:text>
-					<xsl:value-of select="text"/>
-				</pnml:text>
-			</pnml:inscription>
-        </xsl:if>
+		<pnml:inscription>
+			<xsl:variable name="text">
+				<xsl:value-of select="text" />
+			</xsl:variable>
+			<xsl:choose>
+				<xsl:when test="$text = '()'">
+					<pnml:text>1</pnml:text>
+				</xsl:when>
+				<xsl:when test="$text = ''">
+					<pnml:text>1</pnml:text>
+				</xsl:when>
+				<xsl:when test="string(number(translate($text,'(`)','   '))) != 'NaN'">
+					<pnml:text>
+						<xsl:value-of select="normalize-space(translate($text,'(`)','   '))" />
+					</pnml:text>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:comment>
+						<xsl:value-of select="$text" />
+					</xsl:comment>
+					<pnml:text>0</pnml:text>
+				</xsl:otherwise>
+			</xsl:choose>
+			<xsl:call-template name="annotationcommon" />
+		</pnml:inscription>
 	</xsl:template>
 
 	<xsl:template name="annotationcommon">
