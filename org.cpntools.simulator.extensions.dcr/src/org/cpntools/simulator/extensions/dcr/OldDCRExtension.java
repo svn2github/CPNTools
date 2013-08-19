@@ -6,10 +6,6 @@ import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -28,23 +24,25 @@ import org.cpntools.accesscpn.engine.protocol.Packet;
 import org.cpntools.simulator.extensions.AbstractExtension;
 import org.cpntools.simulator.extensions.Channel;
 import org.cpntools.simulator.extensions.Command;
-import org.cpntools.simulator.extensions.Option;
-import org.cpntools.simulator.extensions.scraper.Page;
-import org.cpntools.simulator.extensions.scraper.Scraper;
-import org.cpntools.simulator.extensions.scraper.Transition;
 import org.cpntools.simulator.extensions.server.Handler;
+
+import dk.klafbang.tools.Pair;
 
 public abstract class OldDCRExtension extends AbstractExtension {
 
 	public static final int ID = 10001;
-	private JDialog dialog;
-	private JTabbedPane tabs;
-	private JTextField stringOption;
-	private JTextField integerOption;
 	private JCheckBox booleanOption;
-
 	private final Map<String, DCRGraph> dcrgraphs = new HashMap<String, DCRGraph>();
+	private JDialog dialog;
+	private final Map<String, Integer> indexes = new HashMap<String, Integer>();
+	private JTextField integerOption;
+
+	private final Map<String, DefaultListModel> lists = new HashMap<String, DefaultListModel>();
 	private final Map<String, DCRMarking> markings = new HashMap<String, DCRMarking>();
+
+	private JTextField stringOption;
+
+	private JTabbedPane tabs;
 
 	/**
 	 * 
@@ -69,6 +67,68 @@ public abstract class OldDCRExtension extends AbstractExtension {
 		        new Command(800, 1) // Set state space options
 		);
 		// addObserver(this);
+	}
+
+	@Override
+	public int getIdentifier() {
+		return OldDCRExtension.ID;
+	}
+
+	@Override
+	public String getName() {
+		return "Old DCR Extension";
+	}
+
+	/**
+	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet handle(final Packet p) {
+		p.reset();
+		final int command = p.getInteger();
+		final int extension = p.getInteger();
+		final int subcommand = p.getInteger();
+		assert command == Handler.EXTERNAL_COMMAND;
+		assert extension == OldDCRExtension.ID;
+		Packet result;
+		switch (subcommand) {
+		case 1:
+			result = handleCheckPage(p);
+			break;
+		default:
+			result = new Packet(7, -1);
+			result.addString("Unknown Declare command");
+			break;
+		}
+		return result;
+	}
+
+	@Override
+	public Packet handle(final Packet p, final Packet response) {
+		p.reset();
+		final int command = p.getInteger();
+		final int subcommand = p.getInteger();
+		if (command == 200 && subcommand == 9) {
+			dialog.setTitle("DCR Extension [" + p.getString() + "]");
+		}
+		if (command == 500) {
+			switch (subcommand) {
+			case 12:
+				execute(p);
+				return response;
+			case 13:
+			case 14:
+				return enabled(p, response);
+			case 20:
+			case 21:
+				reset();
+				return response;
+			case 35:
+			case 36:
+				return multipleEnabled(p, response);
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -113,68 +173,6 @@ public abstract class OldDCRExtension extends AbstractExtension {
 		}
 	}
 
-	@Override
-	public int getIdentifier() {
-		return ID;
-	}
-
-	@Override
-	public String getName() {
-		return "Old DCR Extension";
-	}
-
-	/**
-	 * @see org.cpntools.simulator.extensions.Extension#handle(org.cpntools.accesscpn.engine.protocol.Packet)
-	 */
-	@Override
-	public Packet handle(final Packet p) {
-		p.reset();
-		final int command = p.getInteger();
-		final int extension = p.getInteger();
-		final int subcommand = p.getInteger();
-		assert command == Handler.EXTERNAL_COMMAND;
-		assert extension == ID;
-		Packet result;
-		switch (subcommand) {
-		case 1:
-			result = handleCheckPage(p);
-			break;
-		default:
-			result = new Packet(7, -1);
-			result.addString("Unknown Declare command");
-			break;
-		}
-		return result;
-	}
-
-	@Override
-	public Packet handle(final Packet p, final Packet response) {
-		p.reset();
-		final int command = p.getInteger();
-		final int subcommand = p.getInteger();
-		if (command == 200 && subcommand == 9) {
-			dialog.setTitle("DCR Extension [" + p.getString() + "]");
-		}
-		if (command == 500) {
-			switch (subcommand) {
-			case 12:
-				execute(p);
-				return response;
-			case 13:
-			case 14:
-				return enabled(p, response);
-			case 20:
-			case 21:
-				reset();
-				return response;
-			case 35:
-			case 36:
-				return multipleEnabled(p, response);
-			}
-		}
-		return null;
-	}
-
 	private Packet enabled(final Packet p, final Packet response) {
 		p.reset();
 		if (p.getBoolean()) {
@@ -191,31 +189,12 @@ public abstract class OldDCRExtension extends AbstractExtension {
 		for (final String pageId : new ArrayList<String>(dcrgraphs.keySet())) {
 			final DCRGraph d = dcrgraphs.get(pageId);
 			final DCRMarking m = markings.get(pageId);
-			if (!d.Enabled(m, task)) return false;
+			if (!d.Enabled(m, task)) { return false;
 			// final int state = states.get(pageId);
 			// if (!acceptable(a, state, task)) { return false; }
+			}
 		}
 		return true;
-	}
-
-	private Packet multipleEnabled(final Packet p, final Packet response) {
-		p.reset();
-		response.reset();
-		if (response.getInteger() != 1) return response;
-		final Packet result = new Packet(7, 1);
-		p.getInteger();
-		p.getInteger(); // Skip command and subcmd
-		final int count = p.getInteger();
-		result.addInteger(count);
-		for (int i = 0; i < count; i++) {
-			if (response.getBoolean()) {
-				result.addBoolean(enabled(p.getString(), p.getInteger()));
-			} else {
-				result.addBoolean(false);
-			}
-			result.addString(response.getString());
-		}
-		return result;
 	}
 
 	private void execute(final Packet p) {
@@ -229,15 +208,6 @@ public abstract class OldDCRExtension extends AbstractExtension {
 		}
 	}
 
-	private void reset() {
-		for (final String page : new ArrayList<String>(dcrgraphs.keySet())) {
-			markings.put(page, dcrgraphs.get(page).InitialMarking());
-		}
-	}
-
-	private final Map<String, DefaultListModel> lists = new HashMap<String, DefaultListModel>();
-	private final Map<String, Integer> indexes = new HashMap<String, Integer>();
-
 	private Packet handleCheckPage(final Packet p) {
 		final Packet result = new Packet(7, 1);
 		try {
@@ -247,7 +217,7 @@ public abstract class OldDCRExtension extends AbstractExtension {
 			p.getInteger(); // subcmd
 			final int count = p.getInteger();
 			final String pageId = p.getString();
-			if (count == 0) return result;
+			if (count == 0) { return result; }
 
 			DCRGraph oldD = null;
 			if (!indexes.containsKey(pageId)) {
@@ -304,19 +274,19 @@ public abstract class OldDCRExtension extends AbstractExtension {
 				}
 
 				if (name.equals("precedence")) {
-					d.conditions.add(new Tuple<String, String>(param1, param2));
+					d.conditions.add(Pair.createPair(param1, param2));
 				}
 				if (name.equals("response")) {
-					d.responses.add(new Tuple<String, String>(param1, param2));
+					d.responses.add(Pair.createPair(param1, param2));
 				}
 				if (name.equals("include")) {
-					d.includes.add(new Tuple<String, String>(param1, param2));
+					d.includes.add(Pair.createPair(param1, param2));
 				}
 				if (name.equals("exclude")) {
-					d.excludes.add(new Tuple<String, String>(param1, param2));
+					d.excludes.add(Pair.createPair(param1, param2));
 				}
 				if (name.equals("milestone")) {
-					d.milestones.add(new Tuple<String, String>(param1, param2));
+					d.milestones.add(Pair.createPair(param1, param2));
 				}
 
 				/*
@@ -336,6 +306,32 @@ public abstract class OldDCRExtension extends AbstractExtension {
 			result.addString(e.toString());
 		}
 		return result;
+	}
+
+	private Packet multipleEnabled(final Packet p, final Packet response) {
+		p.reset();
+		response.reset();
+		if (response.getInteger() != 1) { return response; }
+		final Packet result = new Packet(7, 1);
+		p.getInteger();
+		p.getInteger(); // Skip command and subcmd
+		final int count = p.getInteger();
+		result.addInteger(count);
+		for (int i = 0; i < count; i++) {
+			if (response.getBoolean()) {
+				result.addBoolean(enabled(p.getString(), p.getInteger()));
+			} else {
+				result.addBoolean(false);
+			}
+			result.addString(response.getString());
+		}
+		return result;
+	}
+
+	private void reset() {
+		for (final String page : new ArrayList<String>(dcrgraphs.keySet())) {
+			markings.put(page, dcrgraphs.get(page).InitialMarking());
+		}
 	}
 
 	/**
