@@ -25,7 +25,7 @@ rm -Rf sml/*
 
 function pause() {
 	echo -ne $*
-	#	read
+	read
 	echo
 }
 
