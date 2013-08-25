@@ -13,7 +13,6 @@ ifeq ($(ARCH), Linux)
 	MLARCH = x86-linux
 endif
 ifeq ($(findstring CYGWIN_NT, $(ARCH)), CYGWIN_NT)
-	MLARCH = x86-win32
 	MLARCH = x86-cygwin
 endif
 ifeq ($(ARCH), Darwin)

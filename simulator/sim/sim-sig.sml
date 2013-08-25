@@ -136,6 +136,11 @@ signature CPN'SIM = sig
 
     val check_enab : CPN'Id.id * int -> bool
     val check_enab_no_scheduler : CPN'Id.id * int -> bool
+    val add_filter : string * {
+           check : CPN'Id.id * int -> bool,
+           execute : CPN'Id.id * int -> unit,
+           reset: unit -> unit } -> unit
+    val remove_filter : string -> unit
     val man_bind : CPN'Id.id * int * bool -> string * string * string
     val pick_bind : CPN'Id.id * int * (string * string) list -> 
 		    string * string * string

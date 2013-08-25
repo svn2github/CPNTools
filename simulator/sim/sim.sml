@@ -144,6 +144,49 @@ fun bind_fair bindings occfun picker bind_exe extract (m, inst) =
       end
        | v => (0, v, fn () => v)
 
+    val filters = ref []: (string * {
+           check : CPN'Id.id * int -> bool,
+           execute : CPN'Id.id * int -> unit,
+           reset: unit -> unit }) list ref
+
+      fun check_filters (t, i) [] = true
+        | check_filters (t, i) ((_, { check, execute, reset })::rest) =
+        if (check (t, i))
+        then check_filters (t, i) rest
+        else false
+
+        fun execute_filters (t, i) [] = ()
+        | execute_filters (t, i) ((_, { check, execute, reset })::rest) =
+        (execute (t, i); execute_filters (t, i) rest)
+
+        fun reset_filters [] = ()
+        | reset_filters ((_, { check, execute, reset })::rest) =
+        (reset (); reset_filters rest)
+
+        fun wrap_filter id f (mode, inst) =
+            if check_filters (id, inst) (!filters)
+            then case f (mode, inst)
+                   of (is_executed, errors) =>
+                   let
+                       val _ = execute_filters (id, inst) (!filters)
+                   in
+                       (is_executed, errors)
+                   end
+                    | (result, errors) => (result, errors)
+            else (is_disabled, [])
+
+        fun wrap_filter_fair id f (mode, inst) =
+            if check_filters (id, inst) (!filters)
+            then case f (mode, inst)
+                   of (count, (is_executed, errors), bind_exe) =>
+                   let
+                       val _ = execute_filters (id, inst) (!filters)
+                   in
+                       (count, (is_executed, errors), bind_exe)
+                   end
+                    | result => result
+            else (0, (is_disabled, []), fn () => (is_disabled, []))
+
 fun add_be (t,bf, bfair, priority) = 
     (if !generate_instances then let
 	open InstTable
@@ -159,7 +202,7 @@ fun add_be (t,bf, bfair, priority) =
             DumpTable.insert (t,{name=name,index=(m,n),dep_list=dep_list,priority=priority})
 	  | _ => raise InternalError "add_be"
     end else ();
-    BETable.insert (t, (bf, bfair, priority)))
+    BETable.insert (t, (wrap_filter t bf, wrap_filter_fair t bfair, priority)))
 
 fun dump_inst () = let
 
@@ -595,6 +638,8 @@ fun init_state () =
      
      Output.setSimOutputDir();
 
+     reset_filters (!filters);
+
      CPN'debug "Calling init_state_funs...";
      app (fn (fname,f) => f()) (!init_state_funs)
      handle exn => 
@@ -613,8 +658,10 @@ fun init_all() = (create_scheduler();
 
 (* The main scheduler runtime system follows *)
 local
-    fun mark_dependents  nil = ()
-      | mark_dependents (x::xs) = let
+    fun mark_dependents deps =
+    let
+    fun mark_dependents'  nil = ()
+      | mark_dependents' (x::xs) = let
 	val {status,...} = Array.sub(!transitions,x) handle exn => (CPN'debug (" mark_dependents raise exn "^(exnName exn)^":"^(Int.toString (Array.length (!transitions)))^"<="^(Int.toString x)); dummy_ti)
     in
 	case !status of
@@ -628,6 +675,11 @@ local
 		 PQ.delete (maybe_readies,x);
 		 PQRS.insert (unknowns,x);
 		 mark_dependents xs)
+       end
+    in
+        if (List.null (!filters))
+        then mark_dependents' deps
+        else (reset_scheduler (); ())
     end
 
     local
@@ -795,13 +847,35 @@ in
      * a transition instance is available but not the scheduler. *)
     fun check_enab_no_scheduler (t,i) = 
 	let
-        val (bind_exe, bind_fair, priority)= BETable.find t
-        val index = InstTable.get_ti_index (t,i)
-	in
+          val (bind_exe, bind_fair, priority)= BETable.find t
+     in
+         if check_filters (t, i) (!filters)
+         then let
+          val index = InstTable.get_ti_index (t,i)
+     in
 	    case bind_exe (test,i) of
 		(is_executed,_) => true
 	      | _ => false
-	end
+               end else false end
+
+    fun remove_filter name =
+    let
+        fun rm [] = []
+          | rm ((n, f)::r) =
+            if n = name
+            then rm r
+            else (n, f)::(rm r)
+    in
+        filters := (rm (!filters))
+    end
+
+    fun add_filter (name, filter) =
+    let
+        val _ = remove_filter name
+        val _ = filters := ((name, filter)::(!filters))
+    in
+        ()
+    end
 
     fun get_lowest_enabled_priority bound_priority =
     let
