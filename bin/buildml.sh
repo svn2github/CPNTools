@@ -1,6 +1,6 @@
 #!/bin/bash
 MIN=75
-MAX_TESTED=75
+MAX_TESTED=76
 
 if [ "x$1" == "x" ]; then
 	echo "Please enter the minor version you want to install, e.g., \`buildml.sh $MAX_TESTED' to install version 110.$MAX_TESTED"
@@ -25,7 +25,7 @@ rm -Rf sml/*
 
 function pause() {
 	echo -ne $*
-	read
+#	read
 	echo
 }
 
