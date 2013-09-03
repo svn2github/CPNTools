@@ -140,6 +140,7 @@ signature CPN'SIM = sig
            check : CPN'Id.id * int -> bool,
            execute : CPN'Id.id * int -> unit,
            reset: unit -> unit } -> unit
+    val has_filter : string -> bool
     val remove_filter : string -> unit
     val man_bind : CPN'Id.id * int * bool -> string * string * string
     val pick_bind : CPN'Id.id * int * (string * string) list -> 

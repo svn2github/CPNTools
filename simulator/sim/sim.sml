@@ -869,6 +869,17 @@ in
         filters := (rm (!filters))
     end
 
+    fun has_filter name =
+    let
+        fun has [] = false
+          | has ((n, f)::r) =
+            if n = name
+            then true
+            else has r
+    in
+        has (!filters)
+    end
+
     fun add_filter (name, filter) =
     let
         val _ = remove_filter name
