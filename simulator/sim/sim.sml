@@ -869,6 +869,8 @@ in
         filters := (rm (!filters))
     end
 
+    fun list_filters () = List.map (fn (a, b) => a) (!filters)
+
     fun has_filter name =
     let
         fun has [] = false
