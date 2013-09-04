@@ -73,12 +73,7 @@ public class DiscoveryServer {
 		final Collection<Extension> extensions = Discovery.instantiate(extensionsClasses);
 		extensions.remove(new Scraper());
 
-		progressMonitor.setNote("Starting server thread...");
-		progressMonitor.setProgress(++progress);
 		try {
-			final Server server = new Server(Server.DEFAULT_PORT, extensions);
-			final Thread t = new Thread(server, "Main server on port " + Server.DEFAULT_PORT);
-
 			progressMonitor.setNote("Preparing UI...");
 			progressMonitor.setProgress(++progress);
 			final MainFrame main = new MainFrame() {
@@ -95,6 +90,10 @@ public class DiscoveryServer {
 					extensionsItem.add(item);
 				}
 			};
+			progressMonitor.setNote("Starting server thread...");
+			progressMonitor.setProgress(++progress);
+			final Server server = new Server(main, Server.DEFAULT_PORT, extensions);
+			final Thread t = new Thread(server, "Main server on port " + Server.DEFAULT_PORT);
 			for (final Extension e : server) {
 				main.addExtension(e);
 			}

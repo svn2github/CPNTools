@@ -24,23 +24,28 @@ public class Server implements Runnable, Iterable<Extension> {
 	public static final int DEFAULT_PORT = 1998;
 	private final List<Extension> extensions;
 	protected final ServerSocket socket;
+	private final HandlerView view;
 
 	/**
+	 * @param view
 	 * @param port
 	 * @param extensions
 	 * @throws IOException
 	 */
-	public Server(final int port, final Collection<Extension> extensions) throws IOException {
+	public Server(final HandlerView view, final int port, final Collection<Extension> extensions) throws IOException {
+		this.view = view;
 		this.extensions = new ArrayList<Extension>(extensions);
 		socket = new ServerSocket(port);
 	}
 
 	/**
+	 * @param view
 	 * @param port
 	 * @param extensions
 	 * @throws IOException
 	 */
-	public Server(final int port, final Extension... extensions) throws IOException {
+	public Server(final HandlerView view, final int port, final Extension... extensions) throws IOException {
+		this.view = view;
 		this.extensions = new ArrayList<Extension>(extensions.length);
 		for (final Extension e : extensions) {
 			this.extensions.add(e);
@@ -75,7 +80,7 @@ public class Server implements Runnable, Iterable<Extension> {
 						throw new Exception("Wrong login");
 					}
 					new Packet(1, "").send(out); //$NON-NLS-1$
-					new Handler(in, out, extensions, "for port " + connection.getRemoteSocketAddress());
+					new Handler(in, out, extensions, "for port " + connection.getRemoteSocketAddress(), view);
 				} catch (final SocketException se) {
 					se.printStackTrace();
 				}

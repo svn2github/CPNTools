@@ -38,8 +38,11 @@ import dk.klafbang.tools.Pair;
 public class Handler implements Channel {
 
 	class DispatcherThread extends Thread {
-		public DispatcherThread(final String name) {
+		private final HandlerView view;
+
+		public DispatcherThread(final HandlerView view, final String name) {
 			super(name);
+			this.view = view;
 		}
 
 		@Override
@@ -47,9 +50,13 @@ public class Handler implements Channel {
 			while (true) {
 				try {
 					final Packet p = packetQueue.get();
-					if (p.getOpcode() == -1) { return; }
+					if (p.getOpcode() == -1) {
+						view.remove(Handler.this);
+						return;
+					}
 					dispatch(p);
 				} catch (final IOException ioe) {
+					view.remove(Handler.this);
 					ioe.printStackTrace();
 					return;
 				}
@@ -92,8 +99,8 @@ public class Handler implements Channel {
 	        throws ConflictingExtensionsException {
 		final Map<Integer, Extension> extensions = new HashMap<Integer, Extension>();
 		for (final Extension e : exns) {
-			if (extensions.containsKey(e.getIdentifier())) { throw new ConflictingExtensionsException(e,
-			        extensions.get(e.getIdentifier())); }
+			if (extensions.containsKey(e.getIdentifier()))
+			    throw new ConflictingExtensionsException(e, extensions.get(e.getIdentifier()));
 			extensions.put(e.getIdentifier(), e);
 		}
 		return extensions;
@@ -179,14 +186,17 @@ public class Handler implements Channel {
 	 * @param out
 	 * @param extensions
 	 * @param name
+	 * @param view
 	 * @throws ConflictingExtensionsException
 	 * @throws ErrorInjectingException
 	 * @throws IOException
 	 */
 	public Handler(final DataInputStream in, final DataOutputStream out, final List<Extension> extensions,
-	        final String name) throws ConflictingExtensionsException, ErrorInjectingException, IOException {
+	        final String name, final HandlerView view) throws ConflictingExtensionsException, ErrorInjectingException,
+	        IOException {
 		this.in = in;
 		this.out = out;
+		view.add(this, "View " + name);
 		lock = new ReentrantLock();
 		sendLock = new ReentrantLock();
 		packetQueue = new BlockingQueue<Packet>();
@@ -202,7 +212,7 @@ public class Handler implements Channel {
 		options = new HashMap<Pair<Integer, String>, Option<?>>();
 		instruments = new HashMap<Pair<Integer, String>, Instrument>();
 		registerExtensions(extensionTypes.values());
-		(dispatcher = new DispatcherThread("Dispatcher " + name)).start();
+		(dispatcher = new DispatcherThread(view, "Dispatcher " + name)).start();
 	}
 
 	/**
@@ -223,7 +233,7 @@ public class Handler implements Channel {
 	@Override
 	public String evaluate(final String expresion) throws Exception {
 		final Packet p = send(createInjectPacket(expresion));
-		if (!p.getBoolean()) { throw new Exception(p.getString()); }
+		if (!p.getBoolean()) throw new Exception(p.getString());
 		return "";
 	}
 
@@ -258,7 +268,7 @@ public class Handler implements Channel {
 		}
 		try {
 			final Packet result = extension.handle(p);
-			if (result == null) { return new Packet(7, 1); }
+			if (result == null) return new Packet(7, 1);
 			return result;
 		} catch (final Throwable t) {
 			final Packet error = new Packet(7, -1);
@@ -333,15 +343,15 @@ public class Handler implements Channel {
 		try {
 			final Object result = g.handle(p.getParameters());
 			if (p.getReturnType() != null && !p.getReturnType().equals(Void.class) && result != null
-			        && p.getReturnType().isAssignableFrom(result.getClass())) { return new Packet(5,
-			        Collections.singletonList(result)); }
+			        && p.getReturnType().isAssignableFrom(result.getClass()))
+			    return new Packet(5, Collections.singletonList(result));
 		} catch (final Exception e) {
 			// Ignore if we do not return normally
 		}
-		if (String.class.equals(p.getReturnType())) { return new Packet(5,
-		        Collections.singletonList("Error in execution")); }
-		if (Integer.class.equals(p.getReturnType())) { return new Packet(5, Collections.singletonList(-1)); }
-		if (Boolean.class.equals(p.getReturnType())) { return new Packet(5, Collections.singletonList(false)); }
+		if (String.class.equals(p.getReturnType()))
+		    return new Packet(5, Collections.singletonList("Error in execution"));
+		if (Integer.class.equals(p.getReturnType())) return new Packet(5, Collections.singletonList(-1));
+		if (Boolean.class.equals(p.getReturnType())) return new Packet(5, Collections.singletonList(false));
 		return new Packet(5, Collections.emptyList());
 	}
 
@@ -518,8 +528,7 @@ public class Handler implements Channel {
 		final int i = p.getInteger();
 		final int s = p.getInteger();
 		p.getInteger(); // Ignore serial
-		if (b < 0) { return null; // Prefilter
-		}
+		if (b < 0) return null; // Prefilter
 		for (int j = 0; j < ob; j++) {
 			p.getBoolean();
 		}
@@ -559,7 +568,7 @@ public class Handler implements Channel {
 			try {
 				final Packet p = send(createInjectPacket(s));
 // System.out.println(p);
-				if (p.getInteger() != 1) { throw new ErrorInjectingException(e, s, p.getString()); }
+				if (p.getInteger() != 1) throw new ErrorInjectingException(e, s, p.getString());
 			} catch (final IOException ex) {
 				throw new ErrorInjectingException(e, s, ex);
 			}
@@ -615,10 +624,9 @@ public class Handler implements Channel {
 								sb.append("Int");
 							} else if (m.getReturnType() == String.class) {
 								sb.append("String");
-							} else {
+							} else
 								throw new Exception("Unknown return type (" + m.getReturnType() + ") for method "
 								        + m.getName());
-							}
 							sb.append(" \"");
 							sb.append(prefix);
 							sb.append(m.getName());
@@ -634,10 +642,9 @@ public class Handler implements Channel {
 									sb.append("vINT (");
 								} else if (clazz == String.class) {
 									sb.append("vSTRING (");
-								} else {
+								} else
 									throw new Exception("Unknown parameter type (" + clazz + ") for parameter "
 									        + (param + 1) + " of method " + m.getName());
-								}
 								sb.append("CPN'param");
 								sb.append(param++);
 								sb.append(')');
