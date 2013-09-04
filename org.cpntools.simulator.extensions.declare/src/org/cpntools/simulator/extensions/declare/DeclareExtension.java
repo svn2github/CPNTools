@@ -36,6 +36,8 @@ public class DeclareExtension extends AbstractExtension {
 	private final Map<String, Task> tasks = new HashMap<String, Task>();
 	private final List<String> trace = new ArrayList<String>();
 
+	private boolean isGenerated = false;
+
 	/**
 	 * 
 	 */
@@ -166,39 +168,58 @@ public class DeclareExtension extends AbstractExtension {
 	}
 
 	private void generate() {
+		final List<String> order = new ArrayList<String>(automata.keySet());
 		try {
-			channel.evaluate("let exception E in if (CPN'Sim.has_filter(\"org.cpntools.simulator.extensions.declare\")) then raise E else () end");
-			final StringBuilder sb = new StringBuilder();
-			sb.append("local val CPN'state = ref (");
-			for (int i = 0; i < automata.size(); i++) {
-				if (i != 0) {
-					sb.append(", ");
+// channel.evaluate("let exception E in if (CPN'Sim.has_filter(\"org.cpntools.simulator.extensions.declare\")) then raise E else () end");
+			if (!isGenerated) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("local val CPN'state = ref (");
+				for (int i = 0; i < automata.size(); i++) {
+					if (i != 0) {
+						sb.append(", ");
+					}
+					sb.append("0");
 				}
-				sb.append("0");
-			}
-			sb.append(")\n");
-			int i = 0;
-			for (final Automaton a : automata.values()) {
-				i++;
-				final List<Object> ts = new ArrayList<Object>(a.getTransitions());
-				ts.remove(Automaton.OTHERWISE);
-				boolean first = true;
-				for (final Object t : ts) {
+				sb.append(")\n");
+				int i = 0;
+				for (final String label : order) {
+					final Automaton a = automata.get(label);
+					i++;
+					final List<Object> ts = new ArrayList<Object>(a.getTransitions());
+					ts.remove(Automaton.OTHERWISE);
+					boolean first = true;
+					for (final Object t : ts) {
+						if (first) {
+							sb.append("fun CPN'next'");
+							first = false;
+						} else {
+							sb.append("  | CPN'next'");
+						}
+						sb.append(i);
+						sb.append(" \"");
+						sb.append(t);
+						sb.append("\" = #[");
+						for (int s = a.getInit(); s < a.lastState(); s++) {
+							int ss = a.next(s, t);
+							if (ss < 0) {
+								ss = a.next(s, Automaton.OTHERWISE);
+							}
+							if (s != 0) {
+								sb.append(",");
+							}
+							sb.append(ss);
+						}
+						sb.append("]\n");
+					}
 					if (first) {
 						sb.append("fun CPN'next'");
-						first = false;
 					} else {
 						sb.append("  | CPN'next'");
 					}
 					sb.append(i);
-					sb.append(" \"");
-					sb.append(t);
-					sb.append("\" = #[");
+					sb.append(" _ = #[");
 					for (int s = a.getInit(); s < a.lastState(); s++) {
-						int ss = a.next(s, t);
-						if (ss < 0) {
-							ss = a.next(s, Automaton.OTHERWISE);
-						}
+						final int ss = a.next(s, Automaton.OTHERWISE);
 						if (s != 0) {
 							sb.append(",");
 						}
@@ -206,97 +227,100 @@ public class DeclareExtension extends AbstractExtension {
 					}
 					sb.append("]\n");
 				}
-				if (first) {
-					sb.append("fun CPN'next'");
-				} else {
-					sb.append("  | CPN'next'");
-				}
-				sb.append(i);
-				sb.append(" _ = #[");
-				for (int s = a.getInit(); s < a.lastState(); s++) {
-					final int ss = a.next(s, Automaton.OTHERWISE);
-					if (s != 0) {
-						sb.append(",");
+				sb.append("fun CPN'next' (CPN't, CPN'state) = (");
+				for (i = 1; i <= automata.size(); i++) {
+					if (i != 1) {
+						sb.append(", ");
 					}
-					sb.append(ss);
-				}
-				sb.append("]\n");
-			}
-			sb.append("fun CPN'next' (CPN't, CPN'state) = (");
-			for (i = 1; i <= automata.size(); i++) {
-				if (i != 1) {
-					sb.append(", ");
-				}
-				sb.append("Vector.sub(CPN'next'");
-				sb.append(i);
-				sb.append(" CPN't, ");
-				if (automata.size() > 1) {
-					sb.append("#");
+					sb.append("Vector.sub(CPN'next'");
 					sb.append(i);
-				}
-				sb.append(" CPN'state)");
-			}
-			sb.append(")\n");
-			i = 0;
-			for (final Automaton a : automata.values()) {
-				i++;
-				boolean first = true;
-				for (int s = a.getInit(); s < a.lastState(); s++) {
-					if (AcceptabilityFlavor.isImpossible(a, s)) {
-						if (first) {
-							sb.append("fun CPN'accept'");
-							first = false;
-						} else {
-							sb.append("  | CPN'accept'");
-						}
+					sb.append(" CPN't, ");
+					if (automata.size() > 1) {
+						sb.append("#");
 						sb.append(i);
-						sb.append(" ");
-						sb.append(s);
-						sb.append(" = false\n");
 					}
+					sb.append(" CPN'state)");
 				}
-				if (first) {
-					sb.append("fun CPN'accept'");
-				} else {
-					sb.append("  | CPN'accept'");
-				}
-				sb.append(i);
-				sb.append(" _ = true\n");
-			}
-			sb.append("fun CPN'accept' CPN'state = ");
-			for (i = 1; i <= automata.size(); i++) {
-				if (i != 1) {
-					sb.append(" andalso ");
-				}
-				sb.append("(CPN'accept'");
-				sb.append(i);
-				sb.append(" (");
-				if (automata.size() > 1) {
-					sb.append("#");
+				sb.append(")\n");
+				i = 0;
+				for (final Automaton a : automata.values()) {
+					i++;
+					boolean first = true;
+					for (int s = a.getInit(); s < a.lastState(); s++) {
+						if (AcceptabilityFlavor.isImpossible(a, s)) {
+							if (first) {
+								sb.append("fun CPN'accept'");
+								first = false;
+							} else {
+								sb.append("  | CPN'accept'");
+							}
+							sb.append(i);
+							sb.append(" ");
+							sb.append(s);
+							sb.append(" = false\n");
+						}
+					}
+					if (first) {
+						sb.append("fun CPN'accept'");
+					} else {
+						sb.append("  | CPN'accept'");
+					}
 					sb.append(i);
+					sb.append(" _ = true\n");
 				}
-				sb.append(" CPN'state))");
-			}
-			sb.append("\n");
-			sb.append("in\nfun CPN'check' (CPN't, _) = CPN'accept' (CPN'next' (CPN't, !CPN'state))\n");
-			sb.append("fun CPN'execute' (CPN't, _) = CPN'state := (CPN'next' (CPN't, !CPN'state))\n");
-			sb.append("fun CPN'show_state () = !CPN'state\n");
-			sb.append("fun CPN'reset' () = CPN'state := (");
-			for (i = 0; i < automata.size(); i++) {
-				if (i != 0) {
-					sb.append(", ");
+				sb.append("fun CPN'accept' CPN'state = ");
+				for (i = 1; i <= automata.size(); i++) {
+					if (i != 1) {
+						sb.append(" andalso ");
+					}
+					sb.append("(CPN'accept'");
+					sb.append(i);
+					sb.append(" (");
+					if (automata.size() > 1) {
+						sb.append("#");
+						sb.append(i);
+					}
+					sb.append(" CPN'state))");
 				}
-				sb.append("0");
-			}
-			sb.append(")\n");
+				sb.append("\n");
+				sb.append("in\nfun CPN'check' (CPN't, _) = CPN'accept' (CPN'next' (CPN't, !CPN'state))\n");
+				sb.append("fun CPN'execute' (CPN't, _) = CPN'state := (CPN'next' (CPN't, !CPN'state))\n");
+				sb.append("fun CPN'get_state () = !CPN'state\n");
+				sb.append("fun CPN'set_state CPN's = CPN'state := CPN's\n");
+				sb.append("fun CPN'reset' () = CPN'state := (");
+				for (i = 0; i < automata.size(); i++) {
+					if (i != 0) {
+						sb.append(", ");
+					}
+					sb.append("0");
+				}
+				sb.append(")\n");
 
-			sb.append("end;\n");
-			sb.append("CPN'Sim.add_filter (\"org.cpntools.simulator.extensions.declare\", { check = CPN'check', execute = CPN'execute', reset = CPN'reset' })");
-//			System.out.println(sb);
-			try {
-				channel.evaluate(sb.toString());
-			} catch (final Exception e) {
-				e.printStackTrace();
+				sb.append("end;\n");
+				sb.append("CPN'Sim.add_filter (\"org.cpntools.simulator.extensions.declare\", { check = CPN'check', execute = CPN'execute', reset = CPN'reset' })");
+// System.out.println(sb);
+				try {
+					channel.evaluate(sb.toString());
+				} catch (final Exception e) {
+					e.printStackTrace();
+				}
+				isGenerated = true;
+				sb = new StringBuilder();
+				sb.append("CPN'set_state (");
+				boolean first = true;
+				for (final String label : order) {
+					if (!first) {
+						sb.append(", ");
+					}
+					first = false;
+					sb.append(states.get(label));
+				}
+				sb.append(")");
+				try {
+					channel.evaluate(sb.toString());
+				} catch (final Exception e) {
+					// Ignore
+				}
 			}
 		} catch (final Exception _) {
 			// Ignore
@@ -310,6 +334,7 @@ public class DeclareExtension extends AbstractExtension {
 	}
 
 	private Packet enabled(final Packet p, final Packet response) {
+		if (isGenerated) return response;
 		response.reset();
 		p.reset();
 // System.out.println("-----------------------------------");
@@ -343,6 +368,7 @@ public class DeclareExtension extends AbstractExtension {
 		final String taskId = p.getString();
 // System.out.print(taskId + ": (");
 		trace.add(taskId);
+		if (isGenerated) return;
 		final Object task = getTask(taskId);
 // boolean first = true;
 		for (final String pageId : new ArrayList<String>(automata.keySet())) {
@@ -379,6 +405,7 @@ public class DeclareExtension extends AbstractExtension {
 		final Packet result = new Packet(7, 1);
 		try {
 			channel.evaluate("CPN'Sim.remove_filter \"org.cpntools.simulator.extensions.declare\"");
+			isGenerated = false;
 			p.reset();
 			p.getInteger(); // command
 			p.getInteger(); // extension
