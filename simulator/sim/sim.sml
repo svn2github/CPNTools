@@ -168,7 +168,9 @@ fun bind_fair bindings occfun picker bind_exe extract (m, inst) =
             then case f (mode, inst)
                    of (is_executed, errors) =>
                    let
-                       val _ = execute_filters (id, inst) (!filters)
+                       val _ = if mode <> test
+                               then execute_filters (id, inst) (!filters)
+                               else ()
                    in
                        (is_executed, errors)
                    end
@@ -180,7 +182,9 @@ fun bind_fair bindings occfun picker bind_exe extract (m, inst) =
             then case f (mode, inst)
                    of (count, (is_executed, errors), bind_exe) =>
                    let
-                       val _ = execute_filters (id, inst) (!filters)
+                       val _ = if mode <> test
+                               then execute_filters (id, inst) (!filters)
+                               else ()
                    in
                        (count, (is_executed, errors), bind_exe)
                    end
