@@ -29,6 +29,7 @@ public class DeclareExtension extends AbstractExtension {
 
 	private final Map<String, Module> modules = new HashMap<String, Module>();
 
+	@SuppressWarnings("unused")
 	private final Option<Boolean> SMART = Option.create("Smart simulation", "smart", Boolean.class);
 
 	private final Map<String, Integer> states = new HashMap<String, Integer>();
@@ -39,12 +40,12 @@ public class DeclareExtension extends AbstractExtension {
 	 * 
 	 */
 	public DeclareExtension() {
-		addOption(SMART);
+// addOption(SMART);
 // addOption(DATA_AWARE, SMART);
 		addLazySubscription(// new Command(400, 2), // Syntax check page
 // new Command(500, 3), // Generate instances
 // new Command(500, 4), // Update instances
-// new Command(500, 11), // Start run
+		        new Command(500, 11, true), // Start run
 		        new Command(500, 12), // Execute transition
 		        new Command(500, 13), // Check transition for enabledness
 		        new Command(500, 14), // Checked enabledness without scheduler
@@ -52,8 +53,8 @@ public class DeclareExtension extends AbstractExtension {
 		        new Command(500, 20), // Init state
 		        new Command(500, 21), // Create + reset scheduler
 		        new Command(500, 35), // Check enabling of list of transitions
-		        new Command(500, 36), // Check enabling of transitions without scheduler
-		        new Command(800, 1) // Set state space options
+		        new Command(500, 36) // Check enabling of transitions without scheduler
+// new Command(800, 1) // Set state space options
 		);
 	}
 
@@ -99,6 +100,32 @@ public class DeclareExtension extends AbstractExtension {
 	}
 
 	/**
+	 * @see org.cpntools.simulator.extensions.AbstractExtension#prefilter(org.cpntools.accesscpn.engine.protocol.Packet)
+	 */
+	@Override
+	public Packet prefilter(final Packet p) {
+		p.reset();
+		final int command = p.getInteger();
+		if (command == 500) {
+			final int subcommand = p.getInteger();
+			switch (subcommand) {
+			case 11:
+				generate();
+				return p;
+			}
+		} else if (command == 800) {
+			final int subcommand = p.getInteger();
+			switch (subcommand) {
+			case 1:
+				generate();
+				return p;
+			}
+
+		}
+		return p;
+	}
+
+	/**
 	 * @see org.cpntools.simulator.extensions.AbstractExtension#handle(org.cpntools.accesscpn.engine.protocol.Packet,
 	 *      org.cpntools.accesscpn.engine.protocol.Packet)
 	 */
@@ -109,6 +136,9 @@ public class DeclareExtension extends AbstractExtension {
 		if (command == 500) {
 			final int subcommand = p.getInteger();
 			switch (subcommand) {
+			case 11:
+				generate();
+				return response;
 			case 12:
 				execute(p);
 				return response;
@@ -123,13 +153,159 @@ public class DeclareExtension extends AbstractExtension {
 			case 36:
 				return multipleEnabled(p, response);
 			}
+		} else if (command == 800) {
+			final int subcommand = p.getInteger();
+			switch (subcommand) {
+			case 1:
+				generate();
+				return response;
+			}
+
 		}
 		return null;
 	}
 
+	private void generate() {
+		try {
+			channel.evaluate("let exception E in if (CPN'Sim.has_filter(\"org.cpntools.simulator.extensions.declare\")) then raise E else () end");
+			final StringBuilder sb = new StringBuilder();
+			sb.append("local val CPN'state = ref (");
+			for (int i = 0; i < automata.size(); i++) {
+				if (i != 0) {
+					sb.append(", ");
+				}
+				sb.append("0");
+			}
+			sb.append(")\n");
+			int i = 0;
+			for (final Automaton a : automata.values()) {
+				i++;
+				final List<Object> ts = new ArrayList<Object>(a.getTransitions());
+				ts.remove(Automaton.OTHERWISE);
+				boolean first = true;
+				for (final Object t : ts) {
+					if (first) {
+						sb.append("fun CPN'next'");
+						first = false;
+					} else {
+						sb.append("  | CPN'next'");
+					}
+					sb.append(i);
+					sb.append(" \"");
+					sb.append(t);
+					sb.append("\" = #[");
+					for (int s = a.getInit(); s < a.lastState(); s++) {
+						int ss = a.next(s, t);
+						if (ss < 0) {
+							ss = a.next(s, Automaton.OTHERWISE);
+						}
+						if (s != 0) {
+							sb.append(",");
+						}
+						sb.append(ss);
+					}
+					sb.append("]\n");
+				}
+				if (first) {
+					sb.append("fun CPN'next'");
+				} else {
+					sb.append("  | CPN'next'");
+				}
+				sb.append(i);
+				sb.append(" _ = #[");
+				for (int s = a.getInit(); s < a.lastState(); s++) {
+					final int ss = a.next(s, Automaton.OTHERWISE);
+					if (s != 0) {
+						sb.append(",");
+					}
+					sb.append(ss);
+				}
+				sb.append("]\n");
+			}
+			sb.append("fun CPN'next' (CPN't, CPN'state) = (");
+			for (i = 1; i <= automata.size(); i++) {
+				if (i != 1) {
+					sb.append(", ");
+				}
+				sb.append("Vector.sub(CPN'next'");
+				sb.append(i);
+				sb.append(" CPN't, ");
+				if (automata.size() > 1) {
+					sb.append("#");
+					sb.append(i);
+				}
+				sb.append(" CPN'state)");
+			}
+			sb.append(")\n");
+			i = 0;
+			for (final Automaton a : automata.values()) {
+				i++;
+				boolean first = true;
+				for (int s = a.getInit(); s < a.lastState(); s++) {
+					if (AcceptabilityFlavor.isImpossible(a, s)) {
+						if (first) {
+							sb.append("fun CPN'accept'");
+							first = false;
+						} else {
+							sb.append("  | CPN'accept'");
+						}
+						sb.append(i);
+						sb.append(" ");
+						sb.append(s);
+						sb.append(" = false\n");
+					}
+				}
+				if (first) {
+					sb.append("fun CPN'accept'");
+				} else {
+					sb.append("  | CPN'accept'");
+				}
+				sb.append(i);
+				sb.append(" _ = true\n");
+			}
+			sb.append("fun CPN'accept' CPN'state = ");
+			for (i = 1; i <= automata.size(); i++) {
+				if (i != 1) {
+					sb.append(" andalso ");
+				}
+				sb.append("(CPN'accept'");
+				sb.append(i);
+				sb.append(" (");
+				if (automata.size() > 1) {
+					sb.append("#");
+					sb.append(i);
+				}
+				sb.append(" CPN'state))");
+			}
+			sb.append("\n");
+			sb.append("in\nfun CPN'check' (CPN't, _) = CPN'accept' (CPN'next' (CPN't, !CPN'state))\n");
+			sb.append("fun CPN'execute' (CPN't, _) = CPN'state := (CPN'next' (CPN't, !CPN'state))\n");
+			sb.append("fun CPN'show_state () = !CPN'state\n");
+			sb.append("fun CPN'reset' () = CPN'state := (");
+			for (i = 0; i < automata.size(); i++) {
+				if (i != 0) {
+					sb.append(", ");
+				}
+				sb.append("0");
+			}
+			sb.append(")\n");
+
+			sb.append("end;\n");
+			sb.append("CPN'Sim.add_filter (\"org.cpntools.simulator.extensions.declare\", { check = CPN'check', execute = CPN'execute', reset = CPN'reset' })");
+//			System.out.println(sb);
+			try {
+				channel.evaluate(sb.toString());
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		} catch (final Exception _) {
+			// Ignore
+		}
+	}
+
 	private boolean acceptable(final Automaton a, final int state, final Object transition) {
 		final int next = execute(transition, a, state);
-		if (next < 0) { return false; }
+		if (next < 0) return false;
 		return !AcceptabilityFlavor.isImpossible(a, next);
 	}
 
@@ -155,10 +331,8 @@ public class DeclareExtension extends AbstractExtension {
 			final Automaton a = automata.get(pageId);
 			final int state = states.get(pageId);
 // System.out.print(state + " ");
-			if (!acceptable(a, state, task)) {
-// System.out.println("= false");
-				return false;
-			}
+			if (!acceptable(a, state, task)) // System.out.println("= false");
+			    return false;
 		}
 // System.out.println("= true");
 		return true;
@@ -204,6 +378,7 @@ public class DeclareExtension extends AbstractExtension {
 	private Packet handleCheckPage(final Packet p) {
 		final Packet result = new Packet(7, 1);
 		try {
+			channel.evaluate("CPN'Sim.remove_filter \"org.cpntools.simulator.extensions.declare\"");
 			p.reset();
 			p.getInteger(); // command
 			p.getInteger(); // extension
@@ -270,7 +445,7 @@ public class DeclareExtension extends AbstractExtension {
 	private Packet multipleEnabled(final Packet p, final Packet response) {
 		p.reset();
 		response.reset();
-		if (response.getInteger() != 1) { return response; }
+		if (response.getInteger() != 1) return response;
 		final Packet result = new Packet(7, 1);
 		p.getInteger();
 		p.getInteger(); // Skip command and subcmd
